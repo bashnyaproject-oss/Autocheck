@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Осмотрено</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky header + role tabs; buyer = filter rail | results grid; car opens in a side sheet with the inspection protocol. */
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --ink:#14201C; --muted:#5D6A65; --line:#DAE1DE; --chip:#E8EDEB; --glass:#B9CBC6;
+  --accent:#0B7A5F; --accent-ink:#FFFFFF; --accent-soft:#DDF0E8;
+  --warn:#A8690F; --warn-soft:#FAEED8; --bad:#BF3B28; --bad-soft:#F8E1DC;
+  --shadow:0 1px 2px rgba(20,32,28,.06),0 8px 24px rgba(20,32,28,.06);
+  --f-display:"Unbounded","Onest",system-ui,sans-serif;
+  --f-body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#161F1C; --ink:#E5EDE9; --muted:#93A39C; --line:#26322E; --chip:#1D2825; --glass:#3C514B;
+  --accent:#3DC69C; --accent-ink:#06261C; --accent-soft:#14352B;
+  --warn:#E5AA4D; --warn-soft:#382B15; --bad:#F07B64; --bad-soft:#3B1E19;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#161F1C; --ink:#E5EDE9; --muted:#93A39C; --line:#26322E; --chip:#1D2825; --glass:#3C514B;
+  --accent:#3DC69C; --accent-ink:#06261C; --accent-soft:#14352B;
+  --warn:#E5AA4D; --warn-soft:#382B15; --bad:#F07B64; --bad-soft:#3B1E19;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:.86em;letter-spacing:.02em}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font:700 18px/1 var(--f-display);letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.logo-mark{width:30px;height:30px;border-radius:50%;border:2.5px solid var(--accent);display:grid;place-items:center;color:var(--accent);transform:rotate(-8deg)}
+.tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:12px;margin-left:auto}
+.tab{border:0;background:none;padding:8px 14px;border-radius:9px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.geo{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:14px}
+.geo strong{color:var(--ink);font-weight:600}
+
+/* AI search */
+.ai{display:flex;gap:8px;align-items:stretch;padding-bottom:14px}
+.ai-box{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:0 14px}
+.ai-box:focus-within{border-color:var(--accent)}
+.ai-tag{font:700 11px/1 var(--f-display);letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:6px 8px;border-radius:6px;white-space:nowrap}
+.ai-box input{flex:1;min-width:0;border:0;background:none;padding:13px 0;outline:none;font-size:16px}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--chip);color:var(--ink);white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:none;border:1.5px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.try{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:12px;font-size:13px;color:var(--muted);align-items:center}
+.try button{border:1px dashed var(--line);background:none;border-radius:999px;padding:4px 10px;font-size:13px;color:var(--ink)}
+
+/* buyer layout */
+.buyer{display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;padding-block:24px 64px}
+.rail{display:flex;flex-direction:column;gap:20px;align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 150px)}
+.fgroup{display:flex;flex-direction:column;gap:8px}
+.flabel{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between}
+.flabel output{text-transform:none;letter-spacing:0;color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.check{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px}
+.seg button[aria-pressed="true"],.check[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.checks{display:flex;flex-direction:column;gap:6px}
+.check{text-align:left;border-radius:10px;display:flex;gap:8px;align-items:center}
+.check .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--muted);display:grid;place-items:center;flex:none}
+.check[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface)}
+.rail-toggle{display:none}
+
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.count{font:600 20px/1.2 var(--f-display);letter-spacing:-.01em}
+.toolbar .spacer{flex:1}
+.ai-note{background:var(--accent-soft);border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.ai-note .chips{display:flex;flex-wrap:wrap;gap:6px}
+.ai-note .chips span{background:var(--surface);border-radius:999px;padding:3px 10px;font-weight:500}
+.demo-flag{font-size:12px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;border:0;padding:0;text-align:left;transition:transform .15s ease}
+.card:hover{transform:translateY(-2px)}
+.photo{position:relative;background:var(--chip);aspect-ratio:16/10;max-width:100%;display:grid;place-items:center}
+.photo svg{width:82%;height:auto}
+.stamp{position:absolute;top:10px;left:10px;border:2px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:8px;padding:3px 8px 2px;font:700 10.5px/1.25 var(--f-display);letter-spacing:.05em;transform:rotate(-4deg);text-align:center}
+.stamp small{display:block;font:500 10px/1.2 var(--f-mono);letter-spacing:0}
+.dist{position:absolute;bottom:10px;right:10px;background:var(--surface);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600}
+.cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ctitle{font-weight:700;font-size:16px;line-height:1.3}
+.cmeta{color:var(--muted);font-size:13.5px}
+.price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.price{font:700 19px/1.2 var(--f-display);letter-spacing:-.01em}
+.mk{font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.mk.good{background:var(--accent-soft);color:var(--accent)}
+.mk.mid{background:var(--chip);color:var(--muted)}
+.mk.high{background:var(--warn-soft);color:var(--warn)}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+.flag{font-size:12.5px;padding:3px 8px;border-radius:6px;display:inline-flex;gap:5px;align-items:center}
+.flag.ok{background:var(--accent-soft);color:var(--accent)}
+.flag.warn{background:var(--warn-soft);color:var(--warn)}
+.flag.bad{background:var(--bad-soft);color:var(--bad)}
+.why{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.index{display:flex;align-items:center;gap:8px}
+.ring{width:42px;height:42px;flex:none}
+.index b{font:700 15px/1 var(--f-display)}
+.index span{font-size:12px;color:var(--muted);line-height:1.2}
+.empty{background:var(--surface);border-radius:16px;padding:32px;text-align:center;color:var(--muted)}
+
+/* map */
+.mapbox{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:16px;overflow-x:auto}
+.mapbox svg{display:block;width:100%;max-width:760px;margin:0 auto;height:auto}
+.mapbox .dot{cursor:pointer}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,16,14,.45);z-index:20}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(720px,100%);background:var(--bg);z-index:21;overflow-y:auto;box-shadow:-12px 0 40px rgba(0,0,0,.18);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet-in{padding:20px max(20px,env(safe-area-inset-right,0px)) 40px 20px;display:flex;flex-direction:column;gap:18px}
+.sheet-top{display:flex;align-items:center;gap:12px}
+.close{margin-left:auto;border:0;background:var(--chip);width:40px;height:40px;border-radius:50%;font-size:20px;line-height:1}
+.panel{background:var(--surface);border-radius:16px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;min-width:0}
+h2{font:700 22px/1.25 var(--f-display);letter-spacing:-.015em;margin:0;text-wrap:balance}
+h3{font:600 15px/1.3 var(--f-display);margin:0;letter-spacing:-.005em}
+.hero-photo{background:var(--chip);border-radius:16px;display:grid;place-items:center;padding:24px;position:relative}
+.hero-photo svg{width:min(420px,90%);height:auto}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.spec{display:flex;flex-direction:column;gap:2px}
+.spec span{font-size:12px;color:var(--muted)}
+.spec b{font-weight:600}
+.proto{display:flex;flex-direction:column}
+.prow{display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.prow:first-child{border-top:0}
+.dotst{width:14px;height:14px;border-radius:50%;margin-top:4px}
+.dotst.ok{background:var(--accent)} .dotst.warn{background:var(--warn)} .dotst.bad{background:var(--bad)}
+.prow small{display:block;color:var(--muted);font-size:13px}
+.ptag{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ptag.conf{color:var(--accent)}
+.bodymap{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:20px;align-items:center}
+.bodymap svg{width:100%;max-width:180px;height:auto}
+.legend{display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.inspector{display:flex;gap:12px;align-items:center}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:700 15px var(--f-display);flex:none}
+.cta{position:sticky;bottom:0;background:var(--surface);border-radius:16px;padding:14px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.08);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.cta .price{font-size:22px}
+.cta .spacer{flex:1}
+
+/* stepper */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:32px 1fr;gap:12px;position:relative;padding-bottom:18px}
+.step::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.sn{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--chip);color:var(--muted)}
+.step.done .sn{background:var(--accent);color:var(--accent-ink)}
+.step.now .sn{background:var(--accent-soft);color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.step b{display:block;margin-top:5px}
+.step p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.step .act{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* seller + inspector */
+.page{padding-block:28px 64px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:start}
+.lead h2{font-size:clamp(22px,3vw,30px)}
+.lead p{color:var(--muted);max-width:60ch;margin:8px 0 0}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field input{border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--bg)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.slots{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.slot{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 12px;text-align:center;flex:none}
+.slot small{display:block;color:var(--muted);font-size:12px}
+.slot[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.formats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fmt{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.fmt small{color:var(--muted);font-size:13px}
+.fmt span{font:700 16px/1.3 var(--f-display);margin-top:4px}
+.fmt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.choice{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.choice small{color:var(--muted);font-size:13px;line-height:1.4}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.mk.auc{background:var(--warn-soft);color:var(--warn)}
+.auction{background:var(--warn-soft);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.auction .big{font:700 24px/1.2 var(--f-display)}
+.rolebar{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}
+.rolebar .tabs{margin-left:0}
+.rolelabel{color:var(--muted);font-size:14px;white-space:nowrap}
+.why{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-weight:700;flex:none}
+.whylink{border:0;background:none;color:var(--accent);font-weight:600;padding:0;text-decoration:underline;text-underline-offset:3px}
+.modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(10,16,14,.5);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mcard{background:var(--surface);border-radius:20px;max-width:560px;width:100%;max-height:100%;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mcard .eyebrow{font:700 11px/1 var(--f-display);letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+.mcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.mcard li{display:grid;grid-template-columns:28px 1fr;gap:10px}
+.mcard li .ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700}
+.mcard li small{display:block;color:var(--muted);font-size:13.5px}
+.mcard .how{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:14px}
+.mcard .how ol{margin:6px 0 0;padding-left:20px}
+.mcard .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.ptypes{display:flex;gap:6px;flex-wrap:wrap}
+.ptypes button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px}
+.ptypes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.places{display:flex;flex-direction:column;gap:8px}
+.place{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:4px 12px;width:100%}
+.place[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.place .ty{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.place small{color:var(--muted);font-size:13px}
+.place .pr{font:700 16px/1.2 var(--f-display);text-align:right}
+.place .perk{grid-column:1/-1;font-size:13px;color:var(--accent)}
+.sched{display:flex;flex-direction:column}
+.srow{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.srow:first-child{border-top:0}
+.srow .t{font:600 15px var(--f-mono)}
+.srow small{display:block;color:var(--muted);font-size:13px}
+.srow .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.lead-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.lead-row:first-child{border-top:0}
+.lead-row small{display:block;color:var(--muted);font-size:13px}
+.offer{display:flex;gap:8px;grid-column:1/-1;flex-wrap:wrap}
+.offer input{flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+.sw{width:44px;height:26px;border-radius:99px;border:0;background:var(--line);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);transition:left .15s}
+.sw[aria-checked="true"]{background:var(--accent)}
+.sw[aria-checked="true"]::after{left:21px}
+.invite{background:var(--bg);border-radius:14px;padding:14px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+.invite svg{width:96px;height:96px}
+.invite code{font:500 14px var(--f-mono);word-break:break-all}
+.team{display:flex;flex-direction:column}
+.trow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.trow:first-child{border-top:0}
+.trow small{display:block;color:var(--muted);font-size:13px}
+.req{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.req:first-child{border-top:0}
+.req small{display:block;color:var(--muted);font-size:13px}
+.benefits{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.benefits li{display:grid;grid-template-columns:28px 1fr;gap:10px}
+.benefits .ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700}
+.benefits small{display:block;color:var(--muted)}
+.paybox{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:12px}
+.stat{display:flex;gap:16px;flex-wrap:wrap}
+.stat div{background:var(--bg);border-radius:12px;padding:10px 14px;min-width:120px}
+.stat span{display:block;font-size:12px;color:var(--muted)}
+.stat b{font:700 20px/1.3 var(--f-display)}
+.route{display:flex;flex-direction:column}
+.stop{display:grid;grid-template-columns:56px 1fr auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:center;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.stop:first-child{border-top:0}
+.stop[aria-current="true"] .t{color:var(--accent)}
+.stop .t{font:600 15px var(--f-mono)}
+.stop small{display:block;color:var(--muted);font-size:13px}
+.ck{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.ck:first-child{border-top:0}
+.ck small{display:block;color:var(--muted);font-size:12.5px}
+.tri{display:flex;gap:4px}
+.tri button{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-size:13px}
+.tri button[aria-pressed="true"][data-v="ok"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tri button[aria-pressed="true"][data-v="warn"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.tri button[aria-pressed="true"][data-v="bad"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .2s}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:40;font-weight:500;max-width:calc(100% - 32px)}
+footer{color:var(--muted);font-size:13px;padding-block:0 32px}
+
+@media (max-width:900px){
+  .buyer{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static}
+  .rail-toggle{display:inline-flex}
+  .rail.collapsed .fgroup{display:none}
+  .page{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:620px){
+  .rolebar{margin-left:0;width:100%}
+  .rolelabel{display:none}
+  .tabs{margin-left:0;flex:1;min-width:0;overflow-x:auto}
+  .tab{flex:1 0 auto;padding:8px 10px;font-size:14px}
+  .srow{grid-template-columns:48px minmax(0,1fr)}
+  .srow > .btn{grid-column:2;justify-self:start}
+  .invite{grid-template-columns:minmax(0,1fr)}
+  .geo{display:none}
+  .ai{flex-direction:column}
+  .bodymap{grid-template-columns:minmax(0,1fr)}
+  .bodymap svg{margin:0 auto}
+  .row2,.formats,.choices{grid-template-columns:minmax(0,1fr)}
+  .stop{grid-template-columns:48px 1fr}
+  .stop .pay{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<header>
+  <div class="wrap">
+    <div class="hrow">
+      <a class="logo" href="#buy" aria-label="Осмотрено, на главную"><span class="logo-mark" aria-hidden="true">✓</span>Осмотрено</a>
+      <span class="geo">📍 <strong>Москва, Савёловская</strong> · радиус <strong id="geoR">50 км</strong></span>
+      <div class="rolebar">
+        <span class="rolelabel">Я —</span>
+        <nav class="tabs" role="tablist" aria-label="Роль">
+          <button class="tab" role="tab" id="tab-buy" aria-selected="true" data-view="buy">Покупатель</button>
+          <button class="tab" role="tab" id="tab-sell" aria-selected="false" data-view="sell">Продавец</button>
+          <button class="tab" role="tab" id="tab-dealer" aria-selected="false" data-view="dealer">Дилер</button>
+          <button class="tab" role="tab" id="tab-insp" aria-selected="false" data-view="insp">Сервис подбора</button>
+        </nav>
+        <button class="why" type="button" id="whyBtn" aria-label="Зачем это мне">?</button>
+      </div>
+    </div>
+    <div id="aiWrap">
+      <form class="ai" id="aiForm">
+        <div class="ai-box">
+          <span class="ai-tag">ИИ-ПОИСК</span>
+          <input id="aiInput" type="search" autocomplete="off" placeholder="Опишите машину своими словами" aria-label="Поиск обычными словами">
+        </div>
+        <button class="btn primary" type="submit">Подобрать</button>
+      </form>
+      <div class="try">Например:
+        <button type="button" data-q="семейный кроссовер до 2,5 млн, не битый, недалеко">семейный кроссовер до 2,5 млн, не битый, недалеко</button>
+        <button type="button" data-q="седан на автомате до 1,5 млн, один владелец, дешёвый в обслуживании">седан на автомате до 1,5 млн, один владелец</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- BUYER -->
+  <section id="view-buy" class="wrap buyer">
+    <aside class="rail" id="rail">
+      <button class="btn ghost rail-toggle" id="railToggle" type="button" aria-expanded="false">Фильтры</button>
+      <div class="fgroup">
+        <div class="flabel">Цена до <output id="oPrice" class="num"></output></div>
+        <input id="fPrice" type="range" min="600000" max="4000000" step="100000" value="4000000" aria-label="Цена до">
+      </div>
+      <div class="fgroup">
+        <div class="flabel">Индекс состояния от <output id="oIndex" class="num"></output></div>
+        <input id="fIndex" type="range" min="0" max="95" step="5" value="0" aria-label="Индекс состояния от">
+      </div>
+      <div class="fgroup">
+        <div class="flabel">Расстояние</div>
+        <div class="seg" id="fRadius">
+          <button type="button" data-r="10" aria-pressed="false">10 км</button>
+          <button type="button" data-r="25" aria-pressed="false">25 км</button>
+          <button type="button" data-r="50" aria-pressed="true">50 км</button>
+          <button type="button" data-r="150" aria-pressed="false">150 км</button>
+        </div>
+      </div>
+      <div class="fgroup">
+        <div class="flabel">Кузов</div>
+        <div class="seg" id="fBody">
+          <button type="button" data-b="" aria-pressed="true">Любой</button>
+          <button type="button" data-b="sedan" aria-pressed="false">Седан</button>
+          <button type="button" data-b="hatch" aria-pressed="false">Хэтчбек</button>
+          <button type="button" data-b="suv" aria-pressed="false">Кроссовер</button>
+        </div>
+      </div>
+      <div class="fgroup">
+        <div class="flabel">Подтверждено осмотром</div>
+        <div class="checks" id="fChecks">
+          <button type="button" class="check" data-k="noPaint" aria-pressed="false"><span class="box">✓</span>Без окрасов и ДТП</button>
+          <button type="button" class="check" data-k="oneOwner" aria-pressed="false"><span class="box">✓</span>Один владелец</button>
+          <button type="button" class="check" data-k="mileageOk" aria-pressed="false"><span class="box">✓</span>Пробег подтверждён</button>
+          <button type="button" class="check" data-k="noLeaks" aria-pressed="false"><span class="box">✓</span>Без подтёков</button>
+          <button type="button" class="check" data-k="noErrors" aria-pressed="false"><span class="box">✓</span>Без ошибок ЭБУ</button>
+          <button type="button" class="check" data-k="auto" aria-pressed="false"><span class="box">✓</span>Автомат</button>
+          <button type="button" class="check" data-k="auction" aria-pressed="false"><span class="box">✓</span>Только аукционы</button>
+        </div>
+      </div>
+      <div class="fgroup"><button class="btn ghost" type="button" id="reset">Сбросить всё</button></div>
+    </aside>
+
+    <div style="min-width:0">
+      <div id="aiNote" class="ai-note" hidden></div>
+      <div class="toolbar">
+        <span class="count num" id="count"></span>
+        <span class="demo-flag">демо-объявления</span>
+        <button type="button" class="whylink" data-why="buy">Зачем это мне?</button>
+        <span class="spacer"></span>
+        <select id="sort" aria-label="Сортировка">
+          <option value="dist">Сначала ближе</option>
+          <option value="index">Лучшее состояние</option>
+          <option value="deal">Выгоднее рынка</option>
+          <option value="price">Дешевле</option>
+        </select>
+        <div class="seg" id="viewMode">
+          <button type="button" data-m="grid" aria-pressed="true">Список</button>
+          <button type="button" data-m="map" aria-pressed="false">Карта</button>
+        </div>
+      </div>
+      <div id="results" class="grid"></div>
+      <div id="map" class="mapbox" hidden></div>
+    </div>
+  </section>
+
+  <!-- SELLER -->
+  <section id="view-sell" class="wrap page" hidden>
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="lead">
+        <h2>Подтвердите состояние машины за 2 500 ₽</h2>
+        <p>Это не выкуп. Вы получаете отчёт о своей машине: криминал по базам, состояние и честную цену. Публиковать объявление или выставлять на аукцион — решаете после осмотра. <button type="button" class="whylink" data-why="sell">Зачем это мне?</button></p>
+      </div>
+      <div class="panel" id="sellForm">
+        <h3>1. Машина</h3>
+        <div class="row2">
+          <div class="field"><label for="sVin">VIN или госномер</label><input id="sVin" value="Х 482 КМ 799" autocomplete="off"></div>
+          <div class="field"><label for="sPhone">Телефон</label><input id="sPhone" value="+7 916 ••• •• 18" inputmode="tel"></div>
+        </div>
+        <h3>2. Где осмотреть</h3>
+        <div class="cmeta">Отвезите машину в любой пункт сети — дилерский центр, СТО-партнёр или наш пункт — или вызовите выездной сервис подбора. Стандарт осмотра везде один.</div>
+        <div class="ptypes" id="ptypes">
+          <button type="button" data-t="" aria-pressed="true">Все</button>
+          <button type="button" data-t="dealer" aria-pressed="false">Дилерские центры</button>
+          <button type="button" data-t="sto" aria-pressed="false">СТО-партнёры</button>
+          <button type="button" data-t="own" aria-pressed="false">Пункты Осмотрено</button>
+          <button type="button" data-t="mobile" aria-pressed="false">Выезд к вам</button>
+        </div>
+        <div class="places" id="places"></div>
+        <div class="field" id="addrField" hidden><label for="sAddr">Адрес, куда приехать</label><input id="sAddr" value="Москва, ул. Новослободская, 45"></div>
+        <h3>3. Время</h3>
+        <div class="slots" id="slots"></div>
+        <div class="slots" id="times"></div>
+        <h3>4. Оплата</h3>
+        <div class="paybox"><span>Полный отчёт о машине, отметка «Осмотрено» на 45 дней, если решите продавать</span><b class="price num" id="payAmount">2 500 ₽</b></div>
+        <button class="btn primary" id="sellPay" type="button">Оплатить и записаться</button>
+      </div>
+      <div class="panel" id="sellStatus" hidden>
+        <h3>Ваша заявка</h3>
+        <div class="steps" id="sellSteps"></div>
+        <button class="btn ghost" id="showReport" type="button">Показать готовый отчёт (демо)</button>
+      </div>
+      <div class="panel" id="sellReport" hidden></div>
+    </div>
+    <div class="panel">
+      <h3>Что вы получаете</h3>
+      <ul class="benefits">
+        <li><span class="ic">1</span><div>Отчёт ваш в любом случае<small>Криминал по базам, двойники, кузов, подтёки, ошибки блоков и оценка цены. Даже если передумаете продавать.</small></div></li>
+        <li><span class="ic">2</span><div>Публикация — по желанию<small>Объявление с отметкой «Осмотрено» в один клик. К вам приезжают только те, кто готов купить.</small></div></li>
+        <li><span class="ic">3</span><div>Аукцион за 24 часа<small>Задайте резервную цену, и покупатели с дилерами поторгуются за машину. Ниже резерва не продадим.</small></div></li>
+        <li><span class="ic">4</span><div>Сделка онлайн через Госключ<small>Деньги покупателя ждут на эскроу, вы получаете их после приёмки.</small></div></li>
+      </ul>
+      <div class="paybox"><span class="demo-flag">Стоимость в прототипе — гипотеза</span><span></span></div>
+    </div>
+  </section>
+
+  <!-- DEALER -->
+  <section id="view-dealer" class="wrap page" hidden>
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="lead">
+        <h2>Дилерский центр «Север-Авто»</h2>
+        <p>Вы — пункт осмотра в сети. Владельцы машин приезжают подтвердить состояние, а вы знакомитесь с новым клиентом ещё до того, как он решил продавать. <button type="button" class="whylink" data-why="dealer">Зачем это мне?</button></p>
+      </div>
+      <div class="panel">
+        <div class="stat">
+          <div><span>Осмотров в октябре</span><b class="num">46</b></div>
+          <div><span>Новых клиентов</span><b class="num">31</b></div>
+          <div><span>Trade-in и выкуп у вас</span><b class="num">7</b></div>
+          <div><span>Записей в сервис</span><b class="num">12</b></div>
+          <div><span>Доход от осмотров</span><b class="num">80 500 ₽</b></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><h3>Осмотры сегодня</h3><span class="cmeta">Нажмите, чтобы сменить статус</span></div>
+        <div class="sched" id="dSched"></div>
+      </div>
+      <div class="panel">
+        <h3>Клиенты после осмотра</h3>
+        <div class="cmeta">Владельцы, которые разрешили присылать предложения. Вы видите отчёт и делаете своё предложение; владелец сравнит его с аукционом и объявлением.</div>
+        <div id="dLeads"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="panel">
+        <h3>Пригласить на осмотр</h3>
+        <div class="cmeta">Своих клиентов из сервиса, тех, кто спрашивает про trade-in, или покупателей, которым нужна проверка машины.</div>
+        <div class="field"><label for="iWho">Телефон или VIN клиента</label><input id="iWho" value="+7 903 ••• •• 41"></div>
+        <div class="field"><label for="iWhy">Повод</label><select id="iWhy"><option>Оценка для trade-in</option><option>Клиент собирается продавать</option><option>Проверка перед покупкой</option><option>Перед плановым ТО</option></select></div>
+        <div class="toggle"><span>Оплатим осмотр за клиента</span><button type="button" class="sw" role="switch" aria-checked="true" id="iPay" aria-label="Оплатим осмотр за клиента"></button></div>
+        <button class="btn primary" type="button" id="iSend">Создать приглашение</button>
+        <div id="iOut"></div>
+      </div>
+      <div class="panel">
+        <h3>Настройки пункта</h3>
+        <div class="toggle"><span>Показывать продавцам на карте</span><button type="button" class="sw" role="switch" aria-checked="true" aria-label="Показывать продавцам на карте"></button></div>
+        <div class="toggle"><span>Бесплатный осмотр при согласии на предложение</span><button type="button" class="sw" role="switch" aria-checked="true" aria-label="Бесплатный осмотр при согласии на предложение"></button></div>
+        <div class="field"><label for="dCap">Осмотров в день: <output id="dCapO" class="num">8</output></label><input id="dCap" type="range" min="2" max="20" value="8"></div>
+        <div class="paybox"><span>Аудит качества протоколов</span><b class="num">98%</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSPECTION SERVICE -->
+  <section id="view-insp" class="wrap page" hidden>
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="lead">
+        <h2>«АвтоЭксперт Север» · выездной осмотр</h2>
+        <p>Заявки на выезд в вашей зоне приходят сами, маршрут собирается кластером. Протокол по стандарту сети, ваш бренд и рейтинг — в каждом отчёте. <button type="button" class="whylink" data-why="insp">Зачем это мне?</button></p>
+      </div>
+      <div class="panel">
+        <h3>Новые заявки в зоне</h3>
+        <div id="reqs"></div>
+      </div>
+      <div class="panel">
+        <div class="stat">
+          <div><span>Осмотров</span><b class="num">5</b></div>
+          <div><span>Пробег по маршруту</span><b class="num">23 км</b></div>
+          <div><span>К выплате</span><b class="num">7 500 ₽</b></div>
+          <div><span>Рейтинг качества</span><b class="num">4,9</b></div>
+        </div>
+        <h3>Маршрут на сегодня</h3>
+        <div class="route" id="route"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="panel" id="checklist"></div>
+      <div class="panel">
+        <h3>Команда</h3>
+        <div class="team">
+          <div class="trow"><span class="ava">ИК</span><div><b>Ирина Кох</b><small>5 выездов сегодня · рейтинг 4,9</small></div><span class="flag ok">на линии</span></div>
+          <div class="trow"><span class="ava">АБ</span><div><b>Артём Белов</b><small>4 выезда · рейтинг 4,8</small></div><span class="flag ok">на линии</span></div>
+          <div class="trow"><span class="ava">ПУ</span><div><b>Павел Ушаков</b><small>выходной</small></div><span class="flag warn">не на линии</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Подбор для своих клиентов</h3>
+        <div class="cmeta">Ищите машины среди уже осмотренных — свои и чужие протоколы по одному стандарту. Ставьте на аукционе от имени клиента.</div>
+        <button class="btn ghost" type="button" id="toBuy">Открыть поиск осмотренных машин</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="wrap">Прототип сервиса «Осмотрено». Все объявления, люди и цифры — примеры для демонстрации.</footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Карточка автомобиля"><div class="sheet-in" id="sheetIn"></div></aside>
+<div class="toast" id="toast" hidden></div>
+<div class="modal" id="whyModal" hidden role="dialog" aria-modal="true" aria-labelledby="whyTitle"><div class="mcard" id="whyCard"></div></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const rub=n=>n.toLocaleString('ru-RU')+' ₽';
+const km=n=>n.toLocaleString('ru-RU')+' км';
+function seeded(n){let x=n*9301+49297;return()=>{x=(x*9301+49297)%233280;return x/233280}}
+
+const PANELS=['bumperF','hood','fenderFL','fenderFR','doorFL','doorFR','doorRL','doorRR','roof','fenderRL','fenderRR','trunk','bumperR'];
+const PNAME={bumperF:'Передний бампер',hood:'Капот',fenderFL:'Крыло пер. лев.',fenderFR:'Крыло пер. прав.',doorFL:'Дверь пер. лев.',doorFR:'Дверь пер. прав.',doorRL:'Дверь зад. лев.',doorRR:'Дверь зад. прав.',roof:'Крыша',fenderRL:'Крыло зад. лев.',fenderRR:'Крыло зад. прав.',trunk:'Крышка багажника',bumperR:'Задний бампер'};
+
+const CARS=[
+ {id:1,make:'Toyota',model:'RAV4',year:2019,price:2890000,market:2990000,km:68400,mOk:true,owners:1,body:'suv',color:'#9AA5A8',where:'Отрадное',dist:7,dir:20,box:'Автомат',eng:'2.0 л, 149 л.с.',idx:91,leaks:false,err:0,paint:{},insp:'Артём Белов',date:'14.10.2026',brand:'cheap'},
+ {id:2,make:'Kia',model:'Rio',year:2020,price:1290000,market:1390000,km:54200,mOk:true,owners:1,body:'sedan',color:'#C23B3B',where:'Марьина Роща',dist:3,dir:110,box:'Автомат',eng:'1.6 л, 123 л.с.',idx:88,leaks:false,err:0,paint:{bumperR:240},insp:'Ирина Кох',date:'16.10.2026',brand:'cheap'},
+ {id:3,make:'Hyundai',model:'Solaris',year:2018,price:1080000,market:1060000,km:112300,mOk:true,owners:2,body:'sedan',color:'#E8E8E4',where:'Химки',dist:19,dir:300,box:'Автомат',eng:'1.6 л, 123 л.с.',idx:74,leaks:true,err:0,paint:{doorFR:310,fenderFR:280},insp:'Артём Белов',date:'12.10.2026',brand:'cheap'},
+ {id:4,make:'Haval',model:'Jolion',year:2023,price:2190000,market:2240000,km:21700,mOk:true,owners:1,body:'suv',color:'#3E6E8E',where:'Мытищи',dist:16,dir:40,box:'Робот',eng:'1.5T, 143 л.с.',idx:94,leaks:false,err:0,paint:{},insp:'Ирина Кох',date:'17.10.2026',brand:''},
+ {id:5,make:'Skoda',model:'Octavia',year:2019,price:1790000,market:1820000,km:96800,mOk:false,owners:2,body:'hatch',color:'#2F3A40',where:'Сокол',dist:6,dir:250,box:'Робот DSG',eng:'1.4T, 150 л.с.',idx:69,leaks:false,err:2,paint:{hood:190},insp:'Павел Ушаков',date:'09.10.2026',brand:''},
+ {id:6,make:'Lada',model:'Vesta SW Cross',year:2021,price:1340000,market:1390000,km:48900,mOk:true,owners:1,body:'hatch',color:'#D97B2B',where:'Долгопрудный',dist:21,dir:345,box:'Механика',eng:'1.6 л, 106 л.с.',idx:85,leaks:false,err:0,paint:{},insp:'Павел Ушаков',date:'15.10.2026',brand:'cheap'},
+ {id:7,make:'Mazda',model:'CX-5',year:2018,price:2350000,market:2290000,km:87500,mOk:true,owners:2,body:'suv',color:'#8C1F2A',where:'Королёв',dist:27,dir:60,box:'Автомат',eng:'2.0 л, 150 л.с.',idx:80,leaks:false,err:0,paint:{bumperF:260,fenderFL:220},insp:'Артём Белов',date:'13.10.2026',brand:''},
+ {id:8,make:'Volkswagen',model:'Polo',year:2020,price:1240000,market:1300000,km:61000,mOk:true,owners:1,body:'sedan',color:'#5B7A9E',where:'Тимирязевская',dist:4,dir:330,box:'Автомат',eng:'1.6 л, 110 л.с.',idx:90,leaks:false,err:0,paint:{},insp:'Ирина Кох',date:'18.10.2026',brand:'cheap'},
+ {id:9,make:'Chery',model:'Tiggo 7 Pro',year:2022,price:1890000,market:1950000,km:39400,mOk:true,owners:1,body:'suv',color:'#EDEDEA',where:'Красногорск',dist:24,dir:270,box:'Вариатор',eng:'1.5T, 147 л.с.',idx:87,leaks:false,err:0,paint:{doorRL:205},insp:'Павел Ушаков',date:'11.10.2026',brand:''},
+ {id:10,make:'BMW',model:'320i',year:2016,price:1990000,market:2050000,km:134000,mOk:false,owners:3,body:'sedan',color:'#1F2933',where:'Балашиха',dist:34,dir:95,box:'Автомат',eng:'2.0T, 184 л.с.',idx:62,leaks:true,err:3,paint:{bumperF:330,hood:240,fenderFR:300},insp:'Артём Белов',date:'08.10.2026',brand:''},
+ {id:11,make:'Renault',model:'Duster',year:2021,price:1590000,market:1640000,km:42300,mOk:true,owners:1,body:'suv',color:'#6E7B3F',where:'Пушкино',dist:38,dir:30,box:'Автомат',eng:'1.3T, 150 л.с.',idx:89,leaks:false,err:0,paint:{},insp:'Ирина Кох',date:'17.10.2026',brand:'cheap'},
+ {id:12,make:'Toyota',model:'Camry',year:2018,price:2490000,market:2560000,km:92100,mOk:true,owners:2,body:'sedan',color:'#2B2B2E',where:'Зеленоград',dist:42,dir:315,box:'Автомат',eng:'2.5 л, 181 л.с.',idx:83,leaks:false,err:0,paint:{doorFL:180},insp:'Павел Ушаков',date:'10.10.2026',brand:'cheap'},
+ {id:13,make:'Kia',model:'Sportage',year:2020,price:2290000,market:2350000,km:58700,mOk:true,owners:1,body:'suv',color:'#BFC5C8',where:'Подольск',dist:46,dir:180,box:'Автомат',eng:'2.0 л, 150 л.с.',idx:86,leaks:false,err:0,paint:{},insp:'Ирина Кох',date:'15.10.2026',brand:'cheap'},
+ {id:14,make:'Hyundai',model:'Creta',year:2021,price:1950000,market:1990000,km:33100,mOk:true,owners:1,body:'suv',color:'#B5462E',where:'Тверь',dist:168,dir:315,box:'Автомат',eng:'1.6 л, 123 л.с.',idx:92,leaks:false,err:0,paint:{},insp:'Олег Смирнов',date:'14.10.2026',brand:'cheap'}
+];
+const AUC={4:{bid:2040000,reserve:2150000,h:14,n:9},7:{bid:2210000,reserve:2200000,h:3,n:17},12:{bid:2300000,reserve:2400000,h:21,n:5}};
+CARS.forEach(c=>{if(AUC[c.id])c.auc=AUC[c.id]});
+CARS.forEach(c=>{const r=seeded(c.id);c.th={};PANELS.forEach(p=>{c.th[p]=c.paint[p]||Math.round(95+r()*40)});c.noPaint=!Object.keys(c.paint).length;});
+
+const S={price:4000000,idx:0,radius:50,body:'',chk:new Set(),sort:'dist',mode:'grid',ai:null,cheap:false};
+
+/* ---------- drawing ---------- */
+function carSvg(c,big){
+  const g='var(--glass)',w='var(--ink)',h='var(--chip)';
+  const P={
+   sedan:{b:'M18 78 L22 62 Q26 54 40 52 L72 48 Q92 30 112 27 L150 27 Q170 28 186 46 L214 52 Q226 55 228 66 L230 78 Z',w:['M80 48 Q96 34 112 32 L128 32 L128 48 Z','M134 32 L150 32 Q164 33 176 48 L134 48 Z'],wh:[[62,80,14],[186,80,14]]},
+   suv:{b:'M16 80 L18 56 Q20 46 34 44 L60 42 Q72 22 90 20 L168 20 Q182 21 194 40 L218 46 Q228 49 228 60 L230 80 Z',w:['M66 42 Q78 26 92 25 L126 25 L126 42 Z','M132 25 L166 25 Q178 26 188 42 L132 42 Z'],wh:[[60,82,16],[190,82,16]]},
+   hatch:{b:'M20 78 L24 60 Q28 52 42 50 L76 46 Q94 28 114 26 L176 26 Q190 28 200 46 L206 60 L208 78 Z',w:['M84 46 Q98 32 114 31 L136 31 L136 46 Z','M142 31 L172 31 Q184 33 192 46 L142 46 Z'],wh:[[62,80,14],[176,80,14]]}
+  }[c.body];
+  return `<svg viewBox="0 0 248 104" role="img" aria-label="${c.make} ${c.model}"><ellipse cx="124" cy="96" rx="110" ry="5" fill="var(--line)"/><path d="${P.b}" fill="${c.color}" stroke="rgba(0,0,0,.18)" stroke-width="1"/>${P.w.map(d=>`<path d="${d}" fill="${g}"/>`).join('')}${P.wh.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${w}"/><circle cx="${x}" cy="${y}" r="${r*.45}" fill="${h}"/>`).join('')}</svg>`;
+}
+function ring(v,size){const r=17,C=2*Math.PI*r,col=v>=85?'var(--accent)':v>=70?'var(--warn)':'var(--bad)';
+  return `<svg class="ring" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--chip)" stroke-width="5"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 21 21)"/></svg>`}
+function market(c){const d=Math.round((c.price-c.market)/c.market*100);
+  if(d<=-3)return{cls:'good',t:`ниже рынка на ${-d}%`};if(d>=3)return{cls:'high',t:`выше рынка на ${d}%`};return{cls:'mid',t:'в рынке'}}
+function flags(c){const f=[];
+  f.push(c.noPaint?['ok','Без окрасов']:[Object.values(c.paint).some(v=>v>=300)?'bad':'warn',`Окрас: ${Object.keys(c.paint).length} дет.`]);
+  f.push(c.mOk?['ok','Пробег ✓']:['warn','Пробег под вопросом']);
+  if(c.leaks)f.push(['warn','Подтёки']);
+  if(c.err)f.push(['warn',`Ошибки ЭБУ: ${c.err}`]);
+  f.push([c.owners===1?'ok':'warn',`${c.owners} влад.`]);
+  return f.map(([k,t])=>`<span class="flag ${k}">${t}</span>`).join('')}
+
+/* ---------- filtering ---------- */
+function pass(c){
+  if(c.price>S.price||c.idx<S.idx||c.dist>S.radius)return false;
+  if(S.body&&c.body!==S.body)return false;
+  if(S.chk.has('noPaint')&&!c.noPaint)return false;
+  if(S.chk.has('oneOwner')&&c.owners!==1)return false;
+  if(S.chk.has('mileageOk')&&!c.mOk)return false;
+  if(S.chk.has('noLeaks')&&c.leaks)return false;
+  if(S.chk.has('noErrors')&&c.err)return false;
+  if(S.chk.has('auto')&&c.box!=='Автомат')return false;
+  if(S.cheap&&c.brand!=='cheap')return false;
+  if(S.chk.has('auction')&&!c.auc)return false;
+  return true}
+function why(c){if(!S.ai)return'';const r=[];
+  if(S.ai.price)r.push(`${rub(c.price)} — в бюджете`);
+  if(S.chk.has('noPaint'))r.push('все детали в заводской краске');
+  if(S.chk.has('oneOwner'))r.push('один владелец по базе');
+  if(S.ai.near)r.push(`${km(c.dist)} от вас`);
+  if(S.cheap)r.push('недорогие запчасти и ТО');
+  if(S.body==='suv')r.push('кроссовер');
+  return r.length?`<div class="why">Почему подходит: ${r.join(', ')}.</div>`:''}
+
+function render(){
+  $('#oPrice').textContent=rub(S.price);$('#oIndex').textContent=S.idx;$('#geoR').textContent=km(S.radius);
+  $('#fPrice').value=S.price;$('#fIndex').value=S.idx;
+  $$('#fRadius button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.r===S.radius));
+  $$('#fBody button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===S.body));
+  $$('#fChecks .check').forEach(b=>b.setAttribute('aria-pressed',S.chk.has(b.dataset.k)));
+  let list=CARS.filter(pass);
+  const so={dist:(a,b)=>a.dist-b.dist,index:(a,b)=>b.idx-a.idx,deal:(a,b)=>(a.price/a.market)-(b.price/b.market),price:(a,b)=>a.price-b.price}[S.sort];
+  list.sort(so);
+  const n=list.length;
+  $('#count').textContent=`${n} ${n%10===1&&n%100!==11?'машина':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'машины':'машин'} осмотрено`;
+  $('#results').innerHTML=n?list.map(c=>{const m=market(c);return `
+   <button class="card" type="button" data-id="${c.id}" aria-label="${c.make} ${c.model} ${c.year}, ${rub(c.price)}">
+    <div class="photo">${carSvg(c)}<span class="stamp">ОСМОТРЕНО<small>${c.date.slice(0,5)}</small></span><span class="dist num">${km(c.dist)}</span></div>
+    <div class="cbody">
+      <div class="ctitle">${c.make} ${c.model}, ${c.year}</div>
+      <div class="cmeta num">${c.km.toLocaleString('ru-RU')} км · ${c.box} · ${c.where}</div>
+      ${c.auc?`<div class="price-row"><span class="price num">${rub(c.auc.bid)}</span><span class="mk auc">Аукцион · ${c.auc.h} ч</span></div><div class="cmeta">Ставок: ${c.auc.n} · ${c.auc.bid>=c.auc.reserve?'резерв достигнут':'резерв не достигнут'}</div>`:`<div class="price-row"><span class="price num">${rub(c.price)}</span><span class="mk ${m.cls}">${m.t}</span></div>`}
+      <div class="index">${ring(c.idx)}<b class="num">${c.idx}</b><span>индекс<br>состояния</span></div>
+      <div class="flags">${flags(c)}</div>
+      ${why(c)}
+    </div></button>`}).join(''):`<div class="empty">Под эти условия пока нет осмотренных машин. Расширьте радиус или поднимите бюджет.</div>`;
+  $('#results').hidden=S.mode!=='grid';$('#map').hidden=S.mode!=='map';
+  if(S.mode==='map')drawMap(list);
+}
+
+function drawMap(list){
+  const W=720,H=440,cx=360,cy=220,maxR=200,scale=d=>Math.sqrt(Math.min(d,S.radius)/S.radius)*maxR;
+  const rings=[10,25,50,150].filter(r=>r<=S.radius);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Машины вокруг вас на схеме"><rect width="${W}" height="${H}" rx="12" fill="var(--bg)"/>`;
+  rings.forEach(r=>{const rr=scale(r);s+=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/><text x="${cx+rr*0.71+4}" y="${cy-rr*0.71-4}" font-size="12" fill="var(--muted)">${r} км</text>`});
+  s+=`<circle cx="${cx}" cy="${cy}" r="9" fill="var(--ink)"/><text x="${cx}" y="${cy+26}" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Вы</text>`;
+  list.forEach(c=>{const a=(c.dir-90)*Math.PI/180,rr=scale(c.dist),x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+    const col=c.idx>=85?'var(--accent)':c.idx>=70?'var(--warn)':'var(--bad)';
+    s+=`<g class="dot" data-id="${c.id}" tabindex="0" role="button" aria-label="${c.make} ${c.model}, ${km(c.dist)}"><rect x="${x-46}" y="${y-30}" width="92" height="22" rx="11" fill="var(--surface)" stroke="${col}" stroke-width="1.5"/><text x="${x}" y="${y-15}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">${(c.price/1e6).toLocaleString('ru-RU',{maximumFractionDigits:2})} млн · ${c.idx}</text><circle cx="${x}" cy="${y}" r="5" fill="${col}"/></g>`});
+  s+=`</svg><p class="demo-flag" style="text-align:center;margin:8px 0 0">Схема: расстояние от вас по прямой, цвет — индекс состояния</p>`;
+  $('#map').innerHTML=s;
+}
+
+/* ---------- AI search ---------- */
+function parseAI(q){
+  const t=q.toLowerCase().replace(/ё/g,'е'),ai={chips:[]};
+  S.chk.clear();S.body='';S.cheap=false;S.price=4000000;S.idx=0;
+  const m=t.match(/до\s*(\d+(?:[.,]\d+)?)\s*(млн|м|тыс|т)?/);
+  if(m){let v=parseFloat(m[1].replace(',','.'));if(!m[2]||/^м/.test(m[2]))v*=v<100?1e6:1;else v*=1e3;S.price=Math.min(4000000,Math.max(600000,Math.round(v/1e5)*1e5));ai.price=true;ai.chips.push(`до ${rub(S.price)}`)}
+  if(/кроссовер|внедорож|паркетник|семейн/.test(t)){S.body='suv';ai.chips.push('кроссовер')}
+  else if(/седан/.test(t)){S.body='sedan';ai.chips.push('седан')}
+  else if(/хэтч|хетч|универсал/.test(t)){S.body='hatch';ai.chips.push('хэтчбек')}
+  if(/не бит|без окрас|без дтп|не крашен|родн.*краск/.test(t)){S.chk.add('noPaint');ai.chips.push('без окрасов')}
+  if(/один влад|1 влад|одн.*владел/.test(t)){S.chk.add('oneOwner');ai.chips.push('один владелец')}
+  if(/автомат|акпп/.test(t)){S.chk.add('auto');ai.chips.push('автомат')}
+  if(/подтек|сух/.test(t)){S.chk.add('noLeaks');ai.chips.push('без подтёков')}
+  if(/пробег/.test(t)){S.chk.add('mileageOk');ai.chips.push('пробег подтверждён')}
+  if(/рядом|недалеко|близко|поблизости/.test(t)){S.radius=25;ai.near=true;ai.chips.push('до 25 км')}
+  if(/дешев.*обслуж|недорог.*обслуж|надежн|неубиваем/.test(t)){S.cheap=true;ai.chips.push('недорогое обслуживание')}
+  if(/семейн/.test(t)){S.idx=80;ai.chips.push('индекс от 80')}
+  if(!ai.chips.length)ai.chips.push('не понял запрос — показываю всё');
+  return ai}
+function showAI(q){S.ai=parseAI(q);
+  const n=$('#aiNote');n.hidden=false;
+  n.innerHTML=`<div><b>ИИ понял запрос так:</b></div><div class="chips">${S.ai.chips.map(c=>`<span>${c}</span>`).join('')}</div><div>Ниже — машины, подходящие по всем пунктам. Состояние взято из протоколов осмотра, а не из текста продавцов.</div>`;
+  S.sort='index';$('#sort').value='index';render()}
+
+/* ---------- car sheet ---------- */
+function bodyMap(c){
+  const R={bumperF:[30,8,120,22],hood:[30,34,120,64],fenderFL:[6,38,22,60],fenderFR:[152,38,22,60],doorFL:[6,104,26,72],doorFR:[148,104,26,72],doorRL:[6,180,26,72],doorRR:[148,180,26,72],roof:[40,150,100,86],fenderRL:[6,256,22,54],fenderRR:[152,256,22,54],trunk:[30,266,120,46],bumperR:[30,316,120,20]};
+  const col=v=>v>=300?'var(--bad)':v>=160?'var(--warn)':'var(--accent)';
+  let s=`<svg viewBox="0 0 180 344" role="img" aria-label="Карта кузова: толщина покрытия по деталям"><path d="M36 102 L144 102 L136 146 L44 146 Z" fill="var(--glass)"/><path d="M44 240 L136 240 L144 262 L36 262 Z" fill="var(--glass)"/>`;
+  PANELS.forEach(p=>{const [x,y,w,h]=R[p],v=c.th[p];s+=`<g><title>${PNAME[p]}: ${v} мкм</title><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${col(v)}" fill-opacity=".22" stroke="${col(v)}" stroke-width="1.5"/>${w>40?`<text x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" font-size="11" font-family="var(--f-mono)" fill="var(--ink)">${v}</text>`:''}</g>`});
+  return s+'</svg>'}
+function protocol(c){
+  const P=[
+   ['ok','Документы','ЭПТС, СТС и VIN на кузове совпадают','Подтверждено'],
+   ['ok','Собственник',`Продаёт владелец по базе ГИБДД, записей в ПТС: ${c.owners}`,'Подтверждено'],
+   ['ok','Криминал и юр. чистота','Нет розыска, залогов и ограничений; не двойник, не такси, не лизинг — на '+c.date,'Подтверждено'],
+   [c.mOk?'ok':'warn','Пробег',c.mOk?`${c.km.toLocaleString('ru-RU')} км совпадает с историей ТО и отчётами`:'Расхождение с записью ТО 2023 года на 38 000 км','Подтверждено'],
+   [c.noPaint?'ok':Object.values(c.paint).some(v=>v>=300)?'bad':'warn','Кузов',c.noPaint?'Все детали в заводском покрытии':Object.entries(c.paint).map(([k,v])=>`${PNAME[k]} — ${v} мкм`).join('; '),'Оценка'],
+   [c.leaks?'warn':'ok','Подтёки',c.leaks?'Запотевание клапанной крышки, фото 14–16':'Двигатель и КПП сухие','Оценка'],
+   [c.err?'warn':'ok','Электроника',c.err?`Сканер нашёл ошибок: ${c.err} (не критичные)`:'Ошибок в блоках нет','Оценка'],
+   ['ok','Салон и опции','Износ соответствует пробегу, опции работают','Оценка']];
+  return P.map(([s,t,d,tag])=>`<div class="prow"><span class="dotst ${s}" aria-hidden="true"></span><div><b>${t}</b><small>${d}</small></div><span class="ptag ${tag==='Подтверждено'?'conf':''}">${tag}</span></div>`).join('')}
+function openCar(id){
+  const c=CARS.find(x=>x.id===+id),m=market(c);
+  const [dd,mm,yy]=c.date.split('.');const until=new Date(+yy,+mm-1,+dd+45).toLocaleDateString('ru-RU');
+  $('#sheetIn').innerHTML=`
+   <div class="sheet-top"><span class="demo-flag">Объявление №${4800+c.id} · демо</span><button class="close" type="button" id="closeSheet" aria-label="Закрыть">×</button></div>
+   <div class="hero-photo">${carSvg(c)}<span class="stamp" style="font-size:12px">ОСМОТРЕНО<small>${c.date}</small></span></div>
+   <div><h2>${c.make} ${c.model}, ${c.year}</h2><div class="cmeta num" style="margin-top:4px">${c.where} · ${km(c.dist)} от вас</div></div>
+   <div class="panel"><div class="specs">
+     <div class="spec"><span>Пробег</span><b class="num">${c.km.toLocaleString('ru-RU')} км</b></div>
+     <div class="spec"><span>Двигатель</span><b>${c.eng}</b></div>
+     <div class="spec"><span>Коробка</span><b>${c.box}</b></div>
+     <div class="spec"><span>Владельцев</span><b>${c.owners}</b></div>
+     <div class="spec"><span>VIN</span><b class="mono">XW8ZZZ••••••${String(4821+c.id*37).slice(-4)}</b></div>
+     <div class="spec"><span>Оценка цены</span><b class="mk ${m.cls}" style="justify-self:start">${m.t}</b></div>
+   </div></div>
+   <div class="panel">
+     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div class="index">${ring(c.idx)}<b class="num" style="font-size:20px">${c.idx}</b><span>индекс состояния<br>из 100</span></div><span class="spacer" style="flex:1"></span><span class="demo-flag">Действует до ${until}</span></div>
+     <h3>Протокол осмотра</h3>
+     <div class="proto">${protocol(c)}</div>
+   </div>
+   <div class="panel"><h3>Карта кузова, мкм</h3>
+     <div class="bodymap">${bodyMap(c)}<div class="legend">
+       <div><i style="background:var(--accent)"></i>до 160 — заводское покрытие</div>
+       <div><i style="background:var(--warn)"></i>160–300 — перекрас</div>
+       <div><i style="background:var(--bad)"></i>больше 300 — шпаклёвка</div>
+       <p class="demo-flag" style="margin:6px 0 0">Замер толщиномером по 5 точкам на каждой детали. Наведите на деталь, чтобы увидеть значение.</p>
+     </div></div></div>
+   <div class="panel"><div class="inspector"><span class="ava">${c.insp.split(' ').map(w=>w[0]).join('')}</span><div><b>${c.insp}</b><div class="cmeta">Подборщик сервиса · 412 осмотров · рейтинг 4,9</div></div></div>
+     <div class="cmeta">Осмотр ${c.date}, 52 минуты, 64 фото и 2 видео. Гарантия распространяется на пункты с пометкой «Подтверждено».</div></div>
+   ${c.auc?`<div class="cta" style="flex-direction:column;align-items:stretch"><div class="auction"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>Текущая ставка · ставок: <span id="aucN">${c.auc.n}</span></span><b>до конца ${c.auc.h} ч</b></div><div class="big num" id="aucBid">${rub(c.auc.bid)}</div><div class="cmeta" id="aucRes">${c.auc.bid>=c.auc.reserve?'Резерв продавца достигнут: победитель покупает машину онлайн.':'Резерв продавца пока не достигнут.'}</div><div class="cmeta">Участие через Госуслуги и депозит 10 000 ₽. Ставка в последние 5 минут продлевает торги.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" id="bidBtn" style="flex:1">Ставка +10 000 ₽</button><button class="btn ghost" type="button" id="callBtn">Записаться на просмотр</button></div></div>`
+   :`<div class="cta"><span class="price num">${rub(c.price)}</span><span class="spacer"></span><button class="btn ghost" type="button" id="callBtn">Записаться на просмотр</button><button class="btn primary" type="button" id="buyBtn">Купить онлайн</button></div>`}`;
+  $('#scrim').hidden=false;$('#sheet').hidden=false;$('#sheet').scrollTop=0;
+  $('#closeSheet').focus();
+  $('#closeSheet').onclick=closeSheet;
+  $('#callBtn').onclick=()=>toast('Продавец получит заявку и предложит время');
+  if(c.auc)$('#bidBtn').onclick=()=>{c.auc.bid+=10000;c.auc.n++;$('#aucBid').textContent=rub(c.auc.bid);$('#aucN').textContent=c.auc.n;$('#aucRes').textContent=c.auc.bid>=c.auc.reserve?'Резерв продавца достигнут: победитель покупает машину онлайн.':'Резерв продавца пока не достигнут.';toast('Ваша ставка лидирует');render()};
+  else $('#buyBtn').onclick=()=>deal(c,0);
+}
+function closeSheet(){$('#scrim').hidden=true;$('#sheet').hidden=true}
+
+const DEAL=[
+ ['Бронь','Возвратный депозит 10 000 ₽. Объявление скрывается из поиска на 72 часа.','Забронировать'],
+ ['Экспресс-пересмотр','Подборщик за 15 минут сверяет пробег, кузов и ограничения с протоколом.','Отметить: пересмотр пройден'],
+ ['Деньги на эскроу','Сумма блокируется на счёте банка-партнёра. Продавец видит, что деньги есть.','Перевести на эскроу'],
+ ['ДКП через Госуслуги','Договор заполняется автоматически. Обе стороны подписывают его в «Госключе».','Подписать в Госключе'],
+ ['Передача и приёмка','Самовывоз или перегон. У вас 24 часа, чтобы принять машину.','Принять автомобиль'],
+ ['Регистрация','Банк раскрывает эскроу продавцу. Помогаем с ОСАГО и записью в ГИБДД (10 дней).','Готово']];
+function deal(c,step){
+  $('#sheetIn').innerHTML=`
+   <div class="sheet-top"><button class="btn ghost" type="button" id="back">← К машине</button><button class="close" type="button" id="closeSheet" aria-label="Закрыть">×</button></div>
+   <div><h2>Онлайн-покупка</h2><div class="cmeta">${c.make} ${c.model}, ${c.year} · ${rub(c.price)}</div></div>
+   <div class="panel"><div class="steps">${DEAL.map(([t,d,a],i)=>`<div class="step ${i<step?'done':i===step?'now':''}"><span class="sn">${i<step?'✓':i+1}</span><div><b>${t}</b><p>${d}</p>${i===step&&step<DEAL.length-1?`<div class="act"><button class="btn primary" type="button" id="next">${a}</button></div>`:''}${i===step&&step===DEAL.length-1?`<div class="act"><span class="flag ok">Машина ваша. Сделка закрыта.</span></div>`:''}</div></div>`).join('')}</div></div>
+   <div class="panel"><h3>Гарантия «Осмотрено»</h3><div class="cmeta">Если подтверждённый факт (документы, собственник, юридическая чистота, пробег) окажется ложным, выкупим машину или вернём разницу до 300 000 ₽.</div></div>
+   <div class="paybox"><span>Сервисный сбор за сделку</span><b class="num">4 900 ₽</b></div>`;
+  $('#back').onclick=()=>openCar(c.id);$('#closeSheet').onclick=closeSheet;
+  const n=$('#next');if(n)n.onclick=()=>{deal(c,step+1);toast(DEAL[step][0]+' — готово')};
+}
+
+/* ---------- seller ---------- */
+const PLACES=[
+ {id:'o1',type:'own',ty:'Пункт Осмотрено',name:'Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'без записи, 7:00–23:00',rating:4.9,perk:'Можно приехать без записи'},
+ {id:'s1',type:'sto',ty:'СТО-партнёр',name:'«Гараж 24»',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике'},
+ {id:'d1',type:'dealer',ty:'Дилерский центр',name:'«Север-Авто»',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно: осмотр оплачивает дилер, если вы согласны получить его предложение по trade-in или выкупу'},
+ {id:'s2',type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:''},
+ {id:'d2',type:'dealer',ty:'Дилерский центр',name:'«Восток Моторс»',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера'},
+ {id:'m1',type:'mobile',ty:'Выездной сервис подбора',name:'«АвтоЭксперт Север»',addr:'приедут по вашему адресу',dist:null,price:3500,slot:'сегодня 19:00',rating:4.8,perk:'Приедут через 2–3 часа'},
+ {id:'m2',type:'mobile',ty:'Выездной сервис подбора',name:'«Подбор Профи»',addr:'приедут по вашему адресу',dist:null,price:3200,slot:'завтра 09:00',rating:4.5,perk:'Эндоскоп двигателя в комплекте'}];
+let ptype='',placeId='o1';
+function drawPlaces(){
+  $$('#ptypes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===ptype));
+  const list=PLACES.filter(p=>!ptype||p.type===ptype);
+  if(!list.some(p=>p.id===placeId))placeId=list[0].id;
+  $('#places').innerHTML=list.map(p=>`<button type="button" class="place" data-id="${p.id}" aria-pressed="${p.id===placeId}"><span><span class="ty">${p.ty}</span><br><b>${p.name}</b><small> · ${p.addr}${p.dist!=null?` · ${String(p.dist).replace('.',',')} км`:''}</small></span><span class="pr num">${p.price?rub(p.price):'0 ₽'}</span><small>★ ${String(p.rating).replace('.',',')} · ближайшее время: ${p.slot}</small><span></span>${p.perk?`<span class="perk">${p.perk}</span>`:''}</button>`).join('');
+  const p=PLACES.find(x=>x.id===placeId);$('#addrField').hidden=p.type!=='mobile';$('#payAmount').textContent=p.price?rub(p.price):'0 ₽ — за счёт дилера';
+}
+function initSeller(){
+  drawPlaces();
+  $('#ptypes').onclick=e=>{const b=e.target.closest('button');if(!b)return;ptype=b.dataset.t;drawPlaces()};
+  $('#places').onclick=e=>{const b=e.target.closest('.place');if(!b)return;placeId=b.dataset.id;drawPlaces()};
+  const days=['Пн 20','Вт 21','Ср 22','Чт 23','Пт 24','Сб 25'],free=[3,5,2,4,1,6];
+  $('#slots').innerHTML=days.map((d,i)=>`<button type="button" class="slot" data-d="${d}" aria-pressed="${i===1}"><b>${d}</b><small>окт · ${free[i]} окна</small></button>`).join('');
+  $('#times').innerHTML=['10:00','12:30','15:00','17:30','19:00'].map((t,i)=>`<button type="button" class="slot" data-t="${t}" aria-pressed="${i===2}"><b class="num">${t}</b></button>`).join('');
+  $('#slots').onclick=e=>{const b=e.target.closest('.slot');if(!b)return;$$('#slots .slot').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+  $('#times').onclick=e=>{const b=e.target.closest('.slot');if(!b)return;$$('#times .slot').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+  $('#sellPay').onclick=()=>{
+    const d=$('#slots [aria-pressed="true"]').dataset.d,t=$('#times [aria-pressed="true"]').dataset.t;
+    const p=PLACES.find(x=>x.id===placeId),mob=p.type==='mobile';
+    const where=mob?`${p.name} приедет: ${$('#sAddr').value}`:`${p.ty} ${p.name}, ${p.addr}`;
+    const st=[['done',p.price?`Оплачено ${rub(p.price)}`:'Осмотр оплачивает дилер',p.price?'Чек отправлен на почту.':'Дилер пришлёт своё предложение после осмотра — принимать его не обязательно.'],['now',`Осмотр ${d} октября в ${t}`,`${where}. Возьмите ПТС, СТС и паспорт.`],['','Отчёт готов через 2 часа','Криминал по базам, состояние, оценка цены — в личном кабинете.'],['','Ваш выбор','Оставить отчёт себе, опубликовать объявление или выставить на аукцион.']];
+    $('#sellSteps').innerHTML=st.map(([c,b,p],i)=>`<div class="step ${c}"><span class="sn">${c==='done'?'✓':i+1}</span><div><b>${b}</b><p>${p}</p></div></div>`).join('');
+    $('#sellForm').hidden=true;$('#sellStatus').hidden=false;toast('Записали на осмотр')};
+  $('#showReport').onclick=()=>{$('#showReport').hidden=true;drawReport();$('#sellReport').hidden=false;$('#sellReport').scrollIntoView({behavior:'smooth',block:'start'})};
+}
+let choice='',reserve=1650000;
+function drawReport(){
+  const crim=[['Розыск','не числится'],['Залоги','нет в реестре нотариата'],['Ограничения ГИБДД','нет'],['Лизинг, такси, каршеринг','не использовалась'],['Признаки двойника','VIN на кузове, табличках и в ЭПТС совпадает']];
+  const opts=[['self','Оставить себе','PDF-отчёт и список того, что стоит починить перед продажей. Бесплатно.'],['publish','Опубликовать','Объявление с отметкой «Осмотрено» на 45 дней. Онлайн-сделка без подборщика.'],['auction','На аукцион','Торги 24 часа среди проверенных покупателей и дилеров. Комиссия только при продаже.']];
+  let tail='';
+  if(choice==='auction')tail=`<div class="auction"><div class="field"><label for="sReserve">Резервная цена — ниже неё не продадим</label><input id="sReserve" class="num" value="${reserve.toLocaleString('ru-RU')}" inputmode="numeric"></div><div class="cmeta">Подсказка по рынку с учётом состояния: 1 610 000 – 1 720 000 ₽. Старт торгов — сразу после подтверждения.</div><button class="btn primary" type="button" id="startAuc">Запустить аукцион на 24 часа</button></div>`;
+  if(choice==='publish')tail=`<div class="auction" style="background:var(--accent-soft)"><div class="field"><label for="sPrice">Цена в объявлении, ₽</label><input id="sPrice" class="num" value="1 690 000" inputmode="numeric"></div><button class="btn primary" type="button" id="doPublish">Опубликовать с отметкой «Осмотрено»</button></div>`;
+  if(choice==='self')tail=`<div class="auction" style="background:var(--chip)"><div>Отчёт сохранён в кабинете и действует до 03.12.2026. Опубликовать машину можно в любой момент в один клик.</div></div>`;
+  $('#sellReport').innerHTML=`
+   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h3>Отчёт: Kia Rio, 2020</h3><span class="spacer" style="flex:1"></span><span class="demo-flag">демо</span></div>
+   <div class="index">${ring(88)}<b class="num" style="font-size:20px">88</b><span>индекс состояния<br>из 100</span></div>
+   <div><b>Криминал и юридическая чистота</b><div class="proto">${crim.map(([a,b])=>`<div class="prow"><span class="dotst ok" aria-hidden="true"></span><div><b>${a}</b><small>${b}</small></div><span class="ptag conf">Чисто</span></div>`).join('')}</div></div>
+   <div><b>Состояние</b><div class="flags" style="padding-top:8px"><span class="flag ok">Пробег 54 200 км ✓</span><span class="flag warn">Перекрас: задний бампер</span><span class="flag ok">Без подтёков</span><span class="flag ok">Ошибок ЭБУ нет</span></div></div>
+   <div class="paybox"><span>Оценка рынка с учётом состояния</span><b class="num">1 610 000 – 1 720 000 ₽</b></div>
+   <h3>Что делаем дальше?</h3>
+   <div class="choices">${opts.map(([k,t,s])=>`<button type="button" class="choice" data-c="${k}" aria-pressed="${choice===k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
+   ${tail}`;
+  $('#sellReport').onclick=e=>{const c=e.target.closest('.choice');if(c){const r=$('#sReserve');if(r)reserve=+r.value.replace(/\D/g,'')||reserve;choice=c.dataset.c;drawReport();if(choice==='self')toast('Отчёт сохранён, объявление не публикуем')}};
+  const sa=$('#startAuc');if(sa)sa.onclick=()=>{reserve=+$('#sReserve').value.replace(/\D/g,'')||reserve;toast(`Аукцион запущен, резерв ${rub(reserve)}`)};
+  const dp=$('#doPublish');if(dp)dp.onclick=()=>toast('Объявление опубликовано с отметкой «Осмотрено»');
+}
+
+/* ---------- inspector ---------- */
+const ROUTE=[['09:30','Kia Rio 2020','ул. Новослободская, 45',0],['11:00','Toyota RAV4 2019','Отрадное, ул. Хачатуряна, 8',6],['12:40','VW Polo 2020','Дмитровское ш., 27',5],['14:30','Lada Vesta SW 2021','Долгопрудный, Лихачёвский пр., 6',8],['16:10','Haval Jolion 2023','Мытищи, ул. Мира, 32',4]];
+const CK=[['Документы и VIN','ЭПТС, СТС, таблички, номер на кузове'],['Собственник','Паспорт продавца = владелец в базе'],['Толщиномер','13 деталей, по 5 точек'],['Подкапотное','Подтёки масла и антифриза, ремни'],['Днище и подвеска','Ржавчина, сайлентблоки, пыльники'],['Сканер OBD','Ошибки и пробег из блоков'],['Салон и опции','Износ, кондиционер, электрика'],['Фото и видео','Минимум 40 фото по шаблону']];
+let cur=1,ck={};
+function initInsp(){
+  $('#route').innerHTML=ROUTE.map(([t,car,addr,k],i)=>`<button type="button" class="stop" data-i="${i}" aria-current="${i===cur}"><span class="t">${t}</span><span><b>${car}</b><small>${addr}${k?` · +${k} км`:''}</small></span><span class="pay flag ${i<cur?'ok':'warn'}">${i<cur?'сдан':'1 500 ₽'}</span></button>`).join('');
+  $('#route').onclick=e=>{const b=e.target.closest('.stop');if(!b)return;cur=+b.dataset.i;ck={};initInsp()};
+  drawCk();
+}
+function drawCk(){
+  const done=Object.keys(ck).length,[t,car]=ROUTE[cur];
+  $('#checklist').innerHTML=`<div><h3>${car}</h3><div class="cmeta">Осмотр в ${t} · чек-лист ${done} из ${CK.length}</div></div><div class="bar"><i style="width:${done/CK.length*100}%"></i></div>
+   <div>${CK.map(([a,b],i)=>`<div class="ck"><div><b>${a}</b><small>${b}</small></div><div class="tri" data-i="${i}">${[['ok','Норма'],['warn','Замечание'],['bad','Дефект']].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${ck[i]===v}">${l}</button>`).join('')}</div></div>`).join('')}</div>
+   <button class="btn primary" type="button" id="sendP" ${done<CK.length?'disabled':''}>Отправить протокол</button>`;
+  $('#checklist').onclick=e=>{const b=e.target.closest('.tri button');if(b){ck[b.parentElement.dataset.i]=b.dataset.v;drawCk()}};
+  const s=$('#sendP');s.onclick=()=>{toast('Протокол отправлен на проверку качества');if(cur<ROUTE.length-1){cur++;ck={}}initInsp()};
+}
+
+/* ---------- dealer ---------- */
+const DSTAT=['Записан','Машина на месте','Идёт осмотр','Протокол отправлен'];
+const DSCHED=[
+ {t:'11:00',car:'Hyundai Creta 2021',who:'Алексей М.',src:'по вашему приглашению',consent:true,s:3},
+ {t:'13:30',car:'Kia Sportage 2020',who:'Ольга Р.',src:'записалась сама',consent:true,s:2},
+ {t:'15:00',car:'Toyota Corolla 2018',who:'Денис К.',src:'с площадки',consent:false,s:0},
+ {t:'17:30',car:'Kia Rio 2020',who:'Мария Л.',src:'записалась сама',consent:true,s:0}];
+const DLEADS=[
+ {car:'Hyundai Creta 2021',idx:92,km:33100,want:'Продать или обменять',mk:'1 920 000 – 2 010 000 ₽'},
+ {car:'Skoda Octavia 2019',idx:69,km:96800,want:'Продать',mk:'1 640 000 – 1 760 000 ₽'},
+ {car:'VW Tiguan 2018',idx:81,km:88400,want:'Trade-in на новый',mk:'2 310 000 – 2 450 000 ₽'}];
+function initDealer(){
+  $('#dSched').innerHTML=DSCHED.map((r,i)=>`<div class="srow"><span class="t">${r.t}</span><div><b>${r.car}</b><small>${r.who} · ${r.src}</small><div class="tags">${r.consent?'<span class="flag ok">согласен на предложение</span>':'<span class="flag warn">только отчёт</span>'}</div></div><button type="button" class="btn ${r.s===3?'ghost':'primary'}" data-i="${i}" ${r.s===3?'disabled':''}>${r.s<3?DSTAT[r.s+1]:'Готово'}</button></div>`).join('');
+  $('#dSched').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b)return;const r=DSCHED[+b.dataset.i];if(r.s<3)r.s++;initDealer();toast(`${r.car}: ${DSTAT[r.s].toLowerCase()}`)};
+  $('#dLeads').innerHTML=DLEADS.map((l,i)=>`<div class="lead-row"><div><b>${l.car}</b><small class="num">индекс ${l.idx} · ${l.km.toLocaleString('ru-RU')} км · хочет: ${l.want}</small><small class="num">Рынок по состоянию: ${l.mk}</small></div><button type="button" class="btn ghost" data-r="${i}">Отчёт</button><div class="offer"><input class="num" id="of${i}" aria-label="Ваше предложение, ₽" placeholder="Ваше предложение, ₽" inputmode="numeric"><button type="button" class="btn primary" data-o="${i}">Отправить</button></div></div>`).join('');
+  $('#dLeads').onclick=e=>{const o=e.target.closest('[data-o]');if(o){const v=+$('#of'+o.dataset.o).value.replace(/\D/g,'');toast(v?`Предложение ${rub(v)} отправлено владельцу`:'Укажите сумму предложения');return}if(e.target.closest('[data-r]'))toast('Откроется протокол осмотра')};
+}
+function invite(){
+  const code='SA-'+(4800+Math.floor(Math.random()*200)),pay=$('#iPay').getAttribute('aria-checked')==='true';
+  let q='';const r=seeded(code.length*97+code.charCodeAt(4));for(let y=0;y<9;y++)for(let x=0;x<9;x++){const corner=(x<3&&y<3)||(x>5&&y<3)||(x<3&&y>5);if(corner?((x%6===0||x%6===2||y%6===0||y%6===2)||(x%6===1&&y%6===1)):r()>.5)q+=`<rect x="${x*10+3}" y="${y*10+3}" width="10" height="10" fill="var(--ink)"/>`}
+  $('#iOut').innerHTML=`<div class="invite"><svg viewBox="0 0 96 96" role="img" aria-label="QR-код приглашения (пример)"><rect width="96" height="96" rx="8" fill="var(--surface)"/>${q}</svg><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><code>osmotreno.ru/i/${code}</code><small class="cmeta">${$('#iWhy').value}. ${pay?'Осмотр за счёт «Север-Авто».':'Осмотр за 2 500 ₽.'} Клиент выберет время сам; в СМС уйдёт эта ссылка.</small><button type="button" class="btn ghost" id="iCopy">Скопировать ссылку</button></div></div>`;
+  $('#iCopy').onclick=()=>{try{navigator.clipboard.writeText('osmotreno.ru/i/'+code).then(()=>toast('Ссылка скопирована'),()=>toast('Не удалось скопировать: выделите ссылку вручную'))}catch(e){toast('Не удалось скопировать: выделите ссылку вручную')}};
+}
+
+/* ---------- inspection service requests ---------- */
+const REQS=[
+ {car:'Mazda 6 2019',addr:'ул. Б. Академическая, 12',km:3,win:'сегодня 18:00–20:00',pay:2800},
+ {car:'Kia Ceed 2020',addr:'Лобня, ул. Ленина, 9',km:14,win:'завтра 09:00–11:00',pay:3100},
+ {car:'Nissan Qashqai 2017',addr:'Химки, ул. Молодёжная, 4',km:9,win:'завтра 12:00–14:00',pay:2800}];
+function drawReqs(){
+  $('#reqs').innerHTML=REQS.length?REQS.map((r,i)=>`<div class="req"><div><b>${r.car}</b><small>${r.addr} · ${r.km} км от ближайшего специалиста</small><small>${r.win}</small></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><b class="num">${rub(r.pay)}</b><button type="button" class="btn primary" data-take="${i}">Взять</button></div></div>`).join(''):'<div class="cmeta">Новых заявок нет. Мы пришлём уведомление, когда появится заказ в вашей зоне.</div>';
+  $('#reqs').onclick=e=>{const b=e.target.closest('[data-take]');if(!b)return;const r=REQS.splice(+b.dataset.take,1)[0];ROUTE.push([r.win.includes('завтра')?'завтра':r.win.slice(8,13),r.car,r.addr,r.km]);drawReqs();initInsp();toast(`${r.car}: заявка в маршруте`)};
+}
+
+/* ---------- why popups ---------- */
+const WHY={
+ buy:{e:'Покупателю',t:'Смотрите только то, что уже проверено',p:[['Без пустых поездок','Каждая машина осмотрена до публикации: кузов, подтёки, документы, пробег.'],['Фильтр по реальному состоянию','Индекс состояния, «без окрасов», «пробег подтверждён» и расстояние от вас.'],['Покупка без подборщика','Онлайн-сделка: эскроу, договор в «Госключе», гарантия на подтверждённые факты.'],['Сравнение по ссылкам','Вставьте ссылки с любых площадок — сравним машины и покажем, какую смотреть первой.']],h:['Опишите машину словами или настройте фильтры','Откройте протокол осмотра и карту кузова','Купите онлайн, сделайте ставку или запишитесь на просмотр']},
+ sell:{e:'Продавцу',t:'Подтвердите состояние — и к вам поедут только покупатели',p:[['Отчёт ваш в любом случае','За 2 500 ₽ — криминал по базам, состояние и цена. Даже если передумаете продавать.'],['Осмотр где удобно','Дилерский центр, СТО, наш пункт или выезд. У дилера осмотр бывает бесплатным.'],['Это не выкуп','Мы не покупаем машину. Мы подтверждаем отчёт, а продаёте вы — как и кому хотите.'],['Три пути после осмотра','Оставить отчёт себе, опубликовать объявление или выставить на аукцион на 24 часа.']],h:['Выберите пункт осмотра и время','Получите отчёт через 2 часа','Решите: себе, объявление или аукцион']},
+ dealer:{e:'Дилеру',t:'Новые клиенты приезжают к вам сами',p:[['Поток владельцев','Ваш центр на карте сети: продавцы выбирают, где подтвердить состояние, и едут к вам.'],['Первое предложение — ваше','С согласия владельца вы видите отчёт и предлагаете trade-in или выкуп раньше рынка.'],['Загрузка сервиса','Осмотр — повод познакомиться: каждый шестой записывается на обслуживание (гипотеза пилота).'],['Доход и маркетинг','Получаете оплату за каждый осмотр или оплачиваете его сами — как рекламу с понятной ценой клиента.']],h:['Подключите пункт: время, мощность, цена','Принимайте машины и заполняйте протокол по стандарту','Делайте предложения владельцам, которые согласились']},
+ insp:{e:'Сервису подбора',t:'Заказы без поиска клиентов',p:[['Поток заявок в вашей зоне','Продавцы и покупатели заказывают выезд — заявки приходят вам, без рекламы.'],['Маршруты кластером','Собираем 4–5 выездов в смену рядом друг с другом, меньше пустых километров.'],['Ваш бренд в каждом отчёте','Название и рейтинг сервиса в протоколе — клиенты возвращаются за подбором под ключ.'],['База для подбора под ключ','Ищите клиентам машины среди уже осмотренных и ставьте на аукционе от их имени.']],h:['Укажите зону выезда и команду','Берите заявки и проходите маршрут','Получайте выплату после проверки качества']}};
+const seen=new Set(['buy']);
+function openWhy(role){const w=WHY[role];
+  $('#whyCard').innerHTML=`<span class="eyebrow">${w.e} · зачем это вам</span><h2 id="whyTitle">${w.t}</h2><ul>${w.p.map(([a,b],i)=>`<li><span class="ic">${i+1}</span><div><b>${a}</b><small>${b}</small></div></li>`).join('')}</ul><div class="how"><b>Как начать</b><ol>${w.h.map(x=>`<li>${x}</li>`).join('')}</ol></div><div class="acts"><button type="button" class="btn primary" id="whyOk">Понятно</button></div>`;
+  $('#whyModal').hidden=false;$('#whyOk').focus();$('#whyOk').onclick=closeWhy}
+function closeWhy(){$('#whyModal').hidden=true}
+$('#whyModal').onclick=e=>{if(e.target===$('#whyModal'))closeWhy()};
+let curView='buy';
+
+/* ---------- wiring ---------- */
+let tId;function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(tId);tId=setTimeout(()=>el.hidden=true,2400)}
+function setView(v,quiet){
+  curView=v;
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.view===v));
+  ['buy','sell','dealer','insp'].forEach(k=>$('#view-'+k).hidden=k!==v);
+  $('#aiWrap').hidden=v!=='buy';$('.geo').style.display=v==='buy'?'':'none';
+  window.scrollTo(0,0);
+  if(!quiet&&!seen.has(v)){seen.add(v);openWhy(v)}}
+$('#whyBtn').onclick=()=>openWhy(curView);
+document.addEventListener('click',e=>{const w=e.target.closest('.whylink');if(w)openWhy(w.dataset.why)});
+$('#iSend').onclick=invite;
+$$('.sw').forEach(s=>s.onclick=()=>s.setAttribute('aria-checked',s.getAttribute('aria-checked')!=='true'));
+$('#dCap').oninput=e=>$('#dCapO').textContent=e.target.value;
+$('#toBuy').onclick=()=>setView('buy');
+$$('.tab').forEach(t=>t.onclick=()=>setView(t.dataset.view));
+$('#fPrice').oninput=e=>{S.price=+e.target.value;render()};
+$('#fIndex').oninput=e=>{S.idx=+e.target.value;render()};
+$('#fRadius').onclick=e=>{const b=e.target.closest('button');if(b){S.radius=+b.dataset.r;render()}};
+$('#fBody').onclick=e=>{const b=e.target.closest('button');if(b){S.body=b.dataset.b;render()}};
+$('#fChecks').onclick=e=>{const b=e.target.closest('.check');if(!b)return;const k=b.dataset.k;S.chk.has(k)?S.chk.delete(k):S.chk.add(k);render()};
+$('#sort').onchange=e=>{S.sort=e.target.value;render()};
+$('#viewMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.mode=b.dataset.m;$$('#viewMode button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()};
+$('#reset').onclick=()=>{Object.assign(S,{price:4000000,idx:0,radius:50,body:'',cheap:false,ai:null});S.chk.clear();$('#aiNote').hidden=true;$('#aiInput').value='';render()};
+$('#railToggle').onclick=e=>{const r=$('#rail');r.classList.toggle('collapsed');e.target.setAttribute('aria-expanded',!r.classList.contains('collapsed'))};
+if(matchMedia('(max-width:900px)').matches)$('#rail').classList.add('collapsed');
+$('#aiForm').onsubmit=e=>{e.preventDefault();const q=$('#aiInput').value.trim();if(q)showAI(q)};
+$$('.try button').forEach(b=>b.onclick=()=>{$('#aiInput').value=b.dataset.q;showAI(b.dataset.q)});
+$('#results').onclick=e=>{const c=e.target.closest('.card');if(c)openCar(c.dataset.id)};
+$('#map').onclick=e=>{const d=e.target.closest('.dot');if(d)openCar(d.dataset.id)};
+$('#map').onkeydown=e=>{const d=e.target.closest('.dot');if(d&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openCar(d.dataset.id)}};
+$('#scrim').onclick=closeSheet;
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#whyModal').hidden){closeWhy();return}if(!$('#sheet').hidden)closeSheet()});
+const h=location.hash.slice(1);
+initSeller();initInsp();initDealer();drawReqs();render();
+if(['sell','dealer','insp'].includes(h))setView(h,true);
+})();
+</script>
+
+</body>
+</html>

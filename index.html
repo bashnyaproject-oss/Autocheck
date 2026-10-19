@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Осмотрено</title>
+<meta name="description" content="Проверка машины по номеру, VIN или ссылке, сравнение объявлений и площадка осмотренных авто.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Onest:wght@400;600&display=swap">
+<style>
+:root{--bg:#F2F4F3;--surface:#FFFFFF;--ink:#14201C;--muted:#5D6A65;--accent:#0B7A5F;--accent-soft:#DDF0E8;--line:#DAE1DE}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1412;--surface:#161F1C;--ink:#E5EDE9;--muted:#93A39C;--accent:#3DC69C;--accent-soft:#14352B;--line:#26322E;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Onest",system-ui,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:56px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:32px}
+.logo{display:flex;align-items:center;gap:10px;font:700 20px/1 "Unbounded",sans-serif}
+.mark{width:34px;height:34px;border-radius:50%;border:3px solid var(--accent);color:var(--accent);display:grid;place-items:center;transform:rotate(-8deg)}
+h1{font:700 clamp(28px,5vw,48px)/1.1 "Unbounded",sans-serif;letter-spacing:-.02em;margin:0;max-width:18ch;text-wrap:balance}
+p{margin:0;color:var(--muted);max-width:60ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+a.card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:24px;color:inherit;text-decoration:none;transition:border-color .15s}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
+.tag{align-self:flex-start;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.card h2{font:700 22px/1.2 "Unbounded",sans-serif;margin:0}
+.go{color:var(--accent);font-weight:600;margin-top:auto}
+footer{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="logo"><span class="mark" aria-hidden="true">✓</span>Осмотрено</div>
+  <h1>Машины, состояние которых подтверждено осмотром</h1>
+  <p>Два прототипа одного проекта: простая проверка машины и полноценная площадка с ролями покупателя, продавца, дилера и сервиса подбора.</p>
+  <div class="cards">
+    <a class="card" href="/check"><span class="tag">Микросервис</span><h2>Проверка и сравнение</h2><p>Проверка по номеру, VIN или ссылке, сравнение любого числа объявлений, отчёт по базам, карта пунктов осмотра.</p><span class="go">Открыть →</span></a>
+    <a class="card" href="/market"><span class="tag">Полное приложение</span><h2>Площадка осмотренных авто</h2><p>Поиск по состоянию и расстоянию, сеть пунктов осмотра, кабинеты дилера и сервиса подбора, онлайн-сделка и аукцион.</p><span class="go">Открыть →</span></a>
+  </div>
+  <footer>Прототип. Все объявления, люди, компании и цифры — примеры для демонстрации.</footer>
+</main>
+</body>
+</html>
