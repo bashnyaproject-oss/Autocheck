@@ -3,404 +3,735 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
 <title>Проверка Осмотрено</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: one search field on top; result or map below. Brand shared with the marketplace prototype. */
 :root{
-  /* Classifieds layout in the spirit of large car marketplaces; brand = Instagram-like warm gradient. Single light theme by choice. */
-  --bg:#F3F3F6; --surface:#FFFFFF; --ink:#16161A; --muted:#6E6E78; --line:#E6E6EB; --chip:#F1F1F4; --glass:#C9D2DC;
-  --accent:#D62976; --accent-ink:#FFFFFF; --accent-soft:#FDEBF3;
-  --grad:linear-gradient(45deg,#FEDA75 0%,#FA7E1E 25%,#D62976 55%,#962FBF 80%,#4F5BD5 100%);
-  --good:#1E9E5A; --good-soft:#E6F6EE;
-  --warn:#C27400; --warn-soft:#FFF2DC; --bad:#D92D20; --bad-soft:#FDECEA;
-  --water:#D6E6F2; --road:#EEEFF2; --ring:#D9DCE2;
-  --shadow:0 1px 2px rgba(22,22,26,.05);
-  --f-display:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
-  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  /* Layout: white classifieds page — sticky header (logo, search, actions), category nav, filter grid, photo-first cards, two-column detail pages. Brand gradient only on logo, key actions and the "Осмотрено" mark. Single light look by choice. */
+  --bg:#FFFFFF; --fill:#F2F3F5; --fill-2:#E7E8EC; --line:#ECEDF0; --line-2:#DCDDE2;
+  --ink:#16161A; --ink-2:#3C3C44; --muted:#86868F;
+  --brand:#C1358A; --brand-soft:#FBEDF5;
+  --grad:linear-gradient(100deg,#F8A23A 0%,#E8436B 42%,#B93A9C 72%,#7A3FD0 100%);
+  --good:#14965A; --good-soft:#E7F7EE; --warn:#C9741F; --warn-soft:#FFF3E2; --bad:#E0383B; --bad-soft:#FDECEC;
+  --map-land:#F3F1EA; --map-park:#E3ECD6; --map-water:#C5DDEE; --map-road:#F4C98A;
+  --f:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --gl:max(clamp(16px,3.2vw,40px),env(safe-area-inset-left,0px));
+  --gr:max(clamp(16px,3.2vw,40px),env(safe-area-inset-right,0px));
   color-scheme:light;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
-button,input{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--f);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid #7A3FD0;outline-offset:2px;border-radius:8px}
+[hidden]{display:none!important}
+img,svg{max-width:100%}
 .num{font-variant-numeric:tabular-nums}
-.mono{font-family:var(--f-mono);font-size:.9em;letter-spacing:.03em}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
-.hrow{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px;font:700 18px/1 var(--f-display);color:var(--ink);text-decoration:none}
-.logo-mark{width:30px;height:30px;border-radius:50%;border:0;background:var(--grad);display:grid;place-items:center;color:#FFFFFF;border-radius:9px}
-.tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:12px;margin-left:auto}
-.tab{border:0;background:none;padding:8px 14px;border-radius:9px;font-weight:600;color:var(--muted);white-space:nowrap}
-.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.mono{font-family:var(--mono);font-size:.92em;letter-spacing:.02em}
+.muted{color:var(--muted)}
+.wrap{max-width:1280px;margin:0 auto;padding-left:var(--gl);padding-right:var(--gr)}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-.hero{padding-block:40px 24px;display:flex;flex-direction:column;gap:16px}
-.hero h1{font:700 clamp(26px,4.2vw,44px)/1.1 var(--f-display);letter-spacing:-.02em;margin:0;text-wrap:balance;max-width:20ch}
-.hero p{margin:0;color:var(--muted);max-width:62ch;font-size:16px}
-.search{display:flex;gap:8px;background:var(--surface);border:2px solid var(--ink);border-radius:16px;padding:6px;max-width:760px}
-.search input{flex:1;min-width:0;border:0;background:none;padding:12px 12px;font-size:18px;outline:none;font-family:var(--f-mono);letter-spacing:.04em}
-.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--chip);white-space:nowrap}
-.btn.primary{background:var(--grad);color:#FFFFFF}
-.btn.ghost{background:none;border:1.5px solid var(--line)}
-.examples{display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);align-items:center}
-.examples button{border:1px dashed var(--line);background:none;border-radius:999px;padding:4px 10px;font-size:13px;color:var(--ink)}
+/* ---------- header ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);transition:box-shadow .2s}
+.top.scrolled{box-shadow:0 1px 0 var(--line),0 6px 20px rgba(22,22,26,.04)}
+.bar{display:flex;align-items:center;gap:16px;padding-block:14px 8px}
+.brand{display:flex;align-items:center;gap:9px;flex:none}
+.brand-mark{width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#fff}
+.brand-word{font:800 27px/1 var(--f);letter-spacing:-.05em}
+.brand-sub{font-size:13px;color:var(--muted);font-weight:500;margin-left:2px;align-self:flex-end;padding-bottom:3px}
+.search{flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:50px;padding:0 6px 0 16px;background:var(--fill);border-radius:14px;transition:box-shadow .15s,background .15s}
+.search:focus-within{background:#fff;box-shadow:0 0 0 2px var(--ink)}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:16px;height:100%}
+.search input::placeholder{color:var(--muted)}
+.search .lead-ic{color:var(--ink-2);flex:none}
+.loc{display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;padding:0 10px;height:38px;border-radius:10px}
+.loc:hover{background:var(--fill-2)}
+.loc span{color:var(--muted);font-weight:400}
+.add{width:50px;height:50px;border-radius:14px;background:var(--grad);color:#fff;display:grid;place-items:center;flex:none;transition:filter .15s,transform .15s}
+.add:hover{filter:brightness(1.07)}
+.add:active{transform:scale(.96)}
+.icons{display:flex;gap:18px;flex:none}
+.ico{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:500;position:relative;min-width:52px;color:var(--ink)}
+.ico:hover{color:var(--ink-2)}
+.ico .badge{position:absolute;top:-5px;left:calc(50% + 4px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px;border:2px solid #fff}
+.ava{width:46px;height:46px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none;position:relative}
+.ava::after{content:"";position:absolute;inset:3px;border-radius:50%;border:2px solid rgba(255,255,255,.75)}
+.nav{display:flex;gap:30px;overflow-x:auto;scrollbar-width:none;padding-block:6px 12px}
+.nav::-webkit-scrollbar{display:none}
+.nav > *{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px;white-space:nowrap;position:relative;padding-block:6px;color:var(--ink)}
+.nav > *:hover{color:var(--ink-2)}
+.nav [aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:3px;border-radius:2px;background:var(--grad)}
+.menu{position:absolute;right:var(--gr);top:68px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(22,22,26,.16);padding:8px;min-width:240px;z-index:35}
+.menu button{display:flex;gap:12px;align-items:center;width:100%;padding:10px 12px;border-radius:10px;text-align:left;font-weight:500}
+.menu button:hover{background:var(--fill)}
+.menu small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
 
-.res{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;padding-block:8px 48px;align-items:start}
-.col{display:flex;flex-direction:column;gap:16px;min-width:0}
-.panel{background:var(--surface);border-radius:16px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;min-width:0}
-h2{font:700 22px/1.25 var(--f-display);letter-spacing:-.015em;margin:0;text-wrap:balance}
-h3{font:600 15px/1.3 var(--f-display);margin:0}
-.muted{color:var(--muted);font-size:14px}
-.plate{display:inline-flex;align-items:center;border:2px solid var(--ink);border-radius:6px;padding:2px 8px;font:500 16px/1.3 var(--f-mono);background:var(--surface)}
-.status{border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center}
-.status.ok{background:var(--good-soft)}
-.status.none{background:var(--warn-soft)}
-.stamp{border:0;color:#FFFFFF;border-radius:8px;padding:4px 9px 3px;font:700 11px/1.25 var(--f-display);letter-spacing:.05em;transform:rotate(-4deg);text-align:center;flex:none;background:var(--grad)}
-.stamp small{display:block;font:500 10px/1.2 var(--f-mono)}
-.tl{display:flex;flex-direction:column}
-.tli{display:grid;grid-template-columns:96px 1fr auto;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
-.tli:first-child{border-top:0}
-.tli small{display:block;color:var(--muted);font-size:13px}
-.photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.ph{aspect-ratio:4/3;max-width:100%;background:var(--chip);border-radius:10px;display:grid;place-items:center;position:relative;overflow:hidden}
-.ph svg{width:80%;height:auto}
-.ph span{position:absolute;left:6px;bottom:6px;font-size:11px;background:var(--surface);border-radius:6px;padding:1px 6px}
-.lock{position:relative}
-.rows{display:flex;flex-direction:column}
-.row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.tag{font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
-.tag.ok{background:var(--good-soft);color:var(--good)}
+/* ---------- page bits ---------- */
+main{min-height:60vh}
+.crumbs{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px;padding-top:14px;flex-wrap:wrap}
+.crumbs > * + *::before{content:"›";margin-right:8px;color:var(--line-2)}
+.crumbs button{color:var(--ink-2);display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-block:14px 26px}
+h1{font:800 clamp(28px,3.3vw,42px)/1.12 var(--f);letter-spacing:-.028em;margin:0;text-wrap:balance}
+h2{font:800 clamp(22px,2.2vw,28px)/1.2 var(--f);letter-spacing:-.022em;margin:0;text-wrap:balance}
+h3{font:700 18px/1.3 var(--f);letter-spacing:-.01em;margin:0}
+.lead{font-size:17px;color:var(--ink-2);margin:8px 0 0;max-width:62ch}
+.sect{padding-block:40px 0}
+.sect-h{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.small{font-size:13.5px}
+.fine{font-size:13px;color:var(--muted);line-height:1.45;margin:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.row > svg{flex:none}
+.fopen{display:none}
+.mt{margin-top:32px}
+
+.seg{display:inline-flex;background:var(--fill);border-radius:14px;padding:4px;gap:2px;max-width:100%;overflow-x:auto}
+.seg button{height:42px;padding:0 18px;border-radius:11px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(22,22,26,.1)}
+.seg.sm button{height:36px;padding:0 14px;font-size:14px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{height:46px;padding:0 20px;border-radius:999px;background:var(--fill);font-size:16px;font-weight:500;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
+.chip:hover{background:var(--fill-2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff}
+.chip.sm{height:38px;padding:0 15px;font-size:14.5px}
+.chip .x{opacity:.6}
+
+/* ---------- fields & buttons ---------- */
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fld{position:relative;display:flex;height:54px;background:var(--fill);border-radius:12px;min-width:0;transition:box-shadow .15s}
+.fld > *{min-width:0}
+.fld select,.fld input,.fld textarea{appearance:none;-webkit-appearance:none;border:0;background:transparent;width:100%;height:100%;padding:0 16px;font-size:16px;outline:none;color:var(--ink)}
+.fld textarea{height:auto;min-height:110px;padding:14px 16px;resize:vertical;line-height:1.45}
+.fld.area{height:auto}
+.fld select{padding-right:40px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2316161A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center}
+.fld select.ph{color:var(--muted)}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--muted)}
+.fld > * + *{border-left:1px solid var(--fill-2)}
+.fld:focus-within{box-shadow:inset 0 0 0 2px var(--ink)}
+.fld .unit{display:flex;align-items:center;padding:0 14px;color:var(--muted);border-left:0;white-space:nowrap}
+.flabel{display:block;font-size:13.5px;color:var(--muted);margin:0 0 6px 2px;font-weight:500}
+.btn{height:54px;padding:0 24px;border-radius:12px;font-weight:600;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:filter .15s,background .15s,transform .1s;text-align:center}
+.btn:active{transform:scale(.985)}
+.btn.black{background:var(--ink);color:#fff}
+.btn.black:hover{background:#2c2c33}
+.btn.brand{background:var(--grad);color:#fff}
+.btn.brand:hover{filter:brightness(1.07)}
+.btn.grey{background:var(--fill);color:var(--ink)}
+.btn.grey:hover{background:var(--fill-2)}
+.btn.line{background:#fff;box-shadow:inset 0 0 0 1px var(--line-2)}
+.btn.line:hover{box-shadow:inset 0 0 0 1px var(--ink)}
+.btn.sm{height:42px;padding:0 16px;font-size:15px;border-radius:10px}
+.btn.xs{height:34px;padding:0 12px;font-size:14px;border-radius:9px}
+.btn.block{width:100%}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.btn .sub{display:block;font-size:12.5px;font-weight:500;opacity:.85}
+.btn.tall{height:auto;min-height:62px;flex-direction:column;gap:0;padding-block:8px}
+.link{color:var(--brand);font-weight:600}
+.link:hover{text-decoration:underline;text-underline-offset:3px}
+.sw{width:46px;height:28px;border-radius:99px;background:var(--line-2);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+.sw[aria-checked="true"]{background:var(--ink)}
+.sw[aria-checked="true"]::after{left:21px}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+
+/* ---------- tags ---------- */
+.tag{height:26px;padding:0 9px;border-radius:7px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tag.good{background:var(--good-soft);color:var(--good)}
 .tag.warn{background:var(--warn-soft);color:var(--warn)}
 .tag.bad{background:var(--bad-soft);color:var(--bad)}
-.tag.hid{background:var(--chip);color:var(--muted);filter:blur(3px)}
-.pay{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:12px}
-.price{font:700 20px/1.2 var(--f-display)}
-.flags{display:flex;flex-wrap:wrap;gap:6px}
-.index{display:flex;align-items:center;gap:10px}
-.index b{font:700 22px/1 var(--f-display)}
-.index span{font-size:12px;color:var(--muted);line-height:1.2}
+.tag.grey{background:var(--fill);color:var(--ink-2)}
+.tag.brand{background:var(--brand-soft);color:var(--brand)}
+.tag.dark{background:var(--ink);color:#fff}
+.note{font-size:14.5px;font-weight:500;display:flex;align-items:center;gap:5px}
+.note.good{color:var(--good)} .note.mid{color:var(--muted)} .note.high{color:var(--warn)} .note.brand{color:var(--brand)} .note.bad{color:var(--bad)}
+.score{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;padding:0 7px;border-radius:7px;font-weight:800;font-size:14px;color:#fff}
+.score.good{background:var(--good)} .score.warn{background:var(--warn)} .score.bad{background:var(--bad)}
+.score.big{min-width:56px;height:40px;font-size:20px;border-radius:10px}
+.gpill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 4px;border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink);box-shadow:0 1px 3px rgba(22,22,26,.12)}
+.gpill .gd{width:20px;height:20px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff}
+.gpill.none{padding-left:11px;color:var(--ink-2)}
+.gtag{display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:8px;background:var(--grad);color:#fff;font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
 
-.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding-block:8px 48px}
-.mapbox{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:12px;min-width:0;overflow:hidden}
-.mapbox svg{display:block;width:100%;height:auto}
-.mk{cursor:pointer}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chips button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px}
-.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
-.list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto}
-.li{border:0;background:var(--surface);border-radius:12px;padding:12px;text-align:left;display:grid;grid-template-columns:28px 1fr;gap:10px;box-shadow:var(--shadow)}
-.li[aria-current="true"]{outline:2px solid var(--accent)}
-.li .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:13px}
-.li .ic.p{background:var(--ink);color:var(--surface)}
-.li .ic.c{background:var(--accent-soft);color:var(--accent)}
-.li small{display:block;color:var(--muted);font-size:13px}
+/* ---------- car photos ---------- */
+.photo{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:16px;overflow:hidden;background:var(--fill)}
+.photo .car{position:absolute;left:6%;width:88%;bottom:6%;height:auto;transition:transform .35s ease}
+.ph-studio{background:radial-gradient(120% 85% at 50% 22%,#FFFFFF 0%,#EEF0F3 56%,#DEE2E8 100%)}
+.ph-warm{background:linear-gradient(180deg,#F6EEE5 0%,#EFE3D5 64%,#E1D1BE 64.4%,#D9C6B0 100%)}
+.ph-cool{background:linear-gradient(180deg,#E9F0F7 0%,#DCE6F0 64%,#C9D3DE 64.4%,#BEC9D4 100%)}
+.ph-dark{background:linear-gradient(180deg,#3B4048 0%,#2C3037 64%,#23262C 64.4%,#1C1F24 100%)}
+.ph-green{background:linear-gradient(180deg,#E8F0E4 0%,#DCE8D6 64%,#C9D5C2 64.4%,#BCC9B4 100%)}
 
-.linkchips{display:flex;flex-wrap:wrap;gap:8px}
-.lc{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;font-size:13.5px;max-width:100%}
-.lc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
-.lc button{border:0;background:var(--chip);width:24px;height:24px;border-radius:50%;line-height:1;flex:none}
-.cmpbar{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.cmpbar .sp{flex:1}
-.tablewrap{overflow-x:auto;background:var(--surface);border-radius:16px;box-shadow:var(--shadow)}
-.cmp{border-collapse:separate;border-spacing:0;width:100%;min-width:640px;font-size:14px}
-.cmp th,.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-.cmp thead th{vertical-align:bottom;background:var(--surface)}
-.cmp th[scope=row]{position:sticky;left:0;background:var(--surface);font-weight:500;color:var(--muted);min-width:150px;z-index:1}
-.cmp td.best{background:var(--good-soft)}
-.cmp td.bad{color:var(--bad)}
-.cmp td .tag{display:inline-block}
-.cmp .grp th{background:var(--bg);font:600 11.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 12px}
-.carh{display:flex;flex-direction:column;gap:6px;min-width:150px}
-.carh .ph{aspect-ratio:16/9}
-.carh b{font-size:14.5px;line-height:1.3}
-.carh .x{align-self:flex-start;border:0;background:none;color:var(--muted);font-size:12.5px;padding:0;text-decoration:underline}
-.top{background:var(--ink);color:var(--bg);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;align-self:flex-start}
-.score{font:700 20px/1 var(--f-display)}
-.verdicts{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.vd{background:var(--surface);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;font-size:14px}
-.vd ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:34px 20px}
+.card{display:flex;flex-direction:column;gap:3px;text-align:left;cursor:pointer;min-width:0;outline-offset:4px}
+.card .photo{margin-bottom:11px}
+.card:hover .photo .car{transform:translateX(-1.5%) scale(1.025)}
+.card .over-tl{position:absolute;top:10px;left:10px}
+.card .over-tr{position:absolute;top:10px;right:10px}
+.card .over-bl{position:absolute;bottom:10px;left:10px;height:26px;padding:0 10px;border-radius:999px;background:rgba(22,22,26,.72);color:#fff;font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:4px;max-width:calc(100% - 20px)}
+.fav{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(22,22,26,.12);transition:transform .15s}
+.fav:hover{transform:scale(1.08)}
+.fav[aria-pressed="true"]{color:var(--bad)}
+.fav[aria-pressed="true"] svg{fill:currentColor}
+.card .t{font-size:17px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .s{color:var(--muted);font-size:15px}
+.card .p{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-top:2px}
+.pool{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.pbar{height:6px;border-radius:99px;background:var(--fill);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .3s}
+
+/* ---------- boxes ---------- */
+.box{border:1px solid var(--line);border-radius:18px;padding:20px;background:#fff}
+.box.sel{box-shadow:inset 0 0 0 2px var(--ink);border-color:transparent}
+.soft{background:var(--fill);border-radius:18px;padding:20px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:48px;align-items:start}
+.aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 132px);display:flex;flex-direction:column;gap:14px}
+.bigprice{font:800 32px/1.1 var(--f);letter-spacing:-.025em}
+.kv{display:grid;grid-template-columns:minmax(120px,220px) minmax(0,1fr);row-gap:12px;column-gap:16px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:500}
+.hr{height:1px;background:var(--line);margin-block:4px}
+.list > *{border-bottom:1px solid var(--line)}
+.list > *:last-child{border-bottom:0}
+.prow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:12px;padding-block:14px;align-items:start}
+.prow .d{width:12px;height:12px;border-radius:50%;margin-top:5px}
+.d.good{background:var(--good)} .d.warn{background:var(--warn)} .d.bad{background:var(--bad)} .d.grey{background:var(--line-2)}
+.prow b{display:block;font-weight:600}
+.prow small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.prow .tg{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.prow .tg.ok{color:var(--good)}
+.person{display:flex;gap:14px;align-items:center}
+.person .pa{width:52px;height:52px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-weight:700;color:var(--ink-2);flex:none}
+.iconbox{width:52px;height:52px;border-radius:14px;background:var(--fill);display:grid;place-items:center;flex:none;color:var(--ink)}
+.iconbox.g{background:var(--grad);color:#fff}
+
+/* ---------- gallery ---------- */
+.gallery{display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:10px}
+.gallery .photo.lg{aspect-ratio:16/10.5}
+.thumbs{display:grid;grid-template-rows:repeat(4,1fr);gap:10px}
+.thumbs .photo{aspect-ratio:auto;border-radius:12px;cursor:pointer}
+.thumbs .photo[aria-current="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
+
+/* ---------- steps ---------- */
+.steps{display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;position:relative;padding-bottom:20px}
+.step::before{content:"";position:absolute;left:16px;top:36px;bottom:2px;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .sn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--fill);color:var(--muted)}
+.step.done .sn{background:var(--grad);color:#fff}
+.step.now .sn{background:var(--ink);color:#fff}
+.step b{display:block;margin-top:6px;font-weight:600}
+.step p{margin:3px 0 0;color:var(--muted);font-size:14.5px}
+.step .act{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- wizard ---------- */
+.wsteps{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.wsteps::-webkit-scrollbar{display:none}
+.wstep{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 6px;border-radius:999px;background:var(--fill);font-weight:600;font-size:14.5px;white-space:nowrap;color:var(--muted)}
+.wstep i{width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center;font-style:normal;font-size:13px;color:var(--ink-2)}
+.wstep.done{color:var(--ink)}
+.wstep.done i{background:var(--grad);color:#fff}
+.wstep.now{background:var(--ink);color:#fff}
+.wstep.now i{background:#fff;color:var(--ink)}
+.srcs{display:flex;gap:10px;flex-wrap:wrap}
+.src{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;background:var(--fill);font-weight:600;font-size:14.5px}
+.src b{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800}
+.opt{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:16px;border-radius:16px;border:1px solid var(--line);background:#fff;transition:box-shadow .15s}
+.opt:hover{border-color:var(--line-2)}
+.opt[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink);border-color:transparent}
+.opt[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.opt b{display:block;font-weight:600;font-size:16px}
+.opt small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.opt .r{font-weight:700;white-space:nowrap;text-align:right}
+.opt .r small{font-weight:400}
+.phgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.phgrid .photo{aspect-ratio:4/3;border-radius:12px}
+.phgrid .ck{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff}
+.phgrid .lbl{position:absolute;left:8px;bottom:8px;font-size:12px;background:rgba(255,255,255,.92);padding:2px 8px;border-radius:999px;font-weight:500}
+
+/* ---------- places & rows ---------- */
+.places{display:flex;flex-direction:column;gap:10px}
+.place{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:#fff;transition:box-shadow .15s,border-color .15s}
+.place:hover{border-color:var(--line-2)}
+.place[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink);border-color:transparent}
+.place b{display:block;font-weight:600;font-size:16px}
+.place .m{display:block;color:var(--muted);font-size:14px}
+.place .perk{display:block;font-size:13.5px;color:var(--brand);font-weight:500;margin-top:3px}
+.place .pr{text-align:right;font-weight:700;font-size:16px;white-space:nowrap}
+.place .pr small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.slots{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.slots::-webkit-scrollbar{display:none}
+.slot{flex:none;min-width:64px;height:54px;border-radius:12px;background:var(--fill);font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 12px;line-height:1.15}
+.slot small{font-weight:400;color:var(--muted);font-size:12px}
+.slot[aria-pressed="true"]{background:var(--ink);color:#fff}
+.slot[aria-pressed="true"] small{color:rgba(255,255,255,.7)}
+.lrow{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:center;padding-block:18px}
+.lrow .photo{border-radius:14px}
+.lrow h3{font-size:20px;font-weight:600}
+.rowline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding-block:14px;align-items:center}
+.rowline b{font-weight:600}
+.rowline small{display:block;color:var(--muted);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.stat{background:var(--fill);border-radius:16px;padding:16px 18px}
+.stat span{display:block;color:var(--muted);font-size:13.5px}
+.stat b{display:block;font:800 26px/1.2 var(--f);letter-spacing:-.02em;margin-top:4px}
+
+/* ---------- map ---------- */
+.mapbox{border-radius:18px;overflow:hidden;background:var(--map-land);position:relative}
+.mapbox > svg{display:block;width:100%;height:auto}
+.mapbox .mk{cursor:pointer}
+.mapbox .mk:focus{outline:none}
+.mapbox .mk:focus-visible circle,.mapbox .mk:focus-visible rect{stroke:#7A3FD0}
+.mapzoom{position:absolute;right:12px;top:12px;display:flex;gap:6px}
+.mapzoom span{width:40px;height:40px;border-radius:10px;background:#fff;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.mapsplit{display:grid;grid-template-columns:420px minmax(0,1fr);gap:24px;align-items:start}
+.mapsplit .listcol{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 220px);overflow-y:auto;padding-right:4px}
+.mapsplit .mapcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 132px)}
+
+/* ---------- table ---------- */
+.tablewrap{overflow-x:auto;border-radius:18px;border:1px solid var(--line)}
+.cmp{border-collapse:separate;border-spacing:0;width:100%;min-width:680px;font-size:15px}
+.cmp th,.cmp td{padding:13px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.cmp tr:last-child td,.cmp tr:last-child th{border-bottom:0}
+.cmp thead th{vertical-align:top;padding-block:16px}
+.cmp th[scope=row]{position:sticky;left:0;background:#fff;font-weight:500;color:var(--muted);min-width:170px;z-index:1}
+.cmp thead th:first-child{position:sticky;left:0;background:#fff;z-index:2}
+.cmp td.best{font-weight:700;color:var(--good)}
+.cmp td.best::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:8px;vertical-align:1px}
+.cmp .grp th{background:var(--fill);font:700 12px/1 var(--f);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:11px 16px}
+.carh{display:flex;flex-direction:column;gap:6px;min-width:160px}
+.carh .score,.carh .firstpick{align-self:flex-start}
+.cmp thead th:not(:first-child){width:210px;min-width:190px}
+.carh .photo{aspect-ratio:16/10;border-radius:12px}
+.carh b{font-size:15px;line-height:1.3}
+.carh .x{align-self:flex-start;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:2px}
+.firstpick{display:inline-flex;align-self:flex-start;height:24px;padding:0 9px;border-radius:7px;background:var(--grad);color:#fff;font-size:12.5px;font-weight:700;align-items:center}
+
+/* ---------- modal, toast ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(16,16,20,.48);padding:max(16px,env(safe-area-inset-top,0px)) var(--gr) max(16px,env(safe-area-inset-bottom,0px)) var(--gl);animation:fade .15s ease}
+.mcard{background:#fff;border-radius:24px;max-width:540px;width:100%;max-height:100%;overflow-y:auto;padding:28px;display:flex;flex-direction:column;gap:18px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+.mclose{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--fill);display:grid;place-items:center}
+.eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.why-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
+.why-list li{display:grid;grid-template-columns:36px minmax(0,1fr);gap:14px;align-items:start}
+.why-list .n{width:36px;height:36px;border-radius:11px;background:var(--fill);display:grid;place-items:center;font-weight:800}
+.why-list b{display:block;font-weight:600;font-size:16px}
+.why-list p{margin:2px 0 0;color:var(--muted);font-size:14.5px}
+.how-list{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:6px;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;z-index:60;font-weight:500;max-width:calc(100% - 32px);box-shadow:0 8px 30px rgba(0,0,0,.25);animation:rise .2s ease}
+.notif{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:14px;border-radius:16px;background:var(--fill)}
+.notif .ib{width:44px;height:44px;border-radius:12px;background:#fff;display:grid;place-items:center}
+.notif b{font-weight:600}
+.notif p{margin:2px 0 0;color:var(--ink-2);font-size:14.5px}
+.notif .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.foot{color:var(--muted);font-size:13.5px;padding-block:64px 40px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:72px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .icons .lbl{display:none}
+  .icons{gap:8px}
+  .ico{min-width:40px}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:960px){
+  .split{grid-template-columns:minmax(0,1fr);gap:28px}
+  .aside{position:static}
+  .fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 14px}
+  .mapsplit{grid-template-columns:minmax(0,1fr)}
+  .mapsplit .mapcol{position:static;order:-1}
+  .mapsplit .listcol{max-height:none;overflow:visible}
+  .gallery{grid-template-columns:minmax(0,1fr)}
+  .thumbs{grid-template-rows:none;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .thumbs .photo{aspect-ratio:4/3}
+}
+@media (max-width:680px){
+  .bar{flex-wrap:wrap;gap:10px;padding-top:10px}
+  .search{order:5;flex-basis:100%;height:46px}
+  .search .loc{display:none}
+  .brand-word{font-size:21px}
+  .brand-mark{width:32px;height:32px}
+  .icons{margin-left:auto;gap:2px}
+  .ico[data-site]{display:none}
+  .fopen{display:inline-flex}
+  .filters:not(.open) .fgrid,.filters:not(.open) #fToggles{display:none}
+  .add,.ava{width:42px;height:42px}
+  .nav{gap:22px}
+  .nav > *{font-size:15px}
+  .fgrid{grid-template-columns:minmax(0,1fr)}
+  .lrow{grid-template-columns:120px minmax(0,1fr);gap:14px}
+  .lrow h3{font-size:17px}
+  .kv{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .phgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opt,.place{grid-template-columns:44px minmax(0,1fr);}
+  .opt .r,.place .pr{grid-column:2;text-align:left}
+  .iconbox{width:44px;height:44px}
+  .mcard{padding:22px;border-radius:20px}
+  .modal{place-items:end center}
+  .head{padding-bottom:18px}
+}
+@media (max-width:460px){
+  .cards{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.chkhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.sq{width:54px;height:54px;border-radius:12px;background:var(--fill);display:grid;place-items:center;flex:none}
+.sq:hover{background:var(--fill-2)}
+.pack{display:flex;justify-content:space-between;align-items:center;width:100%;padding:18px 20px;border-radius:16px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:16px}
+.pack[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink);border-color:transparent}
+.pack b{font-size:20px;font-weight:800}
+.pack span.u{font-weight:500;color:var(--ink-2);font-size:15px}
+.sidelinks{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.sidelinks button{display:flex;align-items:center;gap:12px;padding:10px 4px;font-weight:600;font-size:16px;text-align:left}
+.banner{display:flex;gap:14px;align-items:center;border-radius:16px;padding:16px 18px}
+.banner.ok{background:var(--good-soft)}
+.banner.none{background:var(--warn-soft)}
+.res{display:flex;flex-direction:column;gap:30px;margin-top:30px}
+.reshead{display:grid;grid-template-columns:160px minmax(0,1fr);gap:18px;align-items:center}
+.plate{display:inline-flex;align-items:center;height:30px;padding:0 10px;border:2px solid var(--ink);border-radius:7px;font:600 15px/1 var(--mono);background:#fff}
+.thumbs4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.thumbs4 .photo{border-radius:12px}
+.thumbs4 .lbl{position:absolute;left:8px;bottom:8px;font-size:12px;background:rgba(255,255,255,.92);padding:2px 8px;border-radius:999px;font-weight:500}
+.plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.plan{border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;background:var(--fill)}
+.plan.hi{background:var(--ink);color:#fff}
+.plan.hi .fine{color:rgba(255,255,255,.72)}
+.plan .pp{font:800 28px/1.1 var(--f);letter-spacing:-.02em}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.vd{border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.vd ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:14.5px}
 .vd .p{color:var(--good)} .vd .m{color:var(--bad)}
-.plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-block:0 48px}
-.plan{background:var(--surface);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
-.plan.hi{background:var(--ink);color:var(--bg)}
-.plan.hi small{color:var(--glass)}
-.plan b.price{font-size:22px}
-.plan small{color:var(--muted);font-size:13.5px;line-height:1.45}
-.sect{font:600 12px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-block:8px 12px}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:40;max-width:calc(100% - 32px)}
-footer{color:var(--muted);font-size:13px;padding-block:0 32px}
-@media (max-width:900px){.res,.mapwrap{grid-template-columns:minmax(0,1fr)}.plans{grid-template-columns:repeat(2,minmax(0,1fr))}.list{max-height:none}}
-@media (max-width:560px){.tabs{margin-left:0;width:100%}.tab{flex:1;padding:8px 6px;font-size:14px}.search{flex-direction:column}.photos{grid-template-columns:repeat(2,minmax(0,1fr))}.plans{grid-template-columns:minmax(0,1fr)}.tli{grid-template-columns:80px 1fr}.tli .tag{grid-column:2;justify-self:start}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-
-/* ---- skin: marketplace look ---- */
-body{font-size:15px;line-height:1.45}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.015em}
-h2{font-size:24px}
-h3{font-size:16px;font-weight:600}
-header{border-bottom:1px solid var(--line);box-shadow:none}
-.logo{font:700 20px/1 var(--f-display);letter-spacing:-.02em}
-.tabs{background:none;padding:0;border-radius:0;gap:0}
-.tab{border-radius:0;padding:10px 12px;color:var(--muted);font-weight:500;box-shadow:none}
-.tab:hover{color:var(--ink)}
-.tab[aria-selected="true"]{background:none;color:var(--ink);box-shadow:inset 0 -3px 0 var(--accent)}
-.panel,.mapbox,.tablewrap,.cmpbar,.vd,.plan,.li,.empty{box-shadow:none;border:1px solid var(--line);border-radius:12px}
-.btn{border-radius:10px;font-weight:600}
-.btn.primary:hover{filter:brightness(1.05)}
-.btn.ghost{border:1px solid var(--line);background:var(--surface)}
-.seg button,.check,.chips button,.ptypes button,.slot,.fmt,.choice,.place,.tri button{border-radius:8px;border-width:1px}
-select,.field input,.offer input{border-width:1px;border-radius:8px;background:var(--chip);border-color:transparent}
-.stamp{transform:none;border-radius:6px;font-weight:700;letter-spacing:.06em}
-.why{border-width:1px}
-.mcard{border-radius:16px}
-.mcard .eyebrow{font:600 12px/1 var(--f-body);letter-spacing:.06em;color:var(--accent)}
-.mcard .how ol li{display:list-item}
-.count{font:700 22px/1.2 var(--f-display)}
-.price{font-family:var(--f-display);font-weight:700}
-
-.search{border:0;background:var(--surface);box-shadow:0 0 0 1px var(--line);border-radius:12px}
-.search:focus-within{box-shadow:0 0 0 2px var(--accent)}
-.hero h1{font-size:clamp(26px,4vw,40px)}
-.plan.hi{background:var(--grad);color:#FFFFFF;border:0}
-.plan.hi small{color:rgba(255,255,255,.88)}
+@media (max-width:960px){.plans{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:680px){.reshead{grid-template-columns:110px minmax(0,1fr)}.thumbs4{grid-template-columns:repeat(2,minmax(0,1fr))}.plans{grid-template-columns:minmax(0,1fr)}}
 </style>
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 </head>
 <body>
 
 
-<header><div class="wrap hrow">
-  <a class="logo" href="#check"><span class="logo-mark" aria-hidden="true">✓</span>Осмотрено</a>
-  <nav class="tabs" role="tablist" aria-label="Разделы">
-    <button class="tab" role="tab" aria-selected="true" data-v="check">Проверить</button>
-    <button class="tab" role="tab" aria-selected="false" data-v="compare">Сравнить</button>
-    <button class="tab" role="tab" aria-selected="false" data-v="map">Карта</button>
-    <button class="tab" role="tab" aria-selected="false" data-v="price">Тарифы</button>
-  </nav>
-</div></header>
+<header class="top" id="top">
+  <div class="wrap bar">
+    <a class="brand" href="#" data-go="check" aria-label="Осмотрено — проверка"><span class="brand-mark"><i data-ic="check" data-s="20"></i></span><span class="brand-word gtext">осмотрено</span><span class="brand-sub">проверка</span></a>
+    <form class="search" id="topForm" role="search"><i data-ic="search" data-s="20" class="lead-ic"></i><input id="topQ" autocomplete="off" placeholder="Госномер, VIN или ссылка на объявление" aria-label="Госномер, VIN или ссылка"></form>
+    <nav class="icons" aria-label="Быстрые действия">
+      <button class="ico" type="button" data-go="compare"><i data-ic="compare"></i><span class="lbl">Сравнение</span><span class="badge" id="cmpBadge">4</span></button>
+      <button class="ico" type="button" data-go="points"><i data-ic="map"></i><span class="lbl">Пункты</span></button>
+      <button class="ico" type="button" data-site="/market" data-label="площадка осмотренных машин"><i data-ic="car"></i><span class="lbl">Площадка</span></button>
+    </nav>
+  </div>
+  <div class="wrap"><nav class="nav" id="nav" aria-label="Разделы">
+    <button type="button" data-go="check" aria-current="page"><i data-ic="shield"></i>Проверить машину</button>
+    <button type="button" data-go="compare"><i data-ic="compare"></i>Сравнить объявления</button>
+    <button type="button" data-go="points"><i data-ic="map"></i>Пункты осмотра</button>
+    <button type="button" data-go="price"><i data-ic="doc"></i>Тарифы</button>
+  </nav></div>
+</header>
 
 <main>
-<section id="v-check">
-  <div class="wrap hero">
-    <h1>Проверьте машину по номеру, VIN или ссылке</h1>
-    <p>Бесплатно покажем, осматривалась ли машина, и что о ней известно из открытых источников. Отчёт по базам и живой осмотр — по желанию.</p>
-    <form class="search" id="form">
-      <input id="q" aria-label="Госномер, VIN или ссылка на объявление" placeholder="Госномер, VIN или ссылка" value="Х482КМ799" autocomplete="off">
-      <button class="btn primary" type="submit">Проверить</button>
-    </form>
-    <div class="examples">Примеры:
-      <button type="button" data-q="Х482КМ799">Х482КМ799 · осмотрена</button>
-      <button type="button" data-q="А715ОР750">А715ОР750 · не осматривалась</button>
-      <button type="button" data-q="https://объявление/48213">ссылка на объявление</button>
+<section class="wrap" id="v-check">
+  <div class="split" style="padding-top:28px">
+    <div>
+      <div class="chkhead"><h1>Проверьте машину</h1><span class="gtag">осмотрено</span></div>
+      <p class="lead">По госномеру, VIN или ссылке на объявление с любой площадки. Бесплатно покажем, был ли живой осмотр, фото и историю объявлений.</p>
+      <form class="row" id="form" style="margin-top:22px;flex-wrap:nowrap"><div class="fld grow"><input id="q" value="Х482КМ799" autocomplete="off" aria-label="Госномер, VIN или ссылка на объявление" placeholder="Госномер, VIN или ссылка"></div><button class="sq" type="submit" aria-label="Проверить"><i data-ic="search"></i></button></form>
+      <div class="chips" style="margin-top:12px"><button type="button" class="chip sm" data-q="Х482КМ799">Х482КМ799 · осмотрена</button><button type="button" class="chip sm" data-q="А715ОР750">А715ОР750 · без осмотра</button><button type="button" class="chip sm" data-q="https://www.avito.ru/moskva/avtomobili/48213">Ссылка с Авито</button></div>
+      <div id="result"></div>
+      <section class="sect"><h2>Недавние проверки</h2><div class="list" id="recent" style="margin-top:8px"></div></section>
     </div>
-  </div>
-  <div class="wrap res" id="result"></div>
-</section>
-
-<section id="v-compare" hidden>
-  <div class="wrap hero" style="padding-bottom:16px">
-    <h1>Сравните машины по ссылкам</h1>
-    <p>Вставьте ссылки на объявления с любых площадок — по одной или сразу списком. Сравним цену, пробег, состояние и юридическую чистоту и подскажем, какую смотреть первой.</p>
-    <form class="search" id="addForm">
-      <input id="link" aria-label="Ссылка на объявление" placeholder="Ссылка на объявление, номер или VIN" autocomplete="off">
-      <button class="btn primary" type="submit">Добавить</button>
-    </form>
-    <div class="linkchips" id="links"></div>
-  </div>
-  <div class="wrap" style="padding-bottom:48px;display:flex;flex-direction:column;gap:16px">
-    <div class="cmpbar" id="cmpbar"></div>
-    <div class="tablewrap"><table class="cmp" id="cmp"></table></div>
-    <div class="verdicts" id="verdicts"></div>
+    <aside class="aside" id="packs"></aside>
   </div>
 </section>
 
-<section id="v-map" hidden>
-  <div class="wrap hero" style="padding-bottom:12px">
-    <h1>Осмотренные машины и пункты осмотра рядом</h1>
-    <div class="chips" id="layers">
-      <button type="button" data-l="cars" aria-pressed="true">Осмотренные машины в продаже</button>
-      <button type="button" data-l="points" aria-pressed="true">Пункты осмотра</button>
-    </div>
-  </div>
-  <div class="wrap mapwrap"><div class="mapbox" id="map"></div><div class="list" id="mlist"></div></div>
+<section class="wrap" id="v-compare" hidden>
+  <div class="crumbs"><span>Проверка</span><span>Сравнение объявлений</span></div>
+  <div class="head"><div><h1>Сравнение машин по ссылкам</h1><p class="lead">Вставьте сколько угодно ссылок с Авто.ру, Авито или Дрома — одну или списком. Сравним цену, пробег, состояние и юридическую чистоту и подскажем, какую смотреть первой.</p></div></div>
+  <form class="row" id="addForm" style="flex-wrap:nowrap"><div class="fld grow"><input id="link" placeholder="Ссылки через пробел, номер или VIN" autocomplete="off" aria-label="Ссылки на объявления"></div><button class="btn black" type="submit">Добавить</button></form>
+  <div class="chips" id="links" style="margin-top:12px"></div>
+  <div class="soft row" id="cmpbar" style="margin-top:22px;justify-content:space-between"></div>
+  <div class="tablewrap" style="margin-top:18px"><table class="cmp" id="cmp"></table></div>
+  <section class="sect"><h2>Итог</h2><div class="verdicts" id="verdicts" style="margin-top:16px"></div></section>
 </section>
 
-<section id="v-price" hidden>
-  <div class="wrap hero"><h1>Тарифы</h1><p>Цены в прототипе — гипотезы для пилота.</p></div>
-  <div class="wrap plans">
-    <div class="plan"><h3>Бесплатно</h3><b class="price">0 ₽</b><small>Есть ли отметка «Осмотрено», фото и объявления из открытых источников, пробеги и цены из прошлых объявлений.</small></div>
-    <div class="plan"><h3>Отчёт по базам</h3><b class="price">249 ₽</b><small>Криминал: розыск, залоги, ограничения. ДТП, такси, лизинг, владельцы, техосмотры. Слепок данных на дату проверки. В сравнении — пакетом со скидкой 30%.</small></div>
-    <div class="plan hi"><h3>Осмотр</h3><b class="price">2 500 ₽</b><small>40–60 минут в пункте осмотра или выездом. Отчёт ваш в любом случае; опубликовать машину можно по желанию.</small></div>
-    <div class="plan"><h3>Для бизнеса</h3><b class="price">API</b><small>Отметка «Осмотрено» и протоколы для площадок, дилеров и лизинга. Подписка на осмотренные машины для перекупов.</small></div>
+<section class="wrap" id="v-points" hidden></section>
+
+<section class="wrap" id="v-price" hidden>
+  <div class="crumbs"><span>Проверка</span><span>Тарифы</span></div>
+  <div class="head"><div><h1>Тарифы</h1><p class="lead">Цены в прототипе — гипотезы для пилота.</p></div></div>
+  <div class="plans">
+    <div class="plan"><span class="muted">Бесплатно</span><div class="pp">0 ₽</div><p class="fine">Был ли осмотр, фото и объявления из открытых источников, цены и пробеги из прошлых объявлений.</p></div>
+    <div class="plan"><span class="muted">Отчёт по базам</span><div class="pp">от 159 ₽</div><p class="fine">Розыск, залоги, ограничения, ДТП, такси, лизинг, владельцы, техосмотры. 249 ₽ за один, пакеты 5 и 10 отчётов.</p></div>
+    <div class="plan hi"><span class="gtag" style="align-self:flex-start">осмотр</span><div class="pp">2 500 ₽</div><p class="fine">40–60 минут в пункте или выездом. Отчёт ваш в любом случае, публиковать необязательно. Можно скинуться с другими покупателями от 300 ₽.</p><button class="btn brand block" type="button" data-go="points">Выбрать пункт</button></div>
+    <div class="plan"><span class="muted">Для бизнеса</span><div class="pp">API</div><p class="fine">Отметка «Осмотрено» и протоколы для площадок, дилеров, банков и лизинга. Подписка на осмотренные машины для перекупов.</p></div>
   </div>
 </section>
 </main>
-<footer class="wrap">Прототип микросервиса «Осмотрено». Номера, машины и данные вымышленные.</footer>
-<div class="toast" id="toast" hidden></div>
+
+<footer class="wrap foot"><span>Прототип микросервиса «Осмотрено». Номера, машины и данные вымышленные.</span><span>Цены — гипотезы для пилота</span></footer>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-(function(){
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
-const rub=n=>n.toLocaleString('ru-RU')+' ₽';
-let tId;function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(tId);tId=setTimeout(()=>e.hidden=true,2400)}
-function car(color,body){const P=body==='suv'?{b:'M16 80 L18 56 Q20 46 34 44 L60 42 Q72 22 90 20 L168 20 Q182 21 194 40 L218 46 Q228 49 228 60 L230 80 Z',w:['M66 42 Q78 26 92 25 L126 25 L126 42 Z','M132 25 L166 25 Q178 26 188 42 L132 42 Z'],k:[[60,82,16],[190,82,16]]}:{b:'M18 78 L22 62 Q26 54 40 52 L72 48 Q92 30 112 27 L150 27 Q170 28 186 46 L214 52 Q226 55 228 66 L230 78 Z',w:['M80 48 Q96 34 112 32 L128 32 L128 48 Z','M134 32 L150 32 Q164 33 176 48 L134 48 Z'],k:[[62,80,14],[186,80,14]]};
-  return `<svg viewBox="0 0 248 104" aria-hidden="true"><ellipse cx="124" cy="96" rx="110" ry="5" fill="var(--line)"/><path d="${P.b}" fill="${color}"/>${P.w.map(d=>`<path d="${d}" fill="var(--glass)"/>`).join('')}${P.k.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="var(--ink)"/><circle cx="${x}" cy="${y}" r="${r*.45}" fill="var(--chip)"/>`).join('')}</svg>`}
-function ring(v){const r=17,C=2*Math.PI*r,c=v>=85?'var(--good)':v>=70?'var(--warn)':'var(--bad)';return `<svg width="44" height="44" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--chip)" stroke-width="5"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 21 21)"/></svg>`}
+const rub=n=>Math.round(n).toLocaleString('ru-RU')+' ₽';
+const kmf=n=>Math.round(n).toLocaleString('ru-RU')+' км';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return m===1&&h!==11?a:(m>=2&&m<=4&&(h<10||h>=20))?b:c};
 
-const DB={
- 'Х482КМ799':{title:'Kia Rio, 2020',plate:'Х482КМ799',vin:'Z94C251BBLR••••12',color:'#C23B3B',body:'sedan',insp:{date:'16.10.2026',until:'30.11.2026',idx:88,who:'Пункт «Савёловская»',flags:[['ok','Пробег 54 200 км подтверждён'],['warn','Перекрас: задний бампер'],['ok','Без подтёков'],['ok','Ошибок ЭБУ нет']]},
-   ads:[['17.10.2026','Москва','1 290 000 ₽','54 200 км','продаётся сейчас'],['02.03.2023','Москва','1 180 000 ₽','21 900 км','снято с продажи']],
-   photos:['17.10.2026 · объявление','17.10.2026 · объявление','05.08.2025 · фото пользователя','02.03.2023 · объявление'],
-   rep:[['Розыск','Не числится','ok'],['Залоги','Нет в реестре','ok'],['Ограничения ГИБДД','Нет','ok'],['ДТП','1 запись, 2024 — повреждение заднего бампера','warn'],['Такси и каршеринг','Не найдено','ok'],['Лизинг','Не найдено','ok'],['Владельцы по ПТС','1','ok'],['Техосмотры','3 записи, пробег растёт равномерно','ok']]},
- 'А715ОР750':{title:'Toyota Camry, 2017',plate:'А715ОР750',vin:'XW7BF4FK••••••31',color:'#2B2B2E',body:'sedan',insp:null,
-   ads:[['14.10.2026','Мытищи','2 150 000 ₽','118 000 км','продаётся сейчас'],['11.06.2024','Казань','1 990 000 ₽','131 000 км','снято с продажи'],['20.01.2021','Казань','2 050 000 ₽','74 000 км','снято с продажи']],
-   photos:['14.10.2026 · объявление','11.06.2024 · объявление','11.06.2024 · объявление','03.02.2022 · фото пользователя'],
-   rep:[['Розыск','Не числится','ok'],['Залоги','1 запись, погашена в 2023','warn'],['Ограничения ГИБДД','Нет','ok'],['ДТП','Нет записей','ok'],['Такси и каршеринг','Лицензия такси 2019–2021','bad'],['Лизинг','Не найдено','ok'],['Владельцы по ПТС','3','warn'],['Техосмотры','Пробег 2024 больше, чем 2026: возможна скрутка','bad']]}
+const IC={
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>',
+ nav:'<path d="M3 11 21 3l-8 18-2-8z"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ heart:'<path d="M12 20s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+ compare:'<path d="M6 20V11M12 20V4M18 20v-6"/>',
+ car:'<path d="M3.5 15.5v-3l2.2-5A2 2 0 0 1 7.5 6.3h9a2 2 0 0 1 1.8 1.2l2.2 5v3"/><path d="M2.5 15.5h19v2.2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-.7h-11v.7a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z"/><path d="M5 12.5h14"/>',
+ tag:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3-8.7 8.7z"/><circle cx="8" cy="8" r="1.6"/>',
+ map:'<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
+ building:'<path d="M4 20.5V6l8-3v17.5M12 9h8v11.5M3 20.5h18M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2"/>',
+ wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.3 5.2L3.5 17.4l3.1 3.1 5.9-5.9a4 4 0 0 0 5.2-5.3l-2.5 2.5-2.6-.5-.5-2.6z"/>',
+ shield:'<path d="M12 3 4.5 6v6c0 4.6 3.2 7.7 7.5 9 4.3-1.3 7.5-4.4 7.5-9V6z"/><path d="m8.8 12.2 2.2 2.2 4.4-4.6"/>',
+ check:'<path d="m5 12.5 4.2 4.2L19 7"/>',
+ spark:'<path d="M12 3.5c.7 4.4 2.3 6 6.5 6.5-4.2.6-5.8 2.2-6.5 6.5-.7-4.3-2.3-5.9-6.5-6.5 4.2-.5 5.8-2.1 6.5-6.5z"/><path d="M19 15.5c.3 1.7.9 2.3 2.5 2.5-1.6.3-2.2.9-2.5 2.5-.3-1.6-.9-2.2-2.5-2.5 1.6-.2 2.2-.8 2.5-2.5z"/>',
+ back:'<path d="M15 5 8 12l7 7"/>',
+ chev:'<path d="m9 5 7 7-7 7"/>',
+ q:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.4v.6M12 17v.01"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.4-3.9 4.4-6 8-6s6.6 2.1 8 6"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.3 3.5-5 6.5-5s5.5 1.7 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.2c2 .6 3.4 2.2 4 4.8"/>',
+ bell:'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+ bolt:'<path d="M13 2.5 4.5 13.5h6.5l-1 8 8.5-11h-6.5z"/>',
+ doc:'<path d="M6.5 3h7.5l4.5 4.5V21h-12z"/><path d="M14 3v4.5h4.5M9.5 13h6M9.5 17h6"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
+ camera:'<path d="M3.5 8a2 2 0 0 1 2-2h2.3l1.4-2h5.6l1.4 2h2.3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.8"/>',
+ image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.6"/><path d="m20.5 16-5-5-8.5 8.5"/>',
+ lock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+ pin:'<path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+ route:'<circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/>',
+ coins:'<ellipse cx="9" cy="7" rx="5.5" ry="2.5"/><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7"/><path d="M9.5 16.4c.9.1 1.8.1 2.7 0M14.5 10.6c3.2.1 6 1.2 6 2.6v4c0 1.4-2.5 2.5-5.5 2.5s-5.5-1.1-5.5-2.5v-1.5"/>',
+ grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+ eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+ send:'<path d="m4 12 16-8-6 16-2.5-6.5z"/>',
+ star:'<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/>',
+ qr:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+ refresh:'<path d="M20 11a8 8 0 0 0-14.3-4.4L4 8.5M4 13a8 8 0 0 0 14.3 4.4L20 15.5"/><path d="M4 4v4.5h4.5M20 20v-4.5h-4.5"/>'
 };
-let paid=false;
-function check(raw){
-  const q=raw.toUpperCase().replace(/\s/g,'');
-  const key=q.includes('48213')||q.includes('ОБЪЯВЛЕНИЕ')?'А715ОР750':(DB[q]?q:'А715ОР750');
-  const d=DB[key];paid=false;draw(d,raw.includes('/'));
+function ic(n,s,fill){s=s||22;return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill||'none'}" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
+function hydrate(root){(root||document).querySelectorAll('i[data-ic]').forEach(el=>{el.outerHTML=ic(el.dataset.ic,+el.dataset.s||22,el.dataset.fill)})}
+
+/* ---------- car illustration ---------- */
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=p<0?0:255,a=Math.abs(p);r=Math.round((t-r)*a+r);g=Math.round((t-g)*a+g);b=Math.round((t-b)*a+b);return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1)}
+const BODY={
+ sedan:{b:'M22 132 C22 118 30 110 46 107 L98 100 C116 80 142 66 174 64 L214 64 C238 66 256 80 272 98 L292 104 C302 107 306 116 306 126 L306 136 C306 142 302 146 296 146 L274 146 A28 28 0 0 0 218 146 L114 146 A28 28 0 0 0 58 146 L30 146 C25 146 22 142 22 132 Z',
+  w:['M110 100 C124 84 144 74 170 73 L186 73 L186 100 Z','M194 73 L212 73 C232 74 248 86 260 100 L194 100 Z'],sh:'M48 110 L100 103 L270 103 L296 110',dr:'M190 104 L190 140 M122 104 C119 120 119 132 123 140',wh:[[86,22],[246,22]],hl:[26,113],tl:[296,111]},
+ suv:{b:'M20 130 C20 114 26 104 42 100 L82 94 C96 70 118 54 150 52 L228 52 C248 53 264 66 278 90 L294 96 C304 100 308 110 308 122 L308 136 C308 142 304 146 298 146 L278 146 A31 31 0 0 0 216 146 L117 146 A31 31 0 0 0 55 146 L28 146 C23 146 20 142 20 130 Z',
+  w:['M94 94 C106 74 122 62 148 61 L178 61 L178 94 Z','M186 61 L226 61 C242 62 256 74 266 94 L186 94 Z'],sh:'M44 104 L84 98 L276 98 L298 104',dr:'M182 98 L182 140 M112 98 C109 118 109 132 113 140',wh:[[86,25],[247,25]],hl:[24,109],tl:[298,102]},
+ hatch:{b:'M22 132 C22 118 30 110 46 107 L96 100 C114 78 138 64 170 62 L236 62 C252 63 264 74 274 94 L284 108 C290 114 292 122 292 130 L292 138 C292 143 288 146 283 146 L264 146 A28 28 0 0 0 208 146 L114 146 A28 28 0 0 0 58 146 L30 146 C25 146 22 142 22 132 Z',
+  w:['M108 100 C122 82 142 72 168 71 L186 71 L186 100 Z','M194 71 L232 71 C246 72 256 82 264 100 L194 100 Z'],sh:'M48 110 L98 103 L276 103 L288 112',dr:'M190 104 L190 140 M122 104 C119 120 119 132 123 140',wh:[[86,22],[236,22]],hl:[26,113],tl:[282,107]}
+};
+let carN=0;
+function wheel(x,y,r){let s=`<circle cx="${x}" cy="${y}" r="${r}" fill="#17181c"/><circle cx="${x}" cy="${y}" r="${(r*.66).toFixed(1)}" fill="#cfd4db"/><circle cx="${x}" cy="${y}" r="${(r*.58).toFixed(1)}" fill="#8b919a"/>`;
+ for(let i=0;i<5;i++){const a=(i*72-90)*Math.PI/180;s+=`<line x1="${x}" y1="${y}" x2="${(x+Math.cos(a)*r*.57).toFixed(1)}" y2="${(y+Math.sin(a)*r*.57).toFixed(1)}" stroke="#e1e4e8" stroke-width="${(r*.2).toFixed(1)}" stroke-linecap="round"/>`}
+ return s+`<circle cx="${x}" cy="${y}" r="${(r*.15).toFixed(1)}" fill="#5c626b"/>`}
+function car(color,body){const id='cv'+(++carN),B=BODY[body]||BODY.sedan;
+ return `<svg class="car" viewBox="0 0 320 180" aria-hidden="true"><defs><linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade(color,.22)}"/><stop offset=".5" stop-color="${color}"/><stop offset="1" stop-color="${shade(color,-.38)}"/></linearGradient><linearGradient id="${id}w" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5564"/><stop offset="1" stop-color="#141a22"/></linearGradient><radialGradient id="${id}s" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".38"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+ <ellipse cx="164" cy="171" rx="150" ry="8" fill="url(#${id}s)"/>${B.wh.map(([x,r])=>`<circle cx="${x}" cy="148" r="${r+5}" fill="#0e0f12"/>`).join('')}
+ <path d="${B.b}" fill="url(#${id}b)"/><path d="${B.sh}" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="2"/>${B.w.map(d=>`<path d="${d}" fill="url(#${id}w)"/>`).join('')}
+ <path d="${B.w[0].split(' Z')[0]}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="1"/><path d="${B.dr}" stroke="${shade(color,-.5)}" stroke-opacity=".55" stroke-width="1.2" fill="none"/>
+ <rect x="${B.hl[0]}" y="${B.hl[1]}" width="16" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="${B.tl[0]-6}" y="${B.tl[1]}" width="10" height="6" rx="2" fill="#d6363a"/>${B.wh.map(([x,r])=>wheel(x,148,r)).join('')}</svg>`}
+const SCENES=['ph-studio','ph-warm','ph-cool','ph-studio','ph-green','ph-studio'];
+const scene=id=>SCENES[(typeof id==='number'?id:String(id).length)%SCENES.length];
+const scoreCls=v=>v>=85?'good':v>=70?'warn':'bad';
+
+/* ---------- map ---------- */
+const MAPBG=`<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F8A23A"/><stop offset=".45" stop-color="#E8436B"/><stop offset="1" stop-color="#7A3FD0"/></linearGradient><filter id="msh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="1.6" flood-opacity=".25"/></filter></defs>
+<rect width="800" height="560" fill="#F3F1EA"/>
+<path d="M0 0H800V70C690 96 610 40 520 62S330 110 250 74 80 40 0 70Z" fill="#E3ECD6"/>
+<ellipse cx="640" cy="440" rx="130" ry="74" fill="#E3ECD6"/><ellipse cx="150" cy="420" rx="120" ry="84" fill="#E3ECD6"/><ellipse cx="455" cy="205" rx="34" ry="22" fill="#E3ECD6"/><ellipse cx="300" cy="300" rx="26" ry="18" fill="#E3ECD6"/>
+<ellipse cx="300" cy="64" rx="66" ry="20" fill="#C5DDEE"/>
+<path d="M-10 336C80 300 150 368 236 334S350 246 420 270 560 372 652 344 760 296 810 312" fill="none" stroke="#C5DDEE" stroke-width="13" stroke-linecap="round"/>
+<g fill="none" stroke-linecap="round"><g stroke="#fff" stroke-width="10"><path d="M400 280Q392 140 396 -10"/><path d="M400 280Q520 150 640 -10"/><path d="M400 280Q620 220 810 150"/><path d="M400 280Q620 320 810 360"/><path d="M400 280Q520 420 700 570"/><path d="M400 280Q402 420 396 570"/><path d="M400 280Q260 420 120 570"/><path d="M400 280Q200 330 -10 420"/><path d="M400 280Q200 230 -10 190"/><path d="M400 280Q280 140 150 -10"/></g>
+<g stroke="#F4C98A" stroke-width="5"><path d="M400 280Q392 140 396 -10"/><path d="M400 280Q520 150 640 -10"/><path d="M400 280Q620 220 810 150"/><path d="M400 280Q620 320 810 360"/><path d="M400 280Q520 420 700 570"/><path d="M400 280Q402 420 396 570"/><path d="M400 280Q260 420 120 570"/><path d="M400 280Q200 330 -10 420"/><path d="M400 280Q200 230 -10 190"/><path d="M400 280Q280 140 150 -10"/></g>
+<ellipse cx="400" cy="280" rx="320" ry="236" stroke="#fff" stroke-width="7"/><ellipse cx="400" cy="280" rx="320" ry="236" stroke="#F0D6AE" stroke-width="3" stroke-dasharray="10 8"/>
+<ellipse cx="400" cy="280" rx="160" ry="124" stroke="#fff" stroke-width="11"/><ellipse cx="400" cy="280" rx="160" ry="124" stroke="#F4C98A" stroke-width="6"/>
+<ellipse cx="400" cy="280" rx="74" ry="58" stroke="#fff" stroke-width="8"/><ellipse cx="400" cy="280" rx="74" ry="58" stroke="#F4C98A" stroke-width="4"/></g>
+<g font-size="12.5" fill="#8A8676" font-weight="500"><text x="236" y="122">Химки</text><text x="318" y="104">Долгопрудный</text><text x="512" y="112">Мытищи</text><text x="600" y="150">Королёв</text><text x="650" y="282">Балашиха</text><text x="560" y="410">Люберцы</text><text x="376" y="505">Подольск</text><text x="150" y="318">Одинцово</text><text x="150" y="205">Красногорск</text><text x="96" y="48">Зеленоград</text></g>
+<text x="400" y="285" text-anchor="middle" font-size="15" font-weight="800" fill="#6B6759" letter-spacing="1">МОСКВА</text>`;
+function cityMap(marks,sel,label){
+ let s=`<svg viewBox="0 0 800 560" role="img" aria-label="${esc(label||'Карта')}">`+MAPBG;
+ const order=marks.slice().sort((a,b)=>(a.id===sel)-(b.id===sel));
+ order.forEach(m=>{const on=m.id===sel,x=m.x,y=m.y;
+  if(m.kind==='pt'){s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)">${on?`<circle cx="${x}" cy="${y}" r="26" fill="#C1358A" opacity=".16"/>`:''}<rect x="${x-15}" y="${y-15}" width="30" height="30" rx="10" fill="${on?'url(#mg)':'#16161A'}" stroke="#fff" stroke-width="3"/><path d="M${x-6.5} ${y+.5}l4.3 4.3 8.7-8.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>`}
+  else{const c=m.color||'#16161A',r=on?19:15;s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)"><circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="${on?5:4}"/><text x="${x}" y="${y+4.5}" text-anchor="middle" font-size="${on?14:12.5}" font-weight="800" fill="#16161A">${esc(m.text||'')}</text></g>`}
+  if(on&&m.tip){const t=m.tip,w=Math.min(300,t.length*7.4+28),bx=Math.max(8,Math.min(792-w,x-w/2)),by=y-(m.kind==='pt'?58:62);s+=`<g pointer-events="none" filter="url(#msh)"><rect x="${bx}" y="${by}" width="${w}" height="32" rx="16" fill="#16161A"/><text x="${bx+w/2}" y="${by+21}" text-anchor="middle" font-size="13.5" font-weight="600" fill="#fff">${esc(t)}</text></g>`}
+ });
+ return s+'</svg>'}
+
+/* ---------- inspection points (shared) ---------- */
+const PLACES=[
+ {id:'o1',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'сегодня, без записи',rating:4.9,perk:'Можно без записи, 7:00–23:00',x:386,y:226},
+ {id:'s1',type:'sto',ty:'СТО-партнёр',name:'Гараж 24',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике',x:366,y:244},
+ {id:'d1',type:'dealer',ty:'Дилерский центр',name:'Север-Авто',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно, если согласны получить предложение по trade-in',x:356,y:150},
+ {id:'s2',type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:'',x:432,y:168},
+ {id:'o2',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Люблино',addr:'ул. Краснодарская, 51',dist:16,price:2500,slot:'сегодня, без записи',rating:4.8,perk:'',x:506,y:378},
+ {id:'d2',type:'dealer',ty:'Дилерский центр',name:'Восток Моторс',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера',x:566,y:268},
+ {id:'d3',type:'dealer',ty:'Дилерский центр',name:'Запад-Авто',addr:'Рублёвское ш., 62',dist:15,price:0,slot:'завтра 12:30',rating:4.7,perk:'Бесплатно с предложением по выкупу',x:246,y:300},
+ {id:'s3',type:'sto',ty:'СТО-партнёр',name:'Химки Сервис',addr:'Ленинградское ш., 29',dist:18,price:2500,slot:'сегодня 18:30',rating:4.6,perk:'',x:284,y:132},
+ {id:'m1',type:'mobile',ty:'Выездной сервис подбора',name:'АвтоЭксперт Север',addr:'приедут по вашему адресу',dist:null,price:3500,slot:'сегодня 19:00',rating:4.8,perk:'Приедут через 2–3 часа'},
+ {id:'m2',type:'mobile',ty:'Выездной сервис подбора',name:'Подбор Профи',addr:'приедут по вашему адресу',dist:null,price:3200,slot:'завтра 09:00',rating:4.5,perk:'Эндоскоп двигателя в комплекте'}];
+const PTYPE={own:['check','Пункты Осмотрено'],sto:['wrench','СТО-партнёры'],dealer:['building','Дилерские центры'],mobile:['route','Выезд к вам']};
+function placeRow(p,on,tag){tag=tag||'button';
+ return `<${tag} ${tag==='button'?'type="button"':''} class="place" data-pid="${p.id}" aria-pressed="${on}"><span class="iconbox ${p.type==='own'?'g':''}">${ic(PTYPE[p.type][0],22)}</span><span><b>${esc(p.name)}</b><span class="m">${p.ty} · ${esc(p.addr)}</span><span class="m">★ ${String(p.rating).replace('.',',')} · ближайшее: ${p.slot}</span>${p.perk?`<span class="perk">${esc(p.perk)}</span>`:''}</span><span class="pr num">${p.price?rub(p.price):'Бесплатно'}<small>${p.dist!=null?String(p.dist).replace('.',',')+' км':'выезд'}</small></span></${tag}>`}
+
+/* ---------- misc ---------- */
+let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,2600)}
+const ON_SITE=/^\/(market|check)(\/|$)/.test(location.pathname)||location.pathname==='/';
+function siteGo(path,label){if(ON_SITE)location.href=path;else toast('На сайте здесь откроется '+label)}
+function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>toast('Не удалось скопировать — выделите текст вручную'))}catch(e){toast('Не удалось скопировать — выделите текст вручную')}}
+function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
+
+(function(){
+const DB={
+ 'Х482КМ799':{title:'Kia Rio, 2020',plate:'Х482КМ799',vin:'Z94C251BBLR••••12',color:'#B8282E',body:'sedan',insp:{date:'16.10.2026',until:'30.11.2026',idx:88,who:'Пункт «Осмотрено Савёловская»',flags:[['good','Пробег 54 200 км подтверждён'],['warn','Перекрас: задний бампер'],['good','Без подтёков'],['good','Ошибок в блоках нет']]},
+  ads:[['17.10.2026','Москва',1290000,54200,true,'Авто.ру'],['02.03.2023','Москва',1180000,21900,false,'Авито']],photos:['17.10.2026','17.10.2026','05.08.2025','02.03.2023'],
+  rep:[['Розыск','Не числится','good'],['Залоги','Нет в реестре','good'],['Ограничения ГИБДД','Нет','good'],['ДТП','1 запись, 2024 — задний бампер','warn'],['Такси и каршеринг','Не найдено','good'],['Лизинг','Не найдено','good'],['Владельцы по ПТС','1','good'],['Техосмотры','3 записи, пробег растёт ровно','good']]},
+ 'А715ОР750':{title:'Toyota Camry, 2017',plate:'А715ОР750',vin:'XW7BF4FK••••••31',color:'#26262A',body:'sedan',insp:null,
+  ads:[['14.10.2026','Мытищи',2150000,118000,true,'Авито'],['11.06.2024','Казань',1990000,131000,false,'Дром'],['20.01.2021','Казань',2050000,74000,false,'Авто.ру']],photos:['14.10.2026','11.06.2024','11.06.2024','03.02.2022'],
+  rep:[['Розыск','Не числится','good'],['Залоги','1 запись, погашена в 2023','warn'],['Ограничения ГИБДД','Нет','good'],['ДТП','Нет записей','good'],['Такси и каршеринг','Лицензия такси 2019–2021','bad'],['Лизинг','Не найдено','good'],['Владельцы по ПТС','3','warn'],['Техосмотры','В 2024 пробег больше, чем в 2026 — возможна скрутка','bad']]}};
+const RECENT=[{k:'Х482КМ799',d:'18 октября 2026'},{k:'А715ОР750',d:'16 октября 2026'},{t:'Haval Jolion, 2023',vin:'LGWEF6A51PH••••84',color:'#2F5D7C',body:'suv',d:'30 сентября 2026'},{t:'Volkswagen Polo, 2020',vin:'XW8ZZZ61ZLG••••07',color:'#4E6E93',body:'sedan',d:'29 сентября 2026'}];
+let credits=0,pack=2,curKey='Х482КМ799',paid={};
+const PACKS=[[1,249],[5,199],[10,159]];
+
+function check(raw){const q=raw.toUpperCase().replace(/\s/g,'');const key=/48213|AVITO|АВИТО|HTTP/.test(q)?'А715ОР750':(DB[q]?q:'А715ОР750');curKey=key;draw(/http|\//i.test(raw));}
+function draw(fromLink){const d=DB[curKey],P=!!paid[curKey];
+ const st=d.insp?`<div class="banner ok"><span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено</span><div><b>Машина осмотрена ${d.insp.date}</b><div class="fine" style="font-size:14px">${d.insp.who} · отметка действует до ${d.insp.until}</div></div></div>`
+  :`<div class="banner none"><span class="iconbox" style="background:#fff">${ic('clock')}</span><div><b>Осмотра не было</b><div class="fine" style="font-size:14px">Отчёт по базам есть, живого осмотра — нет. Его может запустить кто угодно: вы, продавец или несколько покупателей вместе.</div></div></div>`;
+ $('#result').innerHTML=`<div class="res">
+  ${fromLink?`<span class="tag grey" style="align-self:flex-start">${ic('link',14)} Нашли машину по ссылке на ${d.ads[0][5]}</span>`:''}
+  <div class="reshead"><div class="photo ${scene(d.plate.length)}" style="border-radius:14px">${car(d.color,d.body)}</div><div><h2>${d.title}</h2><div class="row" style="margin-top:8px;gap:10px"><span class="plate">${d.plate}</span><span class="muted">VIN <span class="mono">${d.vin}</span></span></div></div></div>
+  ${st}
+  ${d.insp?`<section class="box stack"><div class="row" style="justify-content:space-between"><h3>Осмотр</h3><span class="score big ${scoreCls(d.insp.idx)}">${d.insp.idx}</span></div><div class="row" style="gap:6px">${d.insp.flags.map(([k,t])=>`<span class="tag ${k}">${t}</span>`).join('')}</div><div class="row"><button class="btn black sm" type="button" data-act="proto">Открыть протокол · 64 фото</button><button class="btn grey sm" type="button" data-site="/market" data-label="объявление на площадке">Объявление на площадке</button></div></section>`
+   :`<section class="box stack"><h3>Запустить осмотр</h3>
+    <button type="button" class="opt" data-act="invite"><span class="iconbox">${ic('send')}</span><span><b>Пригласить продавца на осмотр</b><small>Отправим продавцу ссылку: осмотр с отметкой поднимет его объявление</small></span><span class="r">0 ₽</span></button>
+    <button type="button" class="opt" data-act="order"><span class="iconbox g">${ic('shield')}</span><span><b>Оплатить осмотр самому</b><small>В ближайшем пункте или выездом. Специалиста назначит платформа</small></span><span class="r num">2 500 ₽</span></button>
+    <button type="button" class="opt" data-act="pool"><span class="iconbox">${ic('users')}</span><span><b>Скинуться с другими покупателями</b><small>От 300 ₽. Взнос вернётся, если машину продадут через приложение</small></span><span class="r num">от 300 ₽</span></button></section>`}
+  <section><div class="sect-h" style="margin-bottom:12px"><h3>Отчёт по базам</h3>${P?'<span class="tag good">открыт</span>':'<span class="tag grey">'+ic('lock',14)+' скрыто</span>'}</div>
+   <div class="list">${d.rep.map(([a,b,k])=>`<div class="prow"><span class="d ${P?k:'grey'}"></span><div><b>${a}</b>${P?`<small>${b}</small>`:''}</div><span class="tg ${P&&k==='good'?'ok':''}" style="${P&&k==='bad'?'color:var(--bad)':P&&k==='warn'?'color:var(--warn)':''}">${P?(k==='good'?'Чисто':k==='warn'?'Внимание':'Риск'):'•••'}</span></div>`).join('')}</div>
+   ${P?'<p class="fine" style="margin-top:8px">Слепок данных сохранён на 19.10.2026.</p>':`<div class="row" style="margin-top:14px"><button class="btn brand" type="button" data-act="buy">${credits?'Открыть за 1 отчёт из пакета':'Открыть отчёт · 249 ₽'}</button>${credits?`<span class="muted">Осталось отчётов: ${credits}</span>`:''}</div>`}</section>
+  <section><div class="sect-h" style="margin-bottom:12px"><h3>Фото из открытых источников</h3><span class="muted">${d.photos.length}</span></div><div class="thumbs4">${d.photos.map((p,i)=>`<div class="photo ${['ph-studio','ph-warm','ph-cool','ph-dark'][i]}">${car(d.color,d.body)}<span class="lbl">${p}</span></div>`).join('')}</div><p class="fine" style="margin-top:8px">Объявления и снимки пользователей. Храним дату и ссылку на источник.</p></section>
+  <section><h3>Объявления о продаже</h3><div class="list" style="margin-top:6px">${d.ads.map(([dt,city,pr,km,act,src])=>`<div class="rowline"><div class="row" style="gap:16px;flex-wrap:nowrap"><span class="num muted" style="min-width:86px">${dt}</span><div><b class="num">${rub(pr)}</b><small class="num">${kmf(km)} · ${city} · ${src}</small></div></div><span class="tag ${act?'good':'grey'}">${act?'продаётся':'снято'}</span></div>`).join('')}</div></section>
+ </div>`;
 }
-function draw(d,fromLink){
-  const st=d.insp?`<div class="status ok"><span class="stamp">ОСМОТРЕНО<small>${d.insp.date}</small></span><div><b>Машина осмотрена</b><div class="muted">${d.insp.who} · отметка действует до ${d.insp.until}</div></div></div>`
-   :`<div class="status none"><div><b>Машина ещё не осматривалась</b><div class="muted">Закажите осмотр: продавцу придёт приглашение, или осмотрите вместе в ближайшем пункте.</div></div></div>`;
-  const insp=d.insp?`<div class="panel"><h3>Осмотр</h3><div class="index">${ring(d.insp.idx)}<b class="num">${d.insp.idx}</b><span>индекс состояния<br>из 100</span></div><div class="flags">${d.insp.flags.map(([k,t])=>`<span class="tag ${k}">${t}</span>`).join('')}</div><button class="btn ghost" type="button" data-act="proto">Открыть протокол: 64 фото, карта кузова</button></div>`
-   :`<div class="panel"><h3>Заказать осмотр</h3><div class="muted">Специалист проверит документы, кузов толщиномером, подтёки и ошибки блоков. Отчёт за 2 часа.</div><div class="pay"><span class="price num">2 500 ₽</span><button class="btn primary" type="button" data-act="order">Выбрать пункт и время</button></div></div>`;
-  $('#result').innerHTML=`
-   <div class="col">
-    <div class="panel">
-     ${fromLink?'<div class="muted">Нашли машину по ссылке на объявление</div>':''}
-     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h2>${d.title}</h2><span class="plate">${d.plate}</span></div>
-     <div class="muted">VIN <span class="mono">${d.vin}</span></div>
-     ${st}
-    </div>
-    <div class="panel"><h3>Фото из открытых источников · ${d.photos.length}</h3><div class="photos">${d.photos.map(p=>`<div class="ph">${car(d.color,d.body)}<span>${p.split(' · ')[0]}</span></div>`).join('')}</div><div class="muted">Источники: объявления и фото пользователей. Храним дату и ссылку на исходник.</div></div>
-    <div class="panel"><h3>Объявления о продаже · ${d.ads.length}</h3><div class="tl">${d.ads.map(([dt,city,pr,km,s])=>`<div class="tli"><span class="num">${dt}</span><div><b class="num">${pr}</b><small class="num">${km} · ${city}</small></div><span class="tag ${s.startsWith('прода')?'ok':'hid'}" style="filter:none">${s}</span></div>`).join('')}</div>
-     ${d.ads[0][4].startsWith('прода')?'<button class="btn ghost" type="button" data-act="ad">Открыть исходное объявление ↗</button>':''}</div>
-   </div>
-   <div class="col">
-    ${insp}
-    <div class="panel lock"><h3>Отчёт по базам</h3><div class="muted">Криминал, ДТП, такси, лизинг, владельцы, техосмотры</div>
-     <div class="rows">${d.rep.map(([a,b,k])=>`<div class="row"><span>${a}${paid?`<small class="muted" style="display:block">${b}</small>`:''}</span><span class="tag ${paid?k:'hid'}">${paid?(k==='ok'?'Чисто':k==='warn'?'Внимание':'Риск'):'скрыто'}</span></div>`).join('')}</div>
-     ${paid?'<div class="muted">Слепок данных сохранён на 19.10.2026.</div>':`<div class="pay"><span class="price num">249 ₽</span><button class="btn primary" type="button" data-act="buy">Открыть отчёт</button></div>`}
-    </div>
-   </div>`;
-  $('#result').onclick=e=>{const a=e.target.closest('[data-act]');if(!a)return;const k=a.dataset.act;
-    if(k==='buy'){paid=true;draw(d,fromLink);toast('Отчёт открыт (демо-оплата)')}
-    if(k==='order'){setView('map');toast('Выберите пункт осмотра на карте')}
-    if(k==='proto')toast('Откроется полный протокол осмотра');
-    if(k==='ad')toast('Откроется объявление на исходной площадке');};
-}
+function drawRecent(){$('#recent').innerHTML=RECENT.map(r=>{const d=r.k?DB[r.k]:null,t=d?d.title:r.t,vin=d?d.vin:r.vin,color=d?d.color:r.color,body=d?d.body:r.body;
+ return `<div class="lrow"><div class="photo ${scene(t.length)}">${car(color,body)}</div><div class="stack" style="gap:6px"><h3>${t}</h3><div class="muted"><span class="mono">${vin}</span> · ${r.d}</div><div class="row" style="gap:8px">${r.k?`<button class="btn grey sm" type="button" data-rk="${r.k}">Открыть отчёт</button>`:`<button class="btn grey sm" type="button" data-act="proto">Открыть отчёт</button>`}<button class="btn grey sm" type="button" data-act="pdf">${ic('doc',18)} Скачать PDF</button></div></div></div>`}).join('')}
+function drawPacks(){const [n,p]=PACKS[pack];
+ $('#packs').innerHTML=`${PACKS.map(([k,v],i)=>`<button type="button" class="pack" data-pack="${i}" aria-pressed="${i===pack}"><span>${k} ${plural(k,'отчёт','отчёта','отчётов')}</span><span><b class="num">${v} ₽</b> <span class="u">/ шт</span></span></button>`).join('')}
+ <button class="btn brand block tall" type="button" id="payPack">Оплатить ${rub(n*p)}<span class="sub">за ${n} ${plural(n,'отчёт','отчёта','отчётов')}</span></button>
+ ${credits?`<div class="soft row" style="justify-content:space-between"><span>Осталось отчётов</span><b>${credits}</b></div>`:''}
+ <div class="sidelinks"><button type="button" data-act="proto">${ic('check',22)} Пример отчёта</button><button type="button" data-go="points">${ic('shield',22)} Заказать осмотр — 2 500 ₽</button><button type="button" data-go="price">${ic('users',22)} Для бизнеса и API</button></div>`}
 
 /* compare */
 const POOL=[
- {t:'Kia Rio, 2020',price:1290000,market:1360000,year:2020,km:54200,kmOk:true,insp:88,paint:1,legal:'ok',dtp:1,taxi:false,owners:1,dist:3,days:2,drop:0,color:'#C23B3B',body:'sedan'},
- {t:'Hyundai Solaris, 2019',price:1150000,market:1210000,year:2019,km:96000,kmOk:true,insp:null,paint:null,legal:'ok',dtp:0,taxi:false,owners:2,dist:12,days:18,drop:40000,color:'#E8E8E4',body:'sedan'},
- {t:'Volkswagen Polo, 2020',price:1240000,market:1300000,year:2020,km:61000,kmOk:true,insp:90,paint:0,legal:'ok',dtp:0,taxi:false,owners:1,dist:4,days:5,drop:0,color:'#5B7A9E',body:'sedan'},
- {t:'Skoda Rapid, 2019',price:1090000,market:1240000,year:2019,km:88000,kmOk:false,insp:null,paint:null,legal:'bad',dtp:2,taxi:true,owners:3,dist:27,days:41,drop:90000,color:'#2F3A40',body:'sedan'},
- {t:'Lada Vesta, 2021',price:1180000,market:1170000,year:2021,km:43000,kmOk:true,insp:84,paint:2,legal:'ok',dtp:1,taxi:false,owners:1,dist:15,days:9,drop:20000,color:'#D97B2B',body:'sedan'},
- {t:'Renault Logan, 2020',price:990000,market:1020000,year:2020,km:71000,kmOk:true,insp:null,paint:null,legal:'warn',dtp:0,taxi:false,owners:2,dist:34,days:12,drop:0,color:'#9AA5A8',body:'sedan'},
- {t:'Kia Rio X, 2021',price:1420000,market:1400000,year:2021,km:38000,kmOk:true,insp:93,paint:0,legal:'ok',dtp:0,taxi:false,owners:1,dist:22,days:3,drop:0,color:'#3E6E8E',body:'suv'}];
-let LINKS=['https://объявление/1001','https://объявление/1002','https://объявление/1003','https://объявление/1004'];
+ {t:'Kia Rio, 2020',price:1290000,market:1360000,year:2020,km:54200,kmOk:true,insp:88,paint:1,legal:'ok',dtp:1,taxi:false,owners:1,dist:3,days:2,drop:0,color:'#B8282E',body:'sedan',src:'Авто.ру'},
+ {t:'Hyundai Solaris, 2019',price:1150000,market:1210000,year:2019,km:96000,kmOk:true,insp:null,paint:null,legal:'ok',dtp:0,taxi:false,owners:2,dist:12,days:18,drop:40000,color:'#ECEDEF',body:'sedan',src:'Авито'},
+ {t:'Volkswagen Polo, 2020',price:1240000,market:1300000,year:2020,km:61000,kmOk:true,insp:90,paint:0,legal:'ok',dtp:0,taxi:false,owners:1,dist:4,days:5,drop:0,color:'#4E6E93',body:'sedan',src:'Дром'},
+ {t:'Skoda Rapid, 2019',price:1090000,market:1240000,year:2019,km:88000,kmOk:false,insp:null,paint:null,legal:'bad',dtp:2,taxi:true,owners:3,dist:27,days:41,drop:90000,color:'#2B3238',body:'hatch',src:'Авито'},
+ {t:'Lada Vesta, 2021',price:1180000,market:1170000,year:2021,km:43000,kmOk:true,insp:84,paint:2,legal:'ok',dtp:1,taxi:false,owners:1,dist:15,days:9,drop:20000,color:'#D9772B',body:'sedan',src:'Авто.ру'},
+ {t:'Renault Logan, 2020',price:990000,market:1020000,year:2020,km:71000,kmOk:true,insp:null,paint:null,legal:'warn',dtp:0,taxi:false,owners:2,dist:34,days:12,drop:0,color:'#9AA5A8',body:'sedan',src:'Дром'},
+ {t:'Kia Rio X, 2021',price:1420000,market:1400000,year:2021,km:38000,kmOk:true,insp:93,paint:0,legal:'ok',dtp:0,taxi:false,owners:1,dist:22,days:3,drop:0,color:'#3E6E8E',body:'suv',src:'Авито'}];
+let LINKS=['https://auto.ru/cars/used/sale/1001','https://www.avito.ru/moskva/avtomobili/1002','https://auto.drom.ru/1003','https://www.avito.ru/moskva/avtomobili/1004'];
 let unlocked=false;
-function carFor(link){const m=link.match(/100(\d)$/);if(m&&+m[1]>=1&&+m[1]<=4)return POOL[+m[1]-1];let h=0;for(const ch of link)h=(h*31+ch.charCodeAt(0))>>>0;return POOL[h%POOL.length]}
+function carFor(l){const m=l.match(/100(\d)$/);if(m&&+m[1]>=1&&+m[1]<=4)return POOL[+m[1]-1];let h=0;for(const ch of l)h=(h*31+ch.charCodeAt(0))>>>0;return POOL[h%POOL.length]}
 const pct=c=>Math.round((c.price-c.market)/c.market*100);
-function score(c,paid){let s=55;const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-  s+=cl(-pct(c)*1.5,-15,15);s+=cl(-(c.km-50000)/5000,-15,5);s+=(c.year-2019)*3;s+=c.kmOk?5:-12;
-  s+=c.insp!=null?(c.insp-80)*0.8+5:-5;if(c.paint!=null)s-=c.paint*3;s-=c.dist/10;
-  if(paid){s+=c.legal==='bad'?-30:c.legal==='warn'?-10:0;s-=c.dtp*4;if(c.taxi)s-=12;s-=(c.owners-1)*3}
-  return Math.round(cl(s,0,100))}
-const LEG={ok:['ok','Чисто'],warn:['warn','Залог погашен в 2024'],bad:['bad','Действующий залог']};
-const ROWS=[
- ['Цена'],
- ['Цена',c=>rub(c.price),c=>c.price,'min'],
- ['К рынку',c=>{const p=pct(c);return `<span class="tag ${p<=-3?'ok':p>=3?'warn':'hid'}" style="filter:none">${p>0?'+':''}${p}%</span>`},c=>pct(c),'min'],
- ['Снижение цены',c=>c.drop?`−${rub(c.drop)}`:'не снижали',null,null],
- ['В продаже',c=>`${c.days} дн.`,null,null],
- ['Состояние'],
- ['Год',c=>c.year,c=>c.year,'max'],
- ['Пробег',c=>c.km.toLocaleString('ru-RU')+' км',c=>c.km,'min'],
- ['Пробег по истории',c=>c.kmOk?'<span class="tag ok">сходится</span>':'<span class="tag bad">расхождение</span>',c=>c.kmOk?1:0,'max'],
- ['Осмотрено',c=>c.insp!=null?`<span class="tag ok">индекс ${c.insp}</span>`:'<span class="tag warn">не осматривалась</span>',c=>c.insp??-1,'max'],
- ['Окрашенные детали',c=>c.paint==null?'нужен осмотр':c.paint===0?'нет':c.paint,c=>c.paint==null?99:c.paint,'min'],
- ['Юридическая чистота (по базам)'],
- ['Розыск, залоги, ограничения',c=>`<span class="tag ${LEG[c.legal][0]}">${LEG[c.legal][1]}</span>`,c=>({ok:2,warn:1,bad:0})[c.legal],'max',1],
- ['ДТП в базах',c=>c.dtp?c.dtp+' записи':'нет',c=>c.dtp,'min',1],
- ['Такси и каршеринг',c=>c.taxi?'<span class="tag bad">было в такси</span>':'нет',c=>c.taxi?1:0,'min',1],
- ['Владельцев по ПТС',c=>c.owners,c=>c.owners,'min',1],
- ['Удобство'],
- ['Расстояние от вас',c=>c.dist+' км',c=>c.dist,'min']];
+function score(c,p){let s=55;const cl=(v,a,b)=>Math.max(a,Math.min(b,v));s+=cl(-pct(c)*1.5,-15,15);s+=cl(-(c.km-50000)/5000,-15,5);s+=(c.year-2019)*3;s+=c.kmOk?5:-12;s+=c.insp!=null?(c.insp-80)*.8+5:-5;if(c.paint!=null)s-=c.paint*3;s-=c.dist/10;if(p){s+=c.legal==='bad'?-30:c.legal==='warn'?-10:0;s-=c.dtp*4;if(c.taxi)s-=12;s-=(c.owners-1)*3}return Math.round(cl(s,0,100))}
+const LEG={good:['good','Чисто'],ok:['good','Чисто'],warn:['warn','Погашенный залог'],bad:['bad','Действующий залог']};
+const ROWS=[['Цена'],['Цена',c=>rub(c.price),c=>c.price,'min'],['К рынку',c=>{const p=pct(c);return `${p>0?'+':''}${p}%`},c=>pct(c),'min'],['Снижение цены',c=>c.drop?'−'+rub(c.drop):'не снижали'],['В продаже',c=>c.days+' дн.'],
+ ['Состояние'],['Год',c=>c.year,c=>c.year,'max'],['Пробег',c=>kmf(c.km),c=>c.km,'min'],['Пробег по истории',c=>c.kmOk?'<span class="tag good">сходится</span>':'<span class="tag bad">расхождение</span>',c=>c.kmOk?1:0,'max'],['Осмотр',c=>c.insp!=null?`<span class="score ${scoreCls(c.insp)}">${c.insp}</span>`:'<span class="tag grey">не было</span>',c=>c.insp==null?null:c.insp,'max'],['Окрашенные детали',c=>c.paint==null?'—':c.paint===0?'нет':c.paint,c=>c.paint,'min'],
+ ['История по базам'],['Розыск, залоги',c=>`<span class="tag ${LEG[c.legal][0]}">${LEG[c.legal][1]}</span>`,c=>({ok:2,warn:1,bad:0})[c.legal],'max',1],['ДТП в базах',c=>c.dtp?c.dtp+' '+plural(c.dtp,'запись','записи','записей'):'нет',c=>c.dtp,'min',1],['Такси',c=>c.taxi?'<span class="tag bad">было</span>':'нет',c=>c.taxi?1:0,'min',1],['Владельцев',c=>c.owners,c=>c.owners,'min',1],
+ ['Удобство'],['Расстояние',c=>c.dist+' км',c=>c.dist,'min'],['Площадка',c=>c.src]];
 function drawCompare(){
-  $('#links').innerHTML=LINKS.map((l,i)=>`<span class="lc"><span title="${l}">${l.replace(/^https?:\/\//,'')}</span><button type="button" data-rm="${i}" aria-label="Убрать ссылку">×</button></span>`).join('');
-  const cars=LINKS.map(carFor),n=cars.length;
-  if(!n){$('#cmp').innerHTML='';$('#verdicts').innerHTML='';$('#cmpbar').innerHTML='<span>Добавьте хотя бы две ссылки, чтобы сравнить машины.</span>';return}
-  const sc=cars.map(c=>score(c,unlocked)),best=sc.indexOf(Math.max(...sc));
-  $('#cmpbar').innerHTML=unlocked?`<b>${n} ${n===1?'машина':n<5?'машины':'машин'} · данные по базам открыты</b><span class="sp"></span><button class="btn ghost" type="button" id="copyCmp">Скопировать итог</button>`
-   :`<span>Данные по базам скрыты: криминал, ДТП, такси, владельцы.</span><span class="sp"></span><span class="num"><s style="color:var(--muted)">${rub(n*249)}</s> <b>${rub(Math.round(n*249*0.7/10)*10)}</b> за все ${n}</span><button class="btn primary" type="button" id="unlock">Открыть по всем</button>`;
-  let h=`<thead><tr><th scope="col" style="position:sticky;left:0;z-index:2;background:var(--surface)"><span class="muted">Итоговая оценка ${unlocked?'':'<br>(без данных по базам)'}</span></th>${cars.map((c,i)=>`<th scope="col"><div class="carh">${i===best&&n>1?'<span class="top">Смотреть первой</span>':''}<div class="ph">${car(c.color,c.body)}</div><b>${c.t}</b><span class="score num">${sc[i]}</span><button type="button" class="x" data-rm="${i}">убрать</button></div></th>`).join('')}</tr></thead><tbody>`;
-  ROWS.forEach(r=>{
-    if(r.length===1){h+=`<tr class="grp"><th colspan="${n+1}">${r[0]}</th></tr>`;return}
-    const [label,show,val,better,paid]=r;const lock=paid&&!unlocked;
-    let bi=-1;if(val&&better&&!lock&&n>1){const vs=cars.map(val),target=better==='min'?Math.min(...vs):Math.max(...vs);if(vs.filter(v=>v===target).length<n)bi=vs.indexOf(target)}
-    h+=`<tr><th scope="row">${label}</th>${cars.map((c,i)=>`<td class="num ${i===bi?'best':''}">${lock?'<span class="tag hid">скрыто</span>':show(c)}</td>`).join('')}</tr>`});
-  $('#cmp').innerHTML=h+'</tbody>';
-  const order=cars.map((c,i)=>i).sort((a,b)=>sc[b]-sc[a]);
-  $('#verdicts').innerHTML=order.map((i,r)=>{const c=cars[i],p=[],m=[];
-    if(pct(c)<=-3)p.push(`дешевле рынка на ${-pct(c)}%`);if(pct(c)>=3)m.push(`дороже рынка на ${pct(c)}%`);
-    if(c.insp!=null)p.push(`осмотрена, индекс ${c.insp}`);else m.push('не осматривалась');
-    if(!c.kmOk)m.push('пробег не сходится с историей');if(c.km<50000)p.push('небольшой пробег');
-    if(c.dist<=10)p.push('рядом с вами');if(c.days>30)m.push(`продаётся ${c.days} дней`);
-    if(unlocked){if(c.legal==='bad')m.push('действующий залог');if(c.taxi)m.push('работала в такси');if(c.owners>=3)m.push(`${c.owners} владельца`);if(c.legal==='ok'&&!c.taxi&&c.owners===1)p.push('чистая история, один владелец')}
-    return `<div class="vd"><div style="display:flex;justify-content:space-between;gap:8px"><b>${r+1}. ${c.t}</b><span class="num">${sc[i]}</span></div><ul>${p.map(x=>`<li class="p">${x}</li>`).join('')}${m.map(x=>`<li class="m">${x}</li>`).join('')}</ul>${c.insp==null?`<button class="btn ghost" type="button" data-order="${i}" style="margin-top:6px">Заказать осмотр · 2 500 ₽</button>`:`<button class="btn ghost" type="button" data-proto="${i}" style="margin-top:6px">Открыть протокол осмотра</button>`}</div>`}).join('');
-  const u=$('#unlock');if(u)u.onclick=()=>{unlocked=true;drawCompare();toast('Данные по базам открыты (демо-оплата)')};
-  const cp=$('#copyCmp');if(cp)cp.onclick=()=>{const txt=order.map((i,r)=>`${r+1}. ${cars[i].t} — ${sc[i]} баллов`).join('\n');
-    try{navigator.clipboard.writeText(txt).then(()=>toast('Итог скопирован'),()=>toast('Не удалось скопировать: выделите текст вручную'))}catch(e){toast('Не удалось скопировать: выделите текст вручную')}};
+ $('#cmpBadge').textContent=LINKS.length;$('#cmpBadge').hidden=!LINKS.length;
+ $('#links').innerHTML=LINKS.map((l,i)=>`<span class="chip sm" style="max-width:100%"><span style="overflow:hidden;text-overflow:ellipsis;max-width:260px">${esc(l.replace(/^https?:\/\/(www\.)?/,''))}</span><button type="button" class="x" data-rm="${i}" aria-label="Убрать ссылку">${ic('x',16)}</button></span>`).join('');
+ const C=LINKS.map(carFor),n=C.length;
+ if(!n){$('#cmp').innerHTML='';$('#verdicts').innerHTML='';$('#cmpbar').innerHTML='<span>Добавьте хотя бы две ссылки.</span>';return}
+ const sc=C.map(c=>score(c,unlocked)),best=sc.indexOf(Math.max(...sc));
+ $('#cmpbar').innerHTML=unlocked?`<b>${n} ${plural(n,'машина','машины','машин')} · данные по базам открыты</b><button class="btn grey sm" type="button" id="copyCmp">Скопировать итог</button>`
+  :`<span>Скрыто: розыск, залоги, ДТП, такси, владельцы — по всем ${n}.</span><span class="row"><span class="num"><s class="muted">${rub(n*249)}</s> <b>${rub(Math.round(n*249*.7/10)*10)}</b></span><button class="btn brand sm" type="button" id="unlock">Открыть по всем</button></span>`;
+ let h=`<thead><tr><th scope="col"><span class="muted small">Итоговая оценка${unlocked?'':'<br>без данных по базам'}</span></th>${C.map((c,i)=>`<th scope="col"><div class="carh">${i===best&&n>1?'<span class="firstpick">Смотреть первой</span>':''}<div class="photo ${scene(c.t.length)}">${car(c.color,c.body)}</div><b>${c.t}</b><span class="score ${scoreCls(sc[i])}" style="align-self:flex-start">${sc[i]}</span><button type="button" class="x" data-rm="${i}">убрать</button></div></th>`).join('')}</tr></thead><tbody>`;
+ ROWS.forEach(r=>{if(r.length===1){h+=`<tr class="grp"><th colspan="${n+1}">${r[0]}</th></tr>`;return}
+  const [l,show,val,dir,pd]=r,lock=pd&&!unlocked;let bi=-1;
+  if(val&&dir&&!lock&&n>1){const vs=C.map(val),ok=vs.filter(v=>v!=null);if(ok.length>1){const t=dir==='min'?Math.min(...ok):Math.max(...ok);if(ok.filter(v=>v===t).length<ok.length)bi=vs.indexOf(t)}}
+  h+=`<tr><th scope="row">${l}</th>${C.map((c,i)=>`<td class="num ${i===bi?'best':''}">${lock?`<span class="tag grey">${ic('lock',13)} скрыто</span>`:show(c)}</td>`).join('')}</tr>`});
+ $('#cmp').innerHTML=h+'</tbody>';
+ const order=C.map((c,i)=>i).sort((a,b)=>sc[b]-sc[a]);
+ $('#verdicts').innerHTML=order.map((i,r)=>{const c=C[i],p=[],m=[];if(pct(c)<=-3)p.push(`дешевле рынка на ${-pct(c)}%`);if(pct(c)>=3)m.push(`дороже рынка на ${pct(c)}%`);if(c.insp!=null)p.push('осмотрена, индекс '+c.insp);else m.push('не осматривалась');if(!c.kmOk)m.push('пробег не сходится с историей');if(c.km<50000)p.push('небольшой пробег');if(c.dist<=10)p.push('рядом с вами');if(c.days>30)m.push(`продаётся ${c.days} дней`);
+  if(unlocked){if(c.legal==='bad')m.push('действующий залог');if(c.taxi)m.push('работала в такси');if(c.owners>=3)m.push(c.owners+' владельца');if(c.legal==='ok'&&!c.taxi&&c.owners===1)p.push('чистая история, один владелец')}
+  return `<div class="vd"><div class="row" style="justify-content:space-between"><b>${r+1}. ${c.t}</b><span class="score ${scoreCls(sc[i])}">${sc[i]}</span></div><ul>${p.map(x=>`<li class="p">${x}</li>`).join('')}${m.map(x=>`<li class="m">${x}</li>`).join('')}</ul>${c.insp==null?'<button class="btn grey sm" type="button" data-go="points">Заказать осмотр · 2 500 ₽</button>':'<button class="btn grey sm" type="button" data-act="proto">Открыть протокол</button>'}</div>`}).join('');
 }
-$('#addForm').onsubmit=e=>{e.preventDefault();const v=$('#link').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);if(!v.length)return;LINKS.push(...v);$('#link').value='';drawCompare();toast(v.length>1?`Добавлено ссылок: ${v.length}`:'Ссылка добавлена')};
-$('#v-compare').onclick=e=>{const rm=e.target.closest('[data-rm]');if(rm){LINKS.splice(+rm.dataset.rm,1);drawCompare();return}
-  if(e.target.closest('[data-order]')){setView('map');toast('Выберите пункт осмотра или выезд')}
-  if(e.target.closest('[data-proto]'))toast('Откроется протокол осмотра')};
 
-/* map */
-const POINTS=[{id:'p1',name:'Савёловская',addr:'ул. Нижняя Масловка, 6',x:300,y:150,slots:'сегодня с 15:00'},{id:'p2',name:'Отрадное',addr:'ул. Хачатуряна, 14',x:330,y:70,slots:'завтра с 10:00'},{id:'p3',name:'Химки',addr:'Ленинградское ш., 29',x:180,y:60,slots:'сегодня с 18:30'},{id:'p4',name:'Люблино',addr:'ул. Краснодарская, 51',x:470,y:330,slots:'завтра с 12:00'},{id:'p5',name:'Кунцево',addr:'Рублёвское ш., 62',x:110,y:250,slots:'сегодня с 16:00'}];
-const CARS=[{id:'c1',t:'Kia Rio 2020',p:1290000,idx:88,x:290,y:175,src:'объявление на площадке'},{id:'c2',t:'Toyota RAV4 2019',p:2890000,idx:91,x:350,y:95,src:'объявление на площадке'},{id:'c3',t:'Haval Jolion 2023',p:2190000,idx:94,x:400,y:40,src:'аукцион'},{id:'c4',t:'VW Polo 2020',p:1240000,idx:90,x:255,y:120,src:'объявление на площадке'},{id:'c5',t:'Skoda Octavia 2019',p:1790000,idx:69,x:200,y:190,src:'объявление на площадке'},{id:'c6',t:'Hyundai Creta 2021',p:1950000,idx:92,x:430,y:260,src:'объявление на площадке'},{id:'c7',t:'Mazda CX-5 2018',p:2350000,idx:80,x:520,y:140,src:'аукцион'},{id:'c8',t:'Lada Vesta SW 2021',p:1340000,idx:85,x:150,y:330,src:'объявление на площадке'}];
-const L={cars:true,points:true};let sel='p1';
-function drawMap(){
-  const col=v=>v>=85?'var(--good)':v>=70?'var(--warn)':'var(--bad)';
-  let s=`<svg viewBox="0 0 620 400" role="img" aria-label="Схема города с пунктами осмотра и осмотренными машинами"><rect width="620" height="400" fill="var(--road)"/>
-   <path d="M0 230 C90 210 140 260 220 240 S330 180 400 230 S520 300 620 270" fill="none" stroke="var(--water)" stroke-width="16"/>
-   <ellipse cx="310" cy="200" rx="270" ry="175" fill="none" stroke="var(--ring)" stroke-width="7"/>
-   <ellipse cx="310" cy="200" rx="150" ry="100" fill="none" stroke="var(--ring)" stroke-width="5"/>
-   <ellipse cx="310" cy="200" rx="60" ry="42" fill="none" stroke="var(--ring)" stroke-width="4"/>
-   <path d="M310 0V400M0 200H620M90 30L530 370M530 30L90 370" stroke="var(--ring)" stroke-width="3" opacity=".7"/>
-   <text x="585" y="388" text-anchor="end" font-size="11" fill="var(--muted)">схема, не в масштабе</text>`;
-  if(L.points)POINTS.forEach(p=>{const on=sel===p.id;s+=`<g class="mk" data-id="${p.id}" tabindex="0" role="button" aria-label="Пункт осмотра ${p.name}"><rect x="${p.x-13}" y="${p.y-13}" width="26" height="26" rx="7" fill="var(--ink)" stroke="${on?'var(--accent)':'var(--surface)'}" stroke-width="${on?3:2}"/><path d="M${p.x-6} ${p.y}l4 4l8-8" fill="none" stroke="var(--surface)" stroke-width="2.4"/></g>`});
-  if(L.cars)CARS.forEach(c=>{const on=sel===c.id;s+=`<g class="mk" data-id="${c.id}" tabindex="0" role="button" aria-label="${c.t}"><circle cx="${c.x}" cy="${c.y}" r="${on?11:8}" fill="${col(c.idx)}" stroke="var(--surface)" stroke-width="2.5"/></g>`});
-  $('#map').innerHTML=s+'</svg>';
-  const items=[...(L.points?POINTS.map(p=>({...p,k:'p'})):[]),...(L.cars?CARS.map(c=>({...c,k:'c'})):[])];
-  $('#mlist').innerHTML=items.map(i=>i.k==='p'?`<button type="button" class="li" data-id="${i.id}" aria-current="${sel===i.id}"><span class="ic p">✓</span><span><b>Пункт «${i.name}»</b><small>${i.addr} · свободно ${i.slots}</small>${sel===i.id?'<span class="btn primary" style="display:inline-block;margin-top:8px;padding:8px 12px" data-book="1">Записаться · 2 500 ₽</span>':''}</span></button>`
-    :`<button type="button" class="li" data-id="${i.id}" aria-current="${sel===i.id}"><span class="ic c num">${i.idx}</span><span><b>${i.t}</b><small class="num">${rub(i.p)} · ${i.src}</small>${sel===i.id?'<span class="btn ghost" style="display:inline-block;margin-top:8px;padding:8px 12px" data-open="1">Открыть отчёт и объявление</span>':''}</span></button>`).join('');
-}
-function pick(id){sel=id;drawMap()}
-$('#map').onclick=e=>{const m=e.target.closest('.mk');if(m)pick(m.dataset.id)};
-$('#map').onkeydown=e=>{const m=e.target.closest('.mk');if(m&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pick(m.dataset.id)}};
-$('#mlist').onclick=e=>{if(e.target.closest('[data-book]')){toast('Записали на осмотр (демо)');return}if(e.target.closest('[data-open]')){setView('check');$('#q').value='Х482КМ799';check('Х482КМ799');return}const b=e.target.closest('.li');if(b)pick(b.dataset.id)};
-$('#layers').onclick=e=>{const b=e.target.closest('button');if(!b)return;L[b.dataset.l]=!L[b.dataset.l];b.setAttribute('aria-pressed',L[b.dataset.l]);drawMap()};
+/* points */
+const P={type:'',sel:'o1',day:0,time:1,booked:false};
+function renderPoints(){const L=PLACES.filter(p=>!P.type||p.type===P.type);if(!L.some(p=>p.id===P.sel))P.sel=L[0].id;const sel=PLACES.find(p=>p.id===P.sel);const days=['Сегодня','Завтра','Ср 21','Чт 22','Пт 23','Сб 24'],times=['10:00','12:30','15:00','17:30','19:00'];
+ $('#v-points').innerHTML=`<div class="crumbs"><span>Проверка</span><span>Пункты осмотра</span></div>
+ <div class="head"><div><h1>Где осмотреть машину</h1><p class="lead">Дилерские центры, СТО-партнёры, наши пункты и выездные сервисы. Стандарт осмотра везде один.</p></div></div>
+ <div class="chips" style="margin-bottom:22px"><button type="button" class="chip sm" data-pt="" aria-pressed="${!P.type}">Все</button>${Object.entries(PTYPE).map(([k,[i,l]])=>`<button type="button" class="chip sm" data-pt="${k}" aria-pressed="${P.type===k}">${ic(i,18)} ${l}</button>`).join('')}</div>
+ <div class="mapsplit"><div class="listcol">${L.map(p=>placeRow(p,p.id===P.sel)).join('')}</div>
+ <div class="mapcol stack" style="gap:14px"><div class="mapbox">${cityMap(PLACES.filter(p=>p.x&&(!P.type||p.type===P.type)).map(p=>({id:p.id,kind:'pt',x:p.x,y:p.y,label:p.name,tip:p.name+' · '+(p.price?rub(p.price):'бесплатно')})),P.sel,'Пункты осмотра на карте')}</div>
+ <div class="box stack">${P.booked?`<div class="row" style="gap:12px;flex-wrap:nowrap"><span class="iconbox g">${ic('check')}</span><div><b>Вы записаны: ${days[P.day].toLowerCase()}, ${times[P.time]}</b><p class="fine">${esc(sel.name)}, ${esc(sel.addr)}. Отчёт — через 2 часа после осмотра.</p></div></div><button class="btn grey block" type="button" id="rebook">Перенести</button>`
+ :`<div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(sel.name)}</h3><div class="muted small">${sel.ty} · ${esc(sel.addr)}</div></div><b class="num" style="font-size:20px">${sel.price?rub(sel.price):'0 ₽'}</b></div>${sel.type==='mobile'?'<div class="fld"><input value="Москва, ул. Новослободская, 45" aria-label="Адрес, куда приехать"></div>':''}
+ <div class="slots">${days.map((d,i)=>`<button type="button" class="slot" data-bd="${i}" aria-pressed="${i===P.day}">${d}</button>`).join('')}</div><div class="slots">${times.map((t,i)=>`<button type="button" class="slot num" data-bt="${i}" aria-pressed="${i===P.time}">${t}</button>`).join('')}</div>
+ <button class="btn brand block" type="button" id="bookBtn">${sel.price?'Оплатить и записаться':'Записаться бесплатно'}</button>`}</div></div></div>`}
 
-function setView(v){$$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v));['check','compare','map','price'].forEach(k=>$('#v-'+k).hidden=k!==v);window.scrollTo(0,0)}
-$$('.tab').forEach(t=>t.onclick=()=>setView(t.dataset.v));
-$('#form').onsubmit=e=>{e.preventDefault();check($('#q').value)};
-$$('.examples button').forEach(b=>b.onclick=()=>{$('#q').value=b.dataset.q;check(b.dataset.q)});
-check('Х482КМ799');drawMap();drawCompare();
-const h=location.hash.slice(1);if(['map','price','compare'].includes(h))setView(h);
+/* routing & events */
+let cur='check';const VIEWS=['check','compare','points','price'];
+function go(v){cur=v;VIEWS.forEach(k=>$('#v-'+k).hidden=k!==v);$$('#nav [data-go]').forEach(b=>{if(b.dataset.go===v)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(v==='points')renderPoints();if(v==='compare')drawCompare();window.scrollTo(0,0)}
+document.addEventListener('click',e=>{const t=e.target;
+ const g=t.closest('[data-go]');if(g){e.preventDefault();go(g.dataset.go);return}
+ const site=t.closest('[data-site]');if(site){e.preventDefault();siteGo(site.dataset.site,site.dataset.label);return}
+ const q=t.closest('[data-q]');if(q){$('#q').value=q.dataset.q;check(q.dataset.q);return}
+ const rk=t.closest('[data-rk]');if(rk){$('#q').value=rk.dataset.rk;check(rk.dataset.rk);window.scrollTo({top:0,behavior:'smooth'});return}
+ const pk=t.closest('[data-pack]');if(pk){pack=+pk.dataset.pack;drawPacks();return}
+ if(t.closest('#payPack')){credits+=PACKS[pack][0];toast(`Пакет оплачен: ${PACKS[pack][0]} ${plural(PACKS[pack][0],'отчёт','отчёта','отчётов')} (демо)`);drawPacks();draw();return}
+ const a=t.closest('[data-act]');if(a){const k=a.dataset.act;
+  if(k==='buy'){if(credits)credits--;paid[curKey]=true;toast('Отчёт открыт (демо-оплата)');draw();drawPacks()}
+  if(k==='proto')toast('Откроется полный протокол осмотра');
+  if(k==='pdf')toast('PDF отчёта сохранится на устройство');
+  if(k==='invite')toast('Приглашение отправлено продавцу');
+  if(k==='order')go('points');
+  if(k==='pool')siteGo('/market','складчина на странице машины');
+  return}
+ const rm=t.closest('[data-rm]');if(rm){LINKS.splice(+rm.dataset.rm,1);drawCompare();return}
+ if(t.closest('#unlock')){unlocked=true;toast('Данные по базам открыты (демо-оплата)');drawCompare();return}
+ if(t.closest('#copyCmp')){const C=LINKS.map(carFor),sc=C.map(c=>score(c,unlocked));copyText(C.map((c,i)=>({c,s:sc[i]})).sort((a,b)=>b.s-a.s).map((x,i)=>`${i+1}. ${x.c.t} — ${x.s}`).join('\n'),'Итог скопирован');return}
+ if(cur==='points'){const pt=t.closest('[data-pt]');if(pt){P.type=pt.dataset.pt;P.booked=false;renderPoints();return}
+  const pl=t.closest('[data-pid]')||t.closest('.mk');if(pl){P.sel=pl.dataset.pid||pl.dataset.id;P.booked=false;renderPoints();return}
+  const bd=t.closest('[data-bd]');if(bd){P.day=+bd.dataset.bd;renderPoints();return}
+  const bt=t.closest('[data-bt]');if(bt){P.time=+bt.dataset.bt;renderPoints();return}
+  if(t.closest('#bookBtn')){P.booked=true;toast('Записали на осмотр');renderPoints();return}
+  if(t.closest('#rebook')){P.booked=false;renderPoints();return}}
+});
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;
+ if(f.id==='form'){const v=$('#q').value.trim();if(v)check(v)}
+ if(f.id==='topForm'){const v=$('#topQ').value.trim();if(!v)return;go('check');$('#q').value=v;check(v)}
+ if(f.id==='addForm'){const v=$('#link').value.split(/[\s,]+/).filter(Boolean);if(!v.length)return;LINKS.push(...v);$('#link').value='';drawCompare();toast(v.length>1?`Добавлено ссылок: ${v.length}`:'Ссылка добавлена')}
+});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.mk')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
+hydrate();headerShadow();check('Х482КМ799');drawRecent();drawPacks();drawCompare();
+const h=location.hash.slice(1);if(VIEWS.includes(h))go(h);
 })();
 </script>
 
