@@ -6,22 +6,21 @@
 <title>Осмотрено</title>
 <meta name="description" content="Проверка машины по номеру, VIN или ссылке, сравнение объявлений и площадка осмотренных авто.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Onest:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;600;700&display=swap">
 <style>
-:root{--bg:#F2F4F3;--surface:#FFFFFF;--ink:#14201C;--muted:#5D6A65;--accent:#0B7A5F;--accent-soft:#DDF0E8;--line:#DAE1DE}
-@media (prefers-color-scheme:dark){:root{--bg:#0E1412;--surface:#161F1C;--ink:#E5EDE9;--muted:#93A39C;--accent:#3DC69C;--accent-soft:#14352B;--line:#26322E;color-scheme:dark}}
+:root{--bg:#F3F3F6;--surface:#FFFFFF;--ink:#16161A;--muted:#6E6E78;--accent:#D62976;--accent-soft:#FDEBF3;--line:#E6E6EB;--grad:linear-gradient(45deg,#FEDA75 0%,#FA7E1E 25%,#D62976 55%,#962FBF 80%,#4F5BD5 100%);color-scheme:light}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Onest",system-ui,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Golos Text",system-ui,sans-serif}
 .wrap{max-width:960px;margin:0 auto;padding:56px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:32px}
-.logo{display:flex;align-items:center;gap:10px;font:700 20px/1 "Unbounded",sans-serif}
-.mark{width:34px;height:34px;border-radius:50%;border:3px solid var(--accent);color:var(--accent);display:grid;place-items:center;transform:rotate(-8deg)}
-h1{font:700 clamp(28px,5vw,48px)/1.1 "Unbounded",sans-serif;letter-spacing:-.02em;margin:0;max-width:18ch;text-wrap:balance}
+.logo{display:flex;align-items:center;gap:10px;font:700 20px/1 "Golos Text",sans-serif}
+.mark{width:34px;height:34px;border-radius:10px;background:var(--grad);color:#FFFFFF;display:grid;place-items:center}
+h1{font:700 clamp(28px,5vw,48px)/1.1 "Golos Text",sans-serif;letter-spacing:-.02em;margin:0;max-width:18ch;text-wrap:balance}
 p{margin:0;color:var(--muted);max-width:60ch}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-a.card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:24px;color:inherit;text-decoration:none;transition:border-color .15s}
+a.card{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;color:inherit;text-decoration:none;transition:border-color .15s}
 a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
 .tag{align-self:flex-start;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.card h2{font:700 22px/1.2 "Unbounded",sans-serif;margin:0}
+.card h2{font:700 22px/1.2 "Golos Text",sans-serif;margin:0}
 .go{color:var(--accent);font-weight:600;margin-top:auto}
 footer{color:var(--muted);font-size:13px}
 </style>

@@ -4,30 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Осмотрено</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: sticky header + role tabs; buyer = filter rail | results grid; car opens in a side sheet with the inspection protocol. */
 :root{
-  --bg:#F2F4F3; --surface:#FFFFFF; --ink:#14201C; --muted:#5D6A65; --line:#DAE1DE; --chip:#E8EDEB; --glass:#B9CBC6;
-  --accent:#0B7A5F; --accent-ink:#FFFFFF; --accent-soft:#DDF0E8;
-  --warn:#A8690F; --warn-soft:#FAEED8; --bad:#BF3B28; --bad-soft:#F8E1DC;
-  --shadow:0 1px 2px rgba(20,32,28,.06),0 8px 24px rgba(20,32,28,.06);
-  --f-display:"Unbounded","Onest",system-ui,sans-serif;
-  --f-body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  /* Classifieds layout in the spirit of large car marketplaces; brand = Instagram-like warm gradient. Single light theme by choice. */
+  --bg:#F3F3F6; --surface:#FFFFFF; --ink:#16161A; --muted:#6E6E78; --line:#E6E6EB; --chip:#F1F1F4; --glass:#C9D2DC;
+  --accent:#D62976; --accent-ink:#FFFFFF; --accent-soft:#FDEBF3;
+  --grad:linear-gradient(45deg,#FEDA75 0%,#FA7E1E 25%,#D62976 55%,#962FBF 80%,#4F5BD5 100%);
+  --good:#1E9E5A; --good-soft:#E6F6EE;
+  --warn:#C27400; --warn-soft:#FFF2DC; --bad:#D92D20; --bad-soft:#FDECEA;
+  --water:#D6E6F2; --road:#EEEFF2; --ring:#D9DCE2;
+  --shadow:0 1px 2px rgba(22,22,26,.05);
+  --f-display:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E1412; --surface:#161F1C; --ink:#E5EDE9; --muted:#93A39C; --line:#26322E; --chip:#1D2825; --glass:#3C514B;
-  --accent:#3DC69C; --accent-ink:#06261C; --accent-soft:#14352B;
-  --warn:#E5AA4D; --warn-soft:#382B15; --bad:#F07B64; --bad-soft:#3B1E19;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0E1412; --surface:#161F1C; --ink:#E5EDE9; --muted:#93A39C; --line:#26322E; --chip:#1D2825; --glass:#3C514B;
-  --accent:#3DC69C; --accent-ink:#06261C; --accent-soft:#14352B;
-  --warn:#E5AA4D; --warn-soft:#382B15; --bad:#F07B64; --bad-soft:#3B1E19;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
@@ -42,7 +36,7 @@ button{cursor:pointer}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
 .hrow{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:10px;font:700 18px/1 var(--f-display);letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
-.logo-mark{width:30px;height:30px;border-radius:50%;border:2.5px solid var(--accent);display:grid;place-items:center;color:var(--accent);transform:rotate(-8deg)}
+.logo-mark{width:30px;height:30px;border-radius:50%;border:0;background:var(--grad);display:grid;place-items:center;color:#FFFFFF;border-radius:9px}
 .tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:12px;margin-left:auto}
 .tab{border:0;background:none;padding:8px 14px;border-radius:9px;font-weight:600;color:var(--muted);white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -53,10 +47,10 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var
 .ai{display:flex;gap:8px;align-items:stretch;padding-bottom:14px}
 .ai-box{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:0 14px}
 .ai-box:focus-within{border-color:var(--accent)}
-.ai-tag{font:700 11px/1 var(--f-display);letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:6px 8px;border-radius:6px;white-space:nowrap}
+.ai-tag{font:700 11px/1 var(--f-display);letter-spacing:.06em;color:#FFFFFF;background:var(--grad);padding:6px 8px;border-radius:6px;white-space:nowrap}
 .ai-box input{flex:1;min-width:0;border:0;background:none;padding:13px 0;outline:none;font-size:16px}
 .btn{border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--chip);color:var(--ink);white-space:nowrap}
-.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary{background:var(--grad);color:#FFFFFF}
 .btn.ghost{background:none;border:1.5px solid var(--line)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .try{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:12px;font-size:13px;color:var(--muted);align-items:center}
@@ -92,7 +86,7 @@ select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;backgr
 .card:hover{transform:translateY(-2px)}
 .photo{position:relative;background:var(--chip);aspect-ratio:16/10;max-width:100%;display:grid;place-items:center}
 .photo svg{width:82%;height:auto}
-.stamp{position:absolute;top:10px;left:10px;border:2px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:8px;padding:3px 8px 2px;font:700 10.5px/1.25 var(--f-display);letter-spacing:.05em;transform:rotate(-4deg);text-align:center}
+.stamp{position:absolute;top:10px;left:10px;border:0;color:#FFFFFF;background:var(--grad);border-radius:8px;padding:3px 8px 2px;font:700 10.5px/1.25 var(--f-display);letter-spacing:.05em;transform:rotate(-4deg);text-align:center}
 .stamp small{display:block;font:500 10px/1.2 var(--f-mono);letter-spacing:0}
 .dist{position:absolute;bottom:10px;right:10px;background:var(--surface);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600}
 .cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
@@ -101,12 +95,12 @@ select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;backgr
 .price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .price{font:700 19px/1.2 var(--f-display);letter-spacing:-.01em}
 .mk{font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
-.mk.good{background:var(--accent-soft);color:var(--accent)}
+.mk.good{background:var(--good-soft);color:var(--good)}
 .mk.mid{background:var(--chip);color:var(--muted)}
 .mk.high{background:var(--warn-soft);color:var(--warn)}
 .flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
 .flag{font-size:12.5px;padding:3px 8px;border-radius:6px;display:inline-flex;gap:5px;align-items:center}
-.flag.ok{background:var(--accent-soft);color:var(--accent)}
+.flag.ok{background:var(--good-soft);color:var(--good)}
 .flag.warn{background:var(--warn-soft);color:var(--warn)}
 .flag.bad{background:var(--bad-soft);color:var(--bad)}
 .why{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
@@ -140,10 +134,10 @@ h3{font:600 15px/1.3 var(--f-display);margin:0;letter-spacing:-.005em}
 .prow{display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
 .prow:first-child{border-top:0}
 .dotst{width:14px;height:14px;border-radius:50%;margin-top:4px}
-.dotst.ok{background:var(--accent)} .dotst.warn{background:var(--warn)} .dotst.bad{background:var(--bad)}
+.dotst.ok{background:var(--good)} .dotst.warn{background:var(--warn)} .dotst.bad{background:var(--bad)}
 .prow small{display:block;color:var(--muted);font-size:13px}
 .ptag{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
-.ptag.conf{color:var(--accent)}
+.ptag.conf{color:var(--good)}
 .bodymap{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:20px;align-items:center}
 .bodymap svg{width:100%;max-width:180px;height:auto}
 .legend{display:flex;flex-direction:column;gap:8px;font-size:13.5px}
@@ -199,9 +193,9 @@ h3{font:600 15px/1.3 var(--f-display);margin:0;letter-spacing:-.005em}
 .mcard{background:var(--surface);border-radius:20px;max-width:560px;width:100%;max-height:100%;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .mcard .eyebrow{font:700 11px/1 var(--f-display);letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
 .mcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.mcard li{display:grid;grid-template-columns:28px 1fr;gap:10px}
-.mcard li .ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700}
-.mcard li small{display:block;color:var(--muted);font-size:13.5px}
+.mcard ul li{display:grid;grid-template-columns:28px 1fr;gap:10px}
+.mcard ul li .ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700}
+.mcard ul li small{display:block;color:var(--muted);font-size:13.5px}
 .mcard .how{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:14px}
 .mcard .how ol{margin:6px 0 0;padding-left:20px}
 .mcard .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
@@ -261,7 +255,7 @@ h3{font:600 15px/1.3 var(--f-display);margin:0;letter-spacing:-.005em}
 .ck small{display:block;color:var(--muted);font-size:12.5px}
 .tri{display:flex;gap:4px}
 .tri button{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-size:13px}
-.tri button[aria-pressed="true"][data-v="ok"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tri button[aria-pressed="true"][data-v="ok"]{background:var(--good-soft);border-color:var(--good);color:var(--good)}
 .tri button[aria-pressed="true"][data-v="warn"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
 .tri button[aria-pressed="true"][data-v="bad"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
@@ -293,6 +287,50 @@ footer{color:var(--muted);font-size:13px;padding-block:0 32px}
   .stop .pay{grid-column:2}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---- skin: marketplace look ---- */
+body{font-size:15px;line-height:1.45}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.015em}
+h2{font-size:24px}
+h3{font-size:16px;font-weight:600}
+header{border-bottom:1px solid var(--line);box-shadow:none}
+.logo{font:700 20px/1 var(--f-display);letter-spacing:-.02em}
+.tabs{background:none;padding:0;border-radius:0;gap:0}
+.tab{border-radius:0;padding:10px 12px;color:var(--muted);font-weight:500;box-shadow:none}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:none;color:var(--ink);box-shadow:inset 0 -3px 0 var(--accent)}
+.panel,.mapbox,.tablewrap,.cmpbar,.vd,.plan,.li,.empty{box-shadow:none;border:1px solid var(--line);border-radius:12px}
+.btn{border-radius:10px;font-weight:600}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{border:1px solid var(--line);background:var(--surface)}
+.seg button,.check,.chips button,.ptypes button,.slot,.fmt,.choice,.place,.tri button{border-radius:8px;border-width:1px}
+select,.field input,.offer input{border-width:1px;border-radius:8px;background:var(--chip);border-color:transparent}
+.stamp{transform:none;border-radius:6px;font-weight:700;letter-spacing:.06em}
+.why{border-width:1px}
+.mcard{border-radius:16px}
+.mcard .eyebrow{font:600 12px/1 var(--f-body);letter-spacing:.06em;color:var(--accent)}
+.mcard .how ol li{display:list-item}
+.count{font:700 22px/1.2 var(--f-display)}
+.price{font-family:var(--f-display);font-weight:700}
+
+/* listing rows like a classifieds search page */
+.card{border:1px solid var(--line);box-shadow:none;border-radius:12px;transition:border-color .15s}
+.card:hover{transform:none;border-color:#C9C9D2}
+.ctitle{font-size:17px;font-weight:600}
+@media (min-width:760px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .card{flex-direction:row;align-items:stretch}
+  .card .photo{width:280px;flex:none;aspect-ratio:4/3;border-radius:12px 0 0 12px}
+  .card .cbody{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;row-gap:8px;align-content:start;padding:16px 20px}
+  .card .cbody > *{grid-column:1}
+  .card .cbody > .price-row{grid-column:2;grid-row:1 / span 3;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:6px}
+  .card .price{font-size:22px}
+  .card .flags{margin-top:4px}
+}
+.ai-box{background:var(--chip);border:1px solid transparent;border-radius:10px}
+.ai-box:focus-within{background:var(--surface);border-color:var(--accent)}
+.rail{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.sheet{background:var(--bg)}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
@@ -585,7 +623,7 @@ function carSvg(c,big){
   }[c.body];
   return `<svg viewBox="0 0 248 104" role="img" aria-label="${c.make} ${c.model}"><ellipse cx="124" cy="96" rx="110" ry="5" fill="var(--line)"/><path d="${P.b}" fill="${c.color}" stroke="rgba(0,0,0,.18)" stroke-width="1"/>${P.w.map(d=>`<path d="${d}" fill="${g}"/>`).join('')}${P.wh.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${w}"/><circle cx="${x}" cy="${y}" r="${r*.45}" fill="${h}"/>`).join('')}</svg>`;
 }
-function ring(v,size){const r=17,C=2*Math.PI*r,col=v>=85?'var(--accent)':v>=70?'var(--warn)':'var(--bad)';
+function ring(v,size){const r=17,C=2*Math.PI*r,col=v>=85?'var(--good)':v>=70?'var(--warn)':'var(--bad)';
   return `<svg class="ring" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--chip)" stroke-width="5"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 21 21)"/></svg>`}
 function market(c){const d=Math.round((c.price-c.market)/c.market*100);
   if(d<=-3)return{cls:'good',t:`ниже рынка на ${-d}%`};if(d>=3)return{cls:'high',t:`выше рынка на ${d}%`};return{cls:'mid',t:'в рынке'}}
@@ -652,7 +690,7 @@ function drawMap(list){
   rings.forEach(r=>{const rr=scale(r);s+=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/><text x="${cx+rr*0.71+4}" y="${cy-rr*0.71-4}" font-size="12" fill="var(--muted)">${r} км</text>`});
   s+=`<circle cx="${cx}" cy="${cy}" r="9" fill="var(--ink)"/><text x="${cx}" y="${cy+26}" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Вы</text>`;
   list.forEach(c=>{const a=(c.dir-90)*Math.PI/180,rr=scale(c.dist),x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
-    const col=c.idx>=85?'var(--accent)':c.idx>=70?'var(--warn)':'var(--bad)';
+    const col=c.idx>=85?'var(--good)':c.idx>=70?'var(--warn)':'var(--bad)';
     s+=`<g class="dot" data-id="${c.id}" tabindex="0" role="button" aria-label="${c.make} ${c.model}, ${km(c.dist)}"><rect x="${x-46}" y="${y-30}" width="92" height="22" rx="11" fill="var(--surface)" stroke="${col}" stroke-width="1.5"/><text x="${x}" y="${y-15}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">${(c.price/1e6).toLocaleString('ru-RU',{maximumFractionDigits:2})} млн · ${c.idx}</text><circle cx="${x}" cy="${y}" r="5" fill="${col}"/></g>`});
   s+=`</svg><p class="demo-flag" style="text-align:center;margin:8px 0 0">Схема: расстояние от вас по прямой, цвет — индекс состояния</p>`;
   $('#map').innerHTML=s;
@@ -685,7 +723,7 @@ function showAI(q){S.ai=parseAI(q);
 /* ---------- car sheet ---------- */
 function bodyMap(c){
   const R={bumperF:[30,8,120,22],hood:[30,34,120,64],fenderFL:[6,38,22,60],fenderFR:[152,38,22,60],doorFL:[6,104,26,72],doorFR:[148,104,26,72],doorRL:[6,180,26,72],doorRR:[148,180,26,72],roof:[40,150,100,86],fenderRL:[6,256,22,54],fenderRR:[152,256,22,54],trunk:[30,266,120,46],bumperR:[30,316,120,20]};
-  const col=v=>v>=300?'var(--bad)':v>=160?'var(--warn)':'var(--accent)';
+  const col=v=>v>=300?'var(--bad)':v>=160?'var(--warn)':'var(--good)';
   let s=`<svg viewBox="0 0 180 344" role="img" aria-label="Карта кузова: толщина покрытия по деталям"><path d="M36 102 L144 102 L136 146 L44 146 Z" fill="var(--glass)"/><path d="M44 240 L136 240 L144 262 L36 262 Z" fill="var(--glass)"/>`;
   PANELS.forEach(p=>{const [x,y,w,h]=R[p],v=c.th[p];s+=`<g><title>${PNAME[p]}: ${v} мкм</title><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${col(v)}" fill-opacity=".22" stroke="${col(v)}" stroke-width="1.5"/>${w>40?`<text x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" font-size="11" font-family="var(--f-mono)" fill="var(--ink)">${v}</text>`:''}</g>`});
   return s+'</svg>'}
@@ -722,7 +760,7 @@ function openCar(id){
    </div>
    <div class="panel"><h3>Карта кузова, мкм</h3>
      <div class="bodymap">${bodyMap(c)}<div class="legend">
-       <div><i style="background:var(--accent)"></i>до 160 — заводское покрытие</div>
+       <div><i style="background:var(--good)"></i>до 160 — заводское покрытие</div>
        <div><i style="background:var(--warn)"></i>160–300 — перекрас</div>
        <div><i style="background:var(--bad)"></i>больше 300 — шпаклёвка</div>
        <p class="demo-flag" style="margin:6px 0 0">Замер толщиномером по 5 точкам на каждой детали. Наведите на деталь, чтобы увидеть значение.</p>
