@@ -459,6 +459,11 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .cards{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;font-size:14.5px}
+.rules li{position:relative;padding-left:28px;line-height:1.4}
+.rules li::before{position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+.rules li.ok::before{content:"✓";background:var(--green)}
+.rules li.no::before{content:"₽";background:var(--brand)}
 
 .chkhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .sq{width:54px;height:54px;border-radius:12px;background:var(--fill);display:grid;place-items:center;flex:none}
@@ -543,8 +548,8 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   <div class="head"><div><h1>Тарифы</h1><p class="lead">Цены в прототипе — гипотезы для пилота.</p></div></div>
   <div class="plans">
     <div class="plan"><span class="muted">Бесплатно</span><div class="pp">0 ₽</div><p class="fine">Был ли осмотр, фото и объявления из открытых источников, цены и пробеги из прошлых объявлений.</p></div>
-    <div class="plan"><span class="muted">Отчёт по базам</span><div class="pp">от 159 ₽</div><p class="fine">Розыск, залоги, ограничения, ДТП, такси, лизинг, владельцы, техосмотры. 249 ₽ за один, пакеты 5 и 10 отчётов.</p></div>
-    <div class="plan hi"><span class="gtag" style="align-self:flex-start">осмотр</span><div class="pp">2 500 ₽</div><p class="fine">40–60 минут в пункте или выездом. Отчёт ваш в любом случае, публиковать необязательно. Можно скинуться с другими покупателями от 300 ₽.</p><button class="btn brand block" type="button" data-go="points">Выбрать пункт</button></div>
+    <div class="plan"><span class="muted">Пропуск покупателя</span><div class="pp">990 ₽<span class="muted" style="font-size:15px;font-weight:500"> / 30 дней</span></div><p class="fine">Полные отчёты по всем машинам на «Осмотрено» без лимита и 10 проверок любых машин. Купите через приложение — засчитаем в сбор.</p></div>
+    <div class="plan hi"><span class="gtag" style="align-self:flex-start">осмотр</span><div class="pp">2 500 ₽</div><p class="fine">40–60 минут в пункте или выездом. Отчёт ваш в любом случае, публиковать необязательно. По брони на площадке осмотр оплачивает тот, кто откажется от сделки.</p><button class="btn brand block" type="button" data-go="points">Выбрать пункт</button></div>
     <div class="plan"><span class="muted">Для бизнеса</span><div class="pp">API</div><p class="fine">Отметка «Осмотрено» и протоколы для площадок, дилеров, банков и лизинга. Подписка на осмотренные машины для перекупов.</p></div>
   </div>
 </section>
@@ -776,6 +781,13 @@ function siteGo(path,label){if(ON_SITE)location.href=path;else toast('На са�
 function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>toast('Не удалось скопировать — выделите текст вручную'))}catch(e){toast('Не удалось скопировать — выделите текст вручную')}}
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
 
+/* ---------- buyer pass ---------- */
+const PASS_PERKS=['Полные отчёты по всем машинам на «Осмотрено» — без лимита','10 проверок любых машин по VIN или ссылке','Сравнение объявлений с данными по базам','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
+function passCard(){const on=typeof PASS!=='undefined'&&PASS.on;
+ return `<div class="box stack passcard"><div class="row" style="justify-content:space-between"><h3>Пропуск покупателя</h3>${on?'<span class="tag good">активен</span>':''}</div>
+  ${on?'<p class="fine" style="font-size:14.5px">До 19 ноября. Отчёты по машинам площадки — без лимита, проверок по VIN осталось 10.</p>':`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
+  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul><button class="btn brand block" type="button" data-pass>Оформить пропуск</button>`}</div>`}
+
 (function(){
 const DB={
  'Х482КМ799':{title:'Kia Rio, 2020',plate:'Х482КМ799',vin:'Z94C251BBLR••••12',color:'#B8282E',body:'sedan',insp:{date:'16.10.2026',until:'30.11.2026',idx:88,who:'Пункт «Осмотрено Савёловская»',flags:[['good','Пробег 54 200 км подтверждён'],['warn','Перекрас: задний бампер'],['good','Без подтёков'],['good','Ошибок в блоках нет']]},
@@ -785,11 +797,12 @@ const DB={
   ads:[['14.10.2026','Мытищи',2150000,118000,true,'Авито'],['11.06.2024','Казань',1990000,131000,false,'Дром'],['20.01.2021','Казань',2050000,74000,false,'Авто.ру']],photos:['14.10.2026','11.06.2024','11.06.2024','03.02.2022'],
   rep:[['Розыск','Не числится','good'],['Залоги','1 запись, погашена в 2023','warn'],['Ограничения ГИБДД','Нет','good'],['ДТП','Нет записей','good'],['Такси и каршеринг','Лицензия такси 2019–2021','bad'],['Лизинг','Не найдено','good'],['Владельцы по ПТС','3','warn'],['Техосмотры','В 2024 пробег больше, чем в 2026 — возможна скрутка','bad']]}};
 const RECENT=[{k:'Х482КМ799',d:'18 октября 2026'},{k:'А715ОР750',d:'16 октября 2026'},{t:'Haval Jolion, 2023',vin:'LGWEF6A51PH••••84',color:'#2F5D7C',body:'suv',d:'30 сентября 2026'},{t:'Volkswagen Polo, 2020',vin:'XW8ZZZ61ZLG••••07',color:'#4E6E93',body:'sedan',d:'29 сентября 2026'}];
-let credits=0,pack=2,curKey='Х482КМ799',paid={};
-const PACKS=[[1,249],[5,199],[10,159]];
+let curKey='Х482КМ799',paid={};
+const PASS={on:false,left:10};
+const ONPLAT={'Х482КМ799':true};
 
 function check(raw){const q=raw.toUpperCase().replace(/\s/g,'');const key=/48213|AVITO|АВИТО|HTTP/.test(q)?'А715ОР750':(DB[q]?q:'А715ОР750');curKey=key;draw(/http|\//i.test(raw));}
-function draw(fromLink){const d=DB[curKey],P=!!paid[curKey];
+function draw(fromLink){const d=DB[curKey],onp=!!ONPLAT[curKey],P=!!paid[curKey]||(PASS.on&&onp);
  const st=d.insp?`<div class="banner ok"><span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено</span><div><b>Машина осмотрена ${d.insp.date}</b><div class="fine" style="font-size:14px">${d.insp.who} · отметка действует до ${d.insp.until}</div></div></div>`
   :`<div class="banner none"><span class="iconbox" style="background:#fff">${ic('clock')}</span><div><b>Осмотра не было</b><div class="fine" style="font-size:14px">Отчёт по базам есть, живого осмотра — нет. Его может запустить кто угодно: вы, продавец или несколько покупателей вместе.</div></div></div>`;
  $('#result').innerHTML=`<div class="res">
@@ -798,24 +811,19 @@ function draw(fromLink){const d=DB[curKey],P=!!paid[curKey];
   ${st}
   ${d.insp?`<section class="box stack"><div class="row" style="justify-content:space-between"><h3>Осмотр</h3><span class="score big ${scoreCls(d.insp.idx)}">${d.insp.idx}</span></div><div class="row" style="gap:6px">${d.insp.flags.map(([k,t])=>`<span class="tag ${k}">${t}</span>`).join('')}</div><div class="row"><button class="btn black sm" type="button" data-act="proto">Открыть протокол · 64 фото</button><button class="btn grey sm" type="button" data-site="/market" data-label="объявление на площадке">Объявление на площадке</button></div></section>`
    :`<section class="box stack"><h3>Запустить осмотр</h3>
-    <button type="button" class="opt" data-act="invite"><span class="iconbox">${ic('send')}</span><span><b>Пригласить продавца на осмотр</b><small>Отправим продавцу ссылку: осмотр с отметкой поднимет его объявление</small></span><span class="r">0 ₽</span></button>
+    <button type="button" class="opt" data-act="invite"><span class="iconbox">${ic('send')}</span><span><b>Пригласить продавца на осмотр</b><small>Разместится у нас бесплатно — и машину можно будет забронировать: осмотр оплатит тот, кто откажется от сделки</small></span><span class="r">0 ₽</span></button>
     <button type="button" class="opt" data-act="order"><span class="iconbox g">${ic('shield')}</span><span><b>Оплатить осмотр самому</b><small>В ближайшем пункте или выездом. Специалиста назначит платформа</small></span><span class="r num">2 500 ₽</span></button>
-    <button type="button" class="opt" data-act="pool"><span class="iconbox">${ic('users')}</span><span><b>Скинуться с другими покупателями</b><small>От 300 ₽. Взнос вернётся, если машину продадут через приложение</small></span><span class="r num">от 300 ₽</span></button></section>`}
+    </section>`}
   <section><div class="sect-h" style="margin-bottom:12px"><h3>Отчёт по базам</h3>${P?'<span class="tag good">открыт</span>':'<span class="tag grey">'+ic('lock',14)+' скрыто</span>'}</div>
    <div class="list">${d.rep.map(([a,b,k])=>`<div class="prow"><span class="d ${P?k:'grey'}"></span><div><b>${a}</b>${P?`<small>${b}</small>`:''}</div><span class="tg ${P&&k==='good'?'ok':''}" style="${P&&k==='bad'?'color:var(--bad)':P&&k==='warn'?'color:var(--warn)':''}">${P?(k==='good'?'Чисто':k==='warn'?'Внимание':'Риск'):'•••'}</span></div>`).join('')}</div>
-   ${P?'<p class="fine" style="margin-top:8px">Слепок данных сохранён на 19.10.2026.</p>':`<div class="row" style="margin-top:14px"><button class="btn brand" type="button" data-act="buy">${credits?'Открыть за 1 отчёт из пакета':'Открыть отчёт · 249 ₽'}</button>${credits?`<span class="muted">Осталось отчётов: ${credits}</span>`:''}</div>`}</section>
+   ${P?'<p class="fine" style="margin-top:8px">Слепок данных сохранён на 19.10.2026.</p>':`<div class="row" style="margin-top:14px">${PASS.on?`<button class="btn brand" type="button" data-act="buy">Открыть · проверка ${11-PASS.left} из 10</button><span class="muted">машина не с нашей площадки</span>`:`<button class="btn brand" type="button" data-pass>Открыть с пропуском · 990 ₽ / 30 дней</button><span class="muted">${onp?'Машина продаётся у нас — с пропуском отчёт бесплатный':'Внутри 10 проверок любых машин'}</span>`}</div>`}</section>
   <section><div class="sect-h" style="margin-bottom:12px"><h3>Фото из открытых источников</h3><span class="muted">${d.photos.length}</span></div><div class="thumbs4">${d.photos.map((p,i)=>`<div class="photo ${['ph-studio','ph-warm','ph-cool','ph-dark'][i]}">${car(d.color,d.body)}<span class="lbl">${p}</span></div>`).join('')}</div><p class="fine" style="margin-top:8px">Объявления и снимки пользователей. Храним дату и ссылку на источник.</p></section>
   <section><h3>Объявления о продаже</h3><div class="list" style="margin-top:6px">${d.ads.map(([dt,city,pr,km,act,src])=>`<div class="rowline"><div class="row" style="gap:16px;flex-wrap:nowrap"><span class="num muted" style="min-width:86px">${dt}</span><div><b class="num">${rub(pr)}</b><small class="num">${kmf(km)} · ${city} · ${src}</small></div></div><span class="tag ${act?'good':'grey'}">${act?'продаётся':'снято'}</span></div>`).join('')}</div></section>
  </div>`;
 }
 function drawRecent(){$('#recent').innerHTML=RECENT.map(r=>{const d=r.k?DB[r.k]:null,t=d?d.title:r.t,vin=d?d.vin:r.vin,color=d?d.color:r.color,body=d?d.body:r.body;
  return `<div class="lrow"><div class="photo ${scene(t.length)}">${car(color,body)}</div><div class="stack" style="gap:6px"><h3>${t}</h3><div class="muted"><span class="mono">${vin}</span> · ${r.d}</div><div class="row" style="gap:8px">${r.k?`<button class="btn grey sm" type="button" data-rk="${r.k}">Открыть отчёт</button>`:`<button class="btn grey sm" type="button" data-act="proto">Открыть отчёт</button>`}<button class="btn grey sm" type="button" data-act="pdf">${ic('doc',18)} Скачать PDF</button></div></div></div>`}).join('')}
-function drawPacks(){const [n,p]=PACKS[pack];
- $('#packs').innerHTML=`${PACKS.map(([k,v],i)=>`<button type="button" class="pack" data-pack="${i}" aria-pressed="${i===pack}"><span>${k} ${plural(k,'отчёт','отчёта','отчётов')}</span><span><b class="num">${v} ₽</b> <span class="u">/ шт</span></span></button>`).join('')}
- <button class="btn brand block tall" type="button" id="payPack">Оплатить ${rub(n*p)}<span class="sub">за ${n} ${plural(n,'отчёт','отчёта','отчётов')}</span></button>
- ${credits?`<div class="soft row" style="justify-content:space-between"><span>Осталось отчётов</span><b>${credits}</b></div>`:''}
- <div class="sidelinks"><button type="button" data-act="proto">${ic('check',22)} Пример отчёта</button><button type="button" data-go="points">${ic('shield',22)} Заказать осмотр — 2 500 ₽</button><button type="button" data-go="price">${ic('users',22)} Для бизнеса и API</button></div>`}
-
+function drawPacks(){$('#packs').innerHTML=passCard()+`<div class="sidelinks"><button type="button" data-act="proto">${ic('check',22)} Пример отчёта</button><button type="button" data-go="points">${ic('shield',22)} Заказать осмотр — 2 500 ₽</button><button type="button" data-go="price">${ic('users',22)} Для бизнеса и API</button></div>`}
 /* compare */
 const POOL=[
  {t:'Kia Rio, 2020',price:1290000,market:1360000,year:2020,km:54200,kmOk:true,insp:88,paint:1,legal:'ok',dtp:1,taxi:false,owners:1,dist:3,days:2,drop:0,color:'#B8282E',body:'sedan',src:'Авто.ру'},
@@ -842,7 +850,7 @@ function drawCompare(){
  if(!n){$('#cmp').innerHTML='';$('#verdicts').innerHTML='';$('#cmpbar').innerHTML='<span>Добавьте хотя бы две ссылки.</span>';return}
  const sc=C.map(c=>score(c,unlocked)),best=sc.indexOf(Math.max(...sc));
  $('#cmpbar').innerHTML=unlocked?`<b>${n} ${plural(n,'машина','машины','машин')} · данные по базам открыты</b><button class="btn grey sm" type="button" id="copyCmp">Скопировать итог</button>`
-  :`<span>Скрыто: розыск, залоги, ДТП, такси, владельцы — по всем ${n}.</span><span class="row"><span class="num"><s class="muted">${rub(n*249)}</s> <b>${rub(Math.round(n*249*.7/10)*10)}</b></span><button class="btn brand sm" type="button" id="unlock">Открыть по всем</button></span>`;
+  :`<span>Скрыто: розыск, залоги, ДТП, такси, владельцы — по всем ${n}.</span><button class="btn brand sm" type="button" data-pass>Открыть с пропуском · 990 ₽</button>`;
  let h=`<thead><tr><th scope="col"><span class="muted small">Итоговая оценка${unlocked?'':'<br>без данных по базам'}</span></th>${C.map((c,i)=>`<th scope="col"><div class="carh">${i===best&&n>1?'<span class="firstpick">Смотреть первой</span>':''}<div class="photo ${scene(c.t.length)}">${car(c.color,c.body)}</div><b>${c.t}</b><span class="score ${scoreCls(sc[i])}" style="align-self:flex-start">${sc[i]}</span><button type="button" class="x" data-rm="${i}">убрать</button></div></th>`).join('')}</tr></thead><tbody>`;
  ROWS.forEach(r=>{if(r.length===1){h+=`<tr class="grp"><th colspan="${n+1}">${r[0]}</th></tr>`;return}
   const [l,show,val,dir,pd]=r,lock=pd&&!unlocked;let bi=-1;
@@ -867,15 +875,13 @@ document.addEventListener('click',e=>{const t=e.target;
  const site=t.closest('[data-site]');if(site){e.preventDefault();siteGo(site.dataset.site,site.dataset.label);return}
  const q=t.closest('[data-q]');if(q){$('#q').value=q.dataset.q;check(q.dataset.q);return}
  const rk=t.closest('[data-rk]');if(rk){$('#q').value=rk.dataset.rk;check(rk.dataset.rk);window.scrollTo({top:0,behavior:'smooth'});return}
- const pk=t.closest('[data-pack]');if(pk){pack=+pk.dataset.pack;drawPacks();return}
- if(t.closest('#payPack')){credits+=PACKS[pack][0];toast(`Пакет оплачен: ${PACKS[pack][0]} ${plural(PACKS[pack][0],'отчёт','отчёта','отчётов')} (демо)`);drawPacks();draw();return}
+ if(t.closest('[data-pass]')){PASS.on=true;unlocked=true;toast('Пропуск активен до 19 ноября (демо-оплата)');drawPacks();draw();drawCompare();return}
  const a=t.closest('[data-act]');if(a){const k=a.dataset.act;
-  if(k==='buy'){if(credits)credits--;paid[curKey]=true;toast('Отчёт открыт (демо-оплата)');draw();drawPacks()}
+  if(k==='buy'){PASS.left=Math.max(0,PASS.left-1);paid[curKey]=true;toast('Отчёт открыт · осталось проверок: '+PASS.left);draw();drawPacks()}
   if(k==='proto')toast('Откроется полный протокол осмотра');
   if(k==='pdf')toast('PDF отчёта сохранится на устройство');
   if(k==='invite')toast('Приглашение отправлено продавцу');
   if(k==='order')go('points');
-  if(k==='pool')siteGo('/market','складчина на странице машины');
   return}
  const rm=t.closest('[data-rm]');if(rm){LINKS.splice(+rm.dataset.rm,1);drawCompare();return}
  if(t.closest('#unlock')){unlocked=true;toast('Данные по базам открыты (демо-оплата)');drawCompare();return}

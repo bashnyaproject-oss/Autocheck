@@ -459,6 +459,11 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .cards{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;font-size:14.5px}
+.rules li{position:relative;padding-left:28px;line-height:1.4}
+.rules li::before{position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+.rules li.ok::before{content:"✓";background:var(--green)}
+.rules li.no::before{content:"₽";background:var(--brand)}
 
 .hero{padding-block:56px 40px;display:flex;flex-direction:column;gap:14px;max-width:780px}
 .hero h1{font-size:clamp(34px,5vw,58px)}
@@ -479,7 +484,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   <div class="hero"><span class="gtag" style="align-self:flex-start">прототип</span><h1>Машины, состояние которых подтверждено осмотром</h1><p class="lead">Два продукта одного проекта: простая проверка машины по номеру или ссылке — и площадка, где у каждой машины видно, был ли живой осмотр.</p></div>
   <div class="duo">
     <a href="/check"><div class="photo ph-cool" id="p1"></div><span class="tag brand" style="align-self:flex-start">Микросервис</span><h2>Проверка и сравнение</h2><p class="muted">По номеру, VIN или ссылке с любой площадки. Сравнение объявлений, отчёт по базам, карта пунктов осмотра.</p><span class="go">Открыть <i data-ic="chev" data-s="18"></i></span></a>
-    <a href="/market"><div class="photo ph-warm" id="p2"></div><span class="tag dark" style="align-self:flex-start">Полное приложение</span><h2>Площадка осмотренных машин</h2><p class="muted">Объявление по ссылке за 500 ₽, подборка, запрос осмотра и складчина, онлайн-сделка, кабинеты дилера и сервиса подбора.</p><span class="go">Открыть <i data-ic="chev" data-s="18"></i></span></a>
+    <a href="/market"><div class="photo ph-warm" id="p2"></div><span class="tag dark" style="align-self:flex-start">Полное приложение</span><h2>Площадка осмотренных машин</h2><p class="muted">Бесплатное объявление по ссылке, пропуск покупателя со всеми отчётами, бронь с осмотром, онлайн-сделка, кабинеты дилера и сервиса подбора.</p><span class="go">Открыть <i data-ic="chev" data-s="18"></i></span></a>
   </div>
   <p class="fine">Логика продукта — в <a class="link" href="https://github.com/bashnyaproject-oss/Autocheck/blob/main/docs/LOGIC.md">docs/LOGIC.md</a>. Все данные в прототипах — примеры.</p>
 </main>
@@ -707,6 +712,13 @@ const ON_SITE=REALMAP;
 function siteGo(path,label){if(ON_SITE)location.href=path;else toast('На сайте здесь откроется '+label)}
 function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>toast('Не удалось скопировать — выделите текст вручную'))}catch(e){toast('Не удалось скопировать — выделите текст вручную')}}
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
+
+/* ---------- buyer pass ---------- */
+const PASS_PERKS=['Полные отчёты по всем машинам на «Осмотрено» — без лимита','10 проверок любых машин по VIN или ссылке','Сравнение объявлений с данными по базам','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
+function passCard(){const on=typeof PASS!=='undefined'&&PASS.on;
+ return `<div class="box stack passcard"><div class="row" style="justify-content:space-between"><h3>Пропуск покупателя</h3>${on?'<span class="tag good">активен</span>':''}</div>
+  ${on?'<p class="fine" style="font-size:14.5px">До 19 ноября. Отчёты по машинам площадки — без лимита, проверок по VIN осталось 10.</p>':`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
+  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul><button class="btn brand block" type="button" data-pass>Оформить пропуск</button>`}</div>`}
 
 hydrate();headerShadow();document.getElementById('p1').innerHTML=car('#4E6E93','sedan');document.getElementById('p2').innerHTML=car('#B8282E','suv');
 </script>
