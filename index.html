@@ -96,7 +96,6 @@ h3{font:700 18px/1.3 var(--f);letter-spacing:-.01em;margin:0}
 .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .grow{flex:1;min-width:0}
 .row > svg{flex:none}
-.fopen,.btn.fopen{display:none}
 .mt{margin-top:32px}
 
 .seg{display:inline-flex;background:var(--fill);border-radius:14px;padding:4px;gap:2px;max-width:100%;overflow-x:auto}
@@ -303,6 +302,30 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .mapsplit .listcol{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 220px);overflow-y:auto;padding-right:4px}
 .mapsplit .mapcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 132px)}
 
+/* ---------- filters ---------- */
+.fgrid.fmain{grid-template-columns:minmax(0,1.25fr) minmax(0,1.25fr) minmax(0,1fr) auto minmax(150px,auto)}
+.fmore{display:none;flex-direction:column;gap:14px}
+.filters.open .fmore{display:flex}
+.cfields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.phimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* ---------- real map ---------- */
+.mapslot{position:relative;width:100%;height:100%}
+.mapbox:not(.full) .mapslot{height:clamp(360px,62vh,620px)}
+.mapbox:not(.full) .mapslot > svg{height:100%;width:100%}
+.mapslot > svg{display:block;width:100%;height:100%}
+.realmap{position:absolute;inset:0;z-index:0;isolation:isolate}
+.mapslot{isolation:isolate}
+.stack > .gpill{align-self:flex-start}
+.maploading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:500;background:var(--map-land)}
+.geo-btn{position:absolute;left:12px;top:12px;z-index:500;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:12px;background:#fff;font-weight:600;font-size:14.5px;box-shadow:0 1px 6px rgba(0,0,0,.16)}
+.geo-btn:hover{background:var(--fill)}
+.lm-pt{display:block;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--pin);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.lm-pt.on{width:32px;height:32px;margin:-16px 0 0 -16px;background:var(--brand)}
+.lm-car{display:inline-block;transform:translate(-50%,-100%);white-space:nowrap;padding:4px 9px;border-radius:9px;background:var(--pin);color:#fff;font:700 13px/1.2 var(--f);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.lm-car.on{background:var(--brand)}
+.lm-me{display:block;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#2B6AEB;border:3px solid #fff;box-shadow:0 0 0 6px rgba(43,106,235,.2)}
+
 /* ---------- points: list + full-height map ---------- */
 .dmap{display:grid;grid-template-columns:440px minmax(0,1fr);gap:28px;align-items:start}
 .dlist{min-width:0;padding-bottom:24px}
@@ -390,6 +413,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:960px){
+  .fgrid.fmain{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dmap{grid-template-columns:minmax(0,1fr);gap:0}
   .dmapcol{position:relative;top:auto;height:320px;min-height:0;order:-1;margin-top:14px}
   .split{grid-template-columns:minmax(0,1fr);gap:28px}
@@ -411,8 +435,8 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .burger{width:42px;height:42px}
   .icons{margin-left:auto;gap:2px}
   .ico[data-site],#aiIco,.ico[data-go="my"]:not(:has(.badge)){display:none}
-  .fopen,.btn.fopen{display:inline-flex}
-  .filters:not(.open) .fgrid,.filters:not(.open) #fToggles{display:none}
+  .fgrid.fmain{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fmain .fld:nth-child(-n+2),.fmain #showBtn{grid-column:1/-1}
   .add,.ava{width:42px;height:42px}
   .ava{display:none}
   .add{order:4}
@@ -553,7 +577,7 @@ function cityMap(marks,sel,label){
  let s=`<svg viewBox="0 0 800 560" role="img" aria-label="${esc(label||'Карта')}">`+MAPBG;
  const order=marks.slice().sort((a,b)=>(a.id===sel)-(b.id===sel));
  order.forEach(m=>{const on=m.id===sel,x=m.x,y=m.y;
-  if(m.kind==='pt'){s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)">${on?`<circle cx="${x}" cy="${y}" r="27" fill="#DB3727" opacity=".14"/>`:''}<circle cx="${x}" cy="${y}" r="${on?19:16}" fill="${on?'url(#mg)':'#3C7BF2'}" stroke="#fff" stroke-width="3"/><path d="M${x-6.5} ${y+.5}l4.3 4.3 8.7-8.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>`}
+  if(m.kind==='pt'){s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)">${on?`<circle cx="${x}" cy="${y}" r="27" fill="#DB3727" opacity=".14" pointer-events="none"/>`:''}<circle cx="${x}" cy="${y}" r="${on?19:16}" fill="${on?'url(#mg)':'#3C7BF2'}" stroke="#fff" stroke-width="3"/><path d="M${x-6.5} ${y+.5}l4.3 4.3 8.7-8.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>`}
   else{const c=m.color||'#16161A',r=on?19:15;s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)"><circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="${on?5:4}"/><text x="${x}" y="${y+4.5}" text-anchor="middle" font-size="${on?14:12.5}" font-weight="800" fill="#16161A">${esc(m.text||'')}</text></g>`}
   if(on&&m.tip){const t=m.tip,w=Math.min(300,t.length*7.4+28),bx=Math.max(8,Math.min(792-w,x-w/2)),by=y-(m.kind==='pt'?58:62);s+=`<g pointer-events="none" filter="url(#msh)"><rect x="${bx}" y="${by}" width="${w}" height="32" rx="16" fill="#16161A"/><text x="${bx+w/2}" y="${by+21}" text-anchor="middle" font-size="13.5" font-weight="600" fill="#fff">${esc(t)}</text></g>`}
  });
@@ -561,26 +585,84 @@ function cityMap(marks,sel,label){
 
 /* ---------- inspection points (shared) ---------- */
 const PLACES=[
- {id:'o1',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'сегодня, без записи',rating:4.9,perk:'Можно без записи, 7:00–23:00',x:386,y:226},
- {id:'s1',type:'sto',ty:'СТО-партнёр',name:'Гараж 24',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике',x:366,y:244},
- {id:'d1',type:'dealer',ty:'Дилерский центр',name:'Север-Авто',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно, если согласны получить предложение по trade-in',x:356,y:150},
- {id:'s2',type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:'',x:432,y:168},
- {id:'o2',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Люблино',addr:'ул. Краснодарская, 51',dist:16,price:2500,slot:'сегодня, без записи',rating:4.8,perk:'',x:506,y:378},
- {id:'d2',type:'dealer',ty:'Дилерский центр',name:'Восток Моторс',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера',x:566,y:268},
- {id:'d3',type:'dealer',ty:'Дилерский центр',name:'Запад-Авто',addr:'Рублёвское ш., 62',dist:15,price:0,slot:'завтра 12:30',rating:4.7,perk:'Бесплатно с предложением по выкупу',x:246,y:300},
- {id:'s3',type:'sto',ty:'СТО-партнёр',name:'Химки Сервис',addr:'Ленинградское ш., 29',dist:18,price:2500,slot:'сегодня 18:30',rating:4.6,perk:'',x:284,y:132},
+ {id:'o1',ll:[55.8025,37.5835],type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'сегодня, без записи',rating:4.9,perk:'Можно без записи, 7:00–23:00',x:386,y:226},
+ {id:'s1',ll:[55.7935,37.5795],type:'sto',ty:'СТО-партнёр',name:'Гараж 24',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике',x:366,y:244},
+ {id:'d1',ll:[55.8835,37.544],type:'dealer',ty:'Дилерский центр',name:'Север-Авто',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно, если согласны получить предложение по trade-in',x:356,y:150},
+ {id:'s2',ll:[55.859,37.605],type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:'',x:432,y:168},
+ {id:'o2',ll:[55.6735,37.77],type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Люблино',addr:'ул. Краснодарская, 51',dist:16,price:2500,slot:'сегодня, без записи',rating:4.8,perk:'',x:506,y:378},
+ {id:'d2',ll:[55.7575,37.752],type:'dealer',ty:'Дилерский центр',name:'Восток Моторс',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера',x:566,y:268},
+ {id:'d3',ll:[55.759,37.417],type:'dealer',ty:'Дилерский центр',name:'Запад-Авто',addr:'Рублёвское ш., 62',dist:15,price:0,slot:'завтра 12:30',rating:4.7,perk:'Бесплатно с предложением по выкупу',x:246,y:300},
+ {id:'s3',ll:[55.889,37.444],type:'sto',ty:'СТО-партнёр',name:'Химки Сервис',addr:'Ленинградское ш., 29',dist:18,price:2500,slot:'сегодня 18:30',rating:4.6,perk:'',x:284,y:132},
  {id:'m1',type:'mobile',ty:'Выездной сервис подбора',name:'АвтоЭксперт Север',addr:'приедут по вашему адресу',dist:null,price:3500,slot:'сегодня 19:00',rating:4.8,perk:'Приедут через 2–3 часа'},
  {id:'m2',type:'mobile',ty:'Выездной сервис подбора',name:'Подбор Профи',addr:'приедут по вашему адресу',dist:null,price:3200,slot:'завтра 09:00',rating:4.5,perk:'Эндоскоп двигателя в комплекте'}];
 const PTYPE={own:['check','Пункты Осмотрено'],sto:['wrench','СТО-партнёры'],dealer:['building','Дилерские центры'],mobile:['route','Выезд к вам']};
 function placeRow(p,on,tag){tag=tag||'button';
  return `<${tag} ${tag==='button'?'type="button"':''} class="place" data-pid="${p.id}" aria-pressed="${on}"><span class="iconbox ${p.type==='own'?'g':''}">${ic(PTYPE[p.type][0],22)}</span><span><b>${esc(p.name)}</b><span class="m">${p.ty} · ${esc(p.addr)}</span><span class="m">★ ${String(p.rating).replace('.',',')} · ближайшее: ${p.slot}</span>${p.perk?`<span class="perk">${esc(p.perk)}</span>`:''}</span><span class="pr num">${p.price?rub(p.price):'Бесплатно'}<small>${p.dist!=null?String(p.dist).replace('.',',')+' км':'выезд'}</small></span></${tag}>`}
 
+/* ---------- location ---------- */
+const CENTER=[55.7558,37.6173];
+const GEO={ll:[55.7963,37.5880],real:false,label:'Москва'};   // until the browser tells us, assume Savyolovskaya
+function hav(a,b){const R=6371,r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]),h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function dest(o,km,deg){const r=x=>x*Math.PI/180;return [o[0]+km*Math.cos(r(deg))/111.2,o[1]+km*Math.sin(r(deg))/(111.2*Math.cos(r(o[0])))]}
+const round1=d=>d<10?Math.round(d*10)/10:Math.round(d);
+function refreshPlaceDist(){PLACES.forEach(p=>{if(p.ll)p.dist=round1(hav(GEO.ll,p.ll))})}
+let geoAsked=false;
+function locate(done,force){
+ if(!navigator.geolocation||(geoAsked&&!force)){done&&done(false);return}
+ geoAsked=true;
+ try{navigator.geolocation.getCurrentPosition(pos=>{GEO.ll=[pos.coords.latitude,pos.coords.longitude];GEO.real=true;GEO.label='Рядом с вами';refreshPlaceDist();done&&done(true)},()=>{done&&done(false)},{enableHighAccuracy:false,timeout:9000,maximumAge:600000})}catch(e){done&&done(false)}}
+
+/* ---------- real map (site only): Yandex Maps 2.1, Leaflet + OSM as a fallback ---------- */
+// Free key: developer.tech.yandex.ru → «JavaScript API и HTTP Геокодер». Paste it here.
+const YMAPS_KEY='';
+const REALMAP=ON_SITE_CHECK();
+function ON_SITE_CHECK(){return /^\/(market|check)(\/|$)/.test(location.pathname)||location.pathname==='/'||/^\/(market|check)\/index\.html$/.test(location.pathname)}
+function loadJs(src,ms){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),ms||8000)})}
+function loadCss(href){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)}
+let LIB=null;
+function mapLib(){if(LIB)return LIB;LIB=(async()=>{
+ try{await loadJs('https://api-maps.yandex.ru/2.1/?lang=ru_RU'+(YMAPS_KEY?'&apikey='+YMAPS_KEY:''),8000);if(!window.ymaps)throw 0;await new Promise((ok,no)=>{ymaps.ready(ok,no);setTimeout(no,8000)});return 'y'}
+ catch(e){loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');await loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',10000);return 'l'}})();return LIB}
+const MAPS={};
+const shortPrice=n=>n>=1e6?String(Math.round(n/1e5)/10).replace('.',',')+' млн':Math.round(n/1e3)+' тыс';
+function mapSlot(key,marks,sel,label){MAPS[key]=Object.assign(MAPS[key]||{},{marks,sel,label});
+ return `<div class="mapslot" data-map="${key}">${REALMAP?'<div class="maploading">Загружаем карту…</div>':cityMap(marks,sel,label)}</div>`}
+function pick(id,holder){const b=document.createElement('button');b.className='mk';b.dataset.id=id;b.hidden=true;holder.appendChild(b);b.click();b.remove()}
+async function mountSlot(holder){const key=holder.dataset.map,M=MAPS[key];if(!M||!REALMAP)return;holder.classList.add('mounted');
+ let lib;try{lib=await mapLib()}catch(e){holder.innerHTML=cityMap(M.marks,M.sel,M.label);return}
+ if(!M.el){M.el=document.createElement('div');M.el.className='realmap';holder.innerHTML='';holder.appendChild(M.el);M.lib=lib;
+  if(lib==='y'){M.map=new ymaps.Map(M.el,{center:GEO.ll,zoom:10,controls:['zoomControl','geolocationControl']},{suppressMapOpenBlock:true,yandexMapDisablePoiInteractivity:true});M.map.behaviors.disable('scrollZoom');M.coll=new ymaps.GeoObjectCollection();M.cl=new ymaps.Clusterer({preset:'islands#invertedBlueClusterIcons',hasBalloon:false,clusterDisableClickZoom:false});M.map.geoObjects.add(M.cl).add(M.coll)}
+  else{M.map=L.map(M.el,{scrollWheelZoom:false}).setView(GEO.ll,10);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19}).addTo(M.map);M.layer=L.layerGroup().addTo(M.map)}
+ }else{holder.innerHTML='';holder.appendChild(M.el);if(M.lib==='y')M.map.container.fitToViewport();else M.map.invalidateSize()}
+ drawMarks(M,holder)}
+function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
+ if(M.lib==='y'){M.cl.removeAll();M.coll.removeAll();
+  pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
+   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#redStretchyIcon':'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
+   pm.events.add('click',()=>pick(m.id,holder));(on?M.coll:M.cl).add(pm)});
+  if(GEO.real)M.coll.add(new ymaps.Placemark(GEO.ll,{hintContent:'Вы здесь'},{preset:'islands#geolocationIcon'}));
+  const s=pts.find(m=>m.id===M.sel);
+  if(!M.fitted&&pts.length){M.fitted=true;const b=ymaps.util.bounds.fromPoints(pts.map(m=>m.ll).concat(GEO.real?[GEO.ll]:[]));M.map.setBounds(b,{checkZoomRange:true,zoomMargin:40})}
+  else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll,{flying:false});
+ }else{M.layer.clearLayers();
+  pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
+   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
+   L.marker(m.ll,{icon,zIndexOffset:on?1000:0,title:m.tip||m.label}).on('click',()=>pick(m.id,holder)).addTo(M.layer)});
+  if(GEO.real)L.marker(GEO.ll,{icon:L.divIcon({className:'',html:'<span class="lm-me"></span>',iconSize:null}),title:'Вы здесь'}).addTo(M.layer);
+  const s=pts.find(m=>m.id===M.sel);
+  if(!M.fitted&&pts.length){M.fitted=true;M.map.fitBounds(L.latLngBounds(pts.map(m=>m.ll).concat(GEO.real?[GEO.ll]:[])),{padding:[40,40],maxZoom:13})}
+  else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll);
+ }
+ M.lastSel=M.sel}
+if(REALMAP&&window.MutationObserver){new MutationObserver(()=>document.querySelectorAll('.mapslot:not(.mounted)').forEach(mountSlot)).observe(document.documentElement,{childList:true,subtree:true})}
+function refitMaps(){Object.values(MAPS).forEach(M=>M.fitted=false)}
+
 /* ---------- points page, auto.ru dealers layout ---------- */
 const PHONES={o1:'+7 495 120-44-10',s1:'+7 495 648-21-07',d1:'+7 495 777-02-98',s2:'+7 499 403-15-60',o2:'+7 495 120-44-11',d2:'+7 495 989-31-31',d3:'+7 495 741-62-00',s3:'+7 495 572-29-29',m1:'+7 925 310-80-80',m2:'+7 916 222-04-15'};
 const PDAYS=['Сегодня','Завтра','Ср 21','Чт 22','Пт 23','Сб 24'],PTIMES=['10:00','12:30','15:00','17:30','19:00'];
 function pointsView(P,o){
  if(!P.ph)P.ph=new Set();
- const L=PLACES.filter(p=>(!P.type||p.type===P.type)&&(!P.free||!p.price));
+ const L=PLACES.filter(p=>(!P.type||p.type===P.type)&&(!P.free||!p.price)).sort((a,b)=>GEO.real?(a.dist??999)-(b.dist??999):0);
  if(L.length&&!L.some(p=>p.id===P.sel))P.sel=L[0].id;
  const tabs=[['','Все'],...Object.entries(PTYPE).map(([k,[,l]])=>[k,l])];
  const book=p=>P.booked?`<div class="dbook"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="okdot">${ic('check',18)}</span><div><b>Вы записаны: ${PDAYS[P.day].toLowerCase()}, ${PTIMES[P.time]}</b><p class="fine">${esc(p.addr)}. ${o.bookedNote||'Отчёт — через 2 часа после осмотра.'}</p></div></div><button class="btn grey sm" type="button" id="rebook">Перенести</button></div>`
@@ -596,7 +678,7 @@ function pointsView(P,o){
   ${p.perk?`<div class="dperk">${esc(p.perk)}</div>`:''}
   <div class="dact"><button class="btn line sm" type="button" data-pick="${p.id}">${on&&!P.booked?'Выберите время ниже':'Записаться'}</button><button class="btn line sm" type="button" data-phone="${p.id}">${P.ph.has(p.id)?ic('phone',16)+' '+PHONES[p.id]:'Показать телефон'}</button></div>
   ${on?book(p):''}</article>`};
- const marks=L.filter(p=>p.x).map(p=>({id:p.id,kind:'pt',x:p.x,y:p.y,label:p.name,tip:p.name+' · '+(p.price?rub(p.price):'бесплатно')}));
+ const marks=L.filter(p=>p.x).map(p=>({id:p.id,kind:'pt',x:p.x,y:p.y,ll:p.ll,label:p.name,tip:p.name+' · '+(p.price?rub(p.price):'бесплатно')}));
  return `<div class="dmap"><div class="dlist">
   <div class="crumbs">${o.crumbs.map(c=>`<span>${c}</span>`).join('')}</div>
   <h1 class="dh">${o.title}</h1>
@@ -605,7 +687,7 @@ function pointsView(P,o){
   <label class="cbx"><input type="checkbox" id="onlyFree" ${P.free?'checked':''}><span class="box-ic">${ic('check',14)}</span>Только бесплатные</label>
   <div class="drows">${L.length?L.map(row).join(''):'<p class="muted" style="padding:24px 0">Ничего не нашли — снимите фильтр.</p>'}</div>
  </div>
- <div class="dmapcol"><div class="mapbox full">${cityMap(marks,P.sel,'Пункты осмотра на карте').replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}<div class="mapzoom" aria-hidden="true"><span>${ic('plus',18)}</span><span>${ic('nav',18)}</span></div><div class="maplegend"><span><i style="background:#3C7BF2"></i>пункт</span><span><i style="background:#DB3727"></i>выбран</span></div></div></div></div>`}
+ <div class="dmapcol"><div class="mapbox full">${mapSlot('points',marks,P.sel,'Пункты осмотра на карте').replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}${GEO.real?'':`<button type="button" class="geo-btn" id="geoBtn">${ic('nav',16)} Определить, где я</button>`}</div></div></div>`}
 function pointsClick(t,P,rerender,onBook){
  const pt=t.closest('[data-pt]');if(pt){P.type=pt.dataset.pt;P.booked=false;rerender();return true}
  if(t.closest('#onlyFree')){P.free=t.closest('#onlyFree').checked;P.booked=false;rerender();return true}
@@ -614,13 +696,14 @@ function pointsClick(t,P,rerender,onBook){
  const bt=t.closest('[data-bt]');if(bt){P.time=+bt.dataset.bt;rerender();return true}
  if(t.closest('#bookBtn')){P.booked=true;if(onBook)onBook();toast('Записали на осмотр');rerender();return true}
  if(t.closest('#rebook')){P.booked=false;rerender();return true}
+ if(t.closest('#geoBtn')){t.closest('#geoBtn').textContent='Определяем…';locate(ok=>{if(!ok)toast('Не получилось определить место — разрешите доступ к геопозиции в браузере');refitMaps();rerender()},true);return true}
  if(t.closest('input,.fld'))return true;
  const pl=t.closest('[data-pid]')||t.closest('.mk');if(pl){const id=pl.dataset.pid||pl.dataset.id;if(id!==P.sel){P.sel=id;P.booked=false;rerender();const r=document.querySelector(`.drow[data-pid="${id}"]`);if(r&&t.closest('.mk'))r.scrollIntoView({block:'nearest',behavior:'smooth'})}return true}
  return false}
 
 /* ---------- misc ---------- */
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,2600)}
-const ON_SITE=/^\/(market|check)(\/|$)/.test(location.pathname)||location.pathname==='/';
+const ON_SITE=REALMAP;
 function siteGo(path,label){if(ON_SITE)location.href=path;else toast('На сайте здесь откроется '+label)}
 function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>toast('Не удалось скопировать — выделите текст вручную'))}catch(e){toast('Не удалось скопировать — выделите текст вручную')}}
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}

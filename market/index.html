@@ -96,7 +96,6 @@ h3{font:700 18px/1.3 var(--f);letter-spacing:-.01em;margin:0}
 .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .grow{flex:1;min-width:0}
 .row > svg{flex:none}
-.fopen,.btn.fopen{display:none}
 .mt{margin-top:32px}
 
 .seg{display:inline-flex;background:var(--fill);border-radius:14px;padding:4px;gap:2px;max-width:100%;overflow-x:auto}
@@ -303,6 +302,30 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .mapsplit .listcol{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 220px);overflow-y:auto;padding-right:4px}
 .mapsplit .mapcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 132px)}
 
+/* ---------- filters ---------- */
+.fgrid.fmain{grid-template-columns:minmax(0,1.25fr) minmax(0,1.25fr) minmax(0,1fr) auto minmax(150px,auto)}
+.fmore{display:none;flex-direction:column;gap:14px}
+.filters.open .fmore{display:flex}
+.cfields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.phimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* ---------- real map ---------- */
+.mapslot{position:relative;width:100%;height:100%}
+.mapbox:not(.full) .mapslot{height:clamp(360px,62vh,620px)}
+.mapbox:not(.full) .mapslot > svg{height:100%;width:100%}
+.mapslot > svg{display:block;width:100%;height:100%}
+.realmap{position:absolute;inset:0;z-index:0;isolation:isolate}
+.mapslot{isolation:isolate}
+.stack > .gpill{align-self:flex-start}
+.maploading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:500;background:var(--map-land)}
+.geo-btn{position:absolute;left:12px;top:12px;z-index:500;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:12px;background:#fff;font-weight:600;font-size:14.5px;box-shadow:0 1px 6px rgba(0,0,0,.16)}
+.geo-btn:hover{background:var(--fill)}
+.lm-pt{display:block;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--pin);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.lm-pt.on{width:32px;height:32px;margin:-16px 0 0 -16px;background:var(--brand)}
+.lm-car{display:inline-block;transform:translate(-50%,-100%);white-space:nowrap;padding:4px 9px;border-radius:9px;background:var(--pin);color:#fff;font:700 13px/1.2 var(--f);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.lm-car.on{background:var(--brand)}
+.lm-me{display:block;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#2B6AEB;border:3px solid #fff;box-shadow:0 0 0 6px rgba(43,106,235,.2)}
+
 /* ---------- points: list + full-height map ---------- */
 .dmap{display:grid;grid-template-columns:440px minmax(0,1fr);gap:28px;align-items:start}
 .dlist{min-width:0;padding-bottom:24px}
@@ -390,6 +413,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:960px){
+  .fgrid.fmain{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dmap{grid-template-columns:minmax(0,1fr);gap:0}
   .dmapcol{position:relative;top:auto;height:320px;min-height:0;order:-1;margin-top:14px}
   .split{grid-template-columns:minmax(0,1fr);gap:28px}
@@ -411,8 +435,8 @@ input[type=range]{width:100%;accent-color:var(--ink)}
   .burger{width:42px;height:42px}
   .icons{margin-left:auto;gap:2px}
   .ico[data-site],#aiIco,.ico[data-go="my"]:not(:has(.badge)){display:none}
-  .fopen,.btn.fopen{display:inline-flex}
-  .filters:not(.open) .fgrid,.filters:not(.open) #fToggles{display:none}
+  .fgrid.fmain{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fmain .fld:nth-child(-n+2),.fmain #showBtn{grid-column:1/-1}
   .add,.ava{width:42px;height:42px}
   .ava{display:none}
   .add{order:4}
@@ -480,31 +504,32 @@ input[type=range]{width:100%;accent-color:var(--ink)}
     <form class="search" id="aiForm" role="search">
       <i data-ic="spark" data-s="20" class="lead-ic"></i>
       <input id="aiInput" type="search" autocomplete="off" placeholder="Марка, модель или запрос словами" aria-label="Найти машину словами">
-      <button type="button" class="loc" id="locBtn"><i data-ic="nav" data-s="18"></i>Москва <span id="locR">+50 км</span></button>
+      <button type="button" class="loc" id="locBtn"><i data-ic="nav" data-s="18"></i><span id="locName">Москва</span> <span id="locR">+50 км</span></button>
     </form>
     <button class="add" type="button" data-go="sell" aria-label="Разместить объявление" title="Разместить объявление"><i data-ic="plus" data-s="24"></i></button>
     <nav class="icons" aria-label="Быстрые действия">
-      <button class="ico" type="button" data-go="my"><i data-ic="grid"></i><span class="lbl">Объявления</span></button>
-      <button class="ico" type="button" id="aiIco"><i data-ic="spark"></i><span class="lbl">Осмотрено AI</span></button>
       <button class="ico" type="button" data-go="list"><i data-ic="heart"></i><span class="lbl">Избранное</span><span class="badge" id="favBadge" hidden></span></button>
-      <button class="ico" type="button" data-go="my"><i data-ic="bell"></i><span class="lbl">Сообщения</span><span class="badge" id="notifBadge">3</span></button>
+      <button class="ico" type="button" data-go="my"><i data-ic="grid"></i><span class="lbl">Мои объявления</span><span class="badge" id="notifBadge">3</span></button>
           </nav>
-    <button class="ava" type="button" id="avaBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Кабинет и роль">ВЫ</button>
+    <button class="ava" type="button" id="avaBtn" data-go="my" aria-label="Личный кабинет">ВЫ</button>
   </div>
   <div class="wrap"><nav class="nav" id="nav" aria-label="Разделы">
     <button type="button" data-go="buy" aria-current="page"><i data-ic="car"></i>Купить</button>
     <button type="button" data-go="sell"><i data-ic="tag"></i>Продать</button>
-    <button type="button" data-go="list"><i data-ic="heart"></i>Подборка</button>
     <button type="button" data-go="points"><i data-ic="map"></i>Пункты осмотра</button>
-    <button type="button" data-go="my"><i data-ic="user"></i>Мои объявления</button>
     <button type="button" data-go="dealer"><i data-ic="building"></i>Дилерам</button>
     <button type="button" data-go="insp"><i data-ic="wrench"></i>Сервисам подбора</button>
   </nav></div>
-  <div class="menu" id="menu" role="menu" hidden>
-    <button type="button" role="menuitem" data-go="buy"><i data-ic="car"></i><span>Покупатель<small>Поиск, подборка, сделка</small></span></button>
-    <button type="button" role="menuitem" data-go="my"><i data-ic="tag"></i><span>Продавец<small>Мои объявления и запросы</small></span></button>
-    <button type="button" role="menuitem" data-go="dealer"><i data-ic="building"></i><span>Дилер<small>Пункт осмотра и клиенты</small></span></button>
-    <button type="button" role="menuitem" data-go="insp"><i data-ic="wrench"></i><span>Сервис подбора<small>Заявки на выезд</small></span></button>
+  <div class="menu left" id="menu" role="menu" hidden>
+    <button type="button" role="menuitem" data-go="buy"><i data-ic="car"></i><span>Купить<small>Поиск, карта, аукционы</small></span></button>
+    <button type="button" role="menuitem" data-go="sell"><i data-ic="tag"></i><span>Продать<small>Объявление по ссылке за 2 минуты</small></span></button>
+    <button type="button" role="menuitem" data-go="points"><i data-ic="map"></i><span>Пункты осмотра<small>Ближайшие к вам</small></span></button>
+    <button type="button" role="menuitem" data-go="list"><i data-ic="heart"></i><span>Избранное<small>Сравнение и запрос осмотра</small></span></button>
+    <button type="button" role="menuitem" data-go="my"><i data-ic="grid"></i><span>Мои объявления<small>Запросы покупателей</small></span></button>
+    <button type="button" role="menuitem" data-site="/check" data-label="сервис проверки по VIN"><i data-ic="shield"></i><span>Проверка по VIN<small>Отчёт и сравнение ссылок</small></span></button>
+    <div class="hr" style="margin:6px 8px"></div>
+    <button type="button" role="menuitem" data-go="dealer"><i data-ic="building"></i><span>Дилерам<small>Пункт осмотра и новые клиенты</small></span></button>
+    <button type="button" role="menuitem" data-go="insp"><i data-ic="wrench"></i><span>Сервисам подбора<small>Заявки на выезд</small></span></button>
   </div>
 </header>
 
@@ -522,26 +547,28 @@ input[type=range]{width:100%;accent-color:var(--ink)}
     <div id="aiNote" class="ai-hint" hidden></div>
     <div class="filters" id="filters">
       <div class="chips" id="fMakes"></div>
-      <button class="btn grey fopen" type="button" id="fOpen" aria-expanded="false">Все фильтры</button>
+      <div class="fgrid fmain">
+        <div class="fld"><input id="fPmin" inputmode="numeric" placeholder="Цена от, ₽" aria-label="Цена от"><input id="fPmax" inputmode="numeric" placeholder="до" aria-label="Цена до"></div>
+        <div class="fld"><select id="fYmin" aria-label="Год от"></select><select id="fYmax" aria-label="Год до"></select></div>
+        <div class="fld"><select id="fRadius" aria-label="Расстояние"><option value="10">До 10 км</option><option value="25">До 25 км</option><option value="50" selected>До 50 км</option><option value="200">До 200 км</option></select></div>
+        <button class="btn grey" type="button" id="fOpen" aria-expanded="false">Ещё фильтры</button>
+        <button class="btn black" type="button" id="showBtn">Показать</button>
+      </div>
+      <div class="fmore">
       <div class="fgrid">
         <div class="fld"><select id="fBody" aria-label="Кузов"><option value="">Кузов</option><option value="sedan">Седан</option><option value="hatch">Хэтчбек, универсал</option><option value="suv">Кроссовер, внедорожник</option></select></div>
         <div class="fld"><select id="fBox" aria-label="Коробка"><option value="">Коробка</option><option>Автомат</option><option>Робот</option><option>Вариатор</option><option>Механика</option></select></div>
-        <div class="fld"><select id="fIdx" aria-label="Состояние по осмотру"><option value="0">Состояние по осмотру</option><option value="70">Индекс от 70</option><option value="80">Индекс от 80</option><option value="90">Индекс от 90</option></select></div>
-        <div class="fld"><input id="fPmin" inputmode="numeric" placeholder="Цена от, ₽" aria-label="Цена от"><input id="fPmax" inputmode="numeric" placeholder="до" aria-label="Цена до"></div>
-        <div class="fld"><select id="fYmin" aria-label="Год от"></select><select id="fYmax" aria-label="Год до"></select></div>
-        <div class="fld"><input id="fKm" inputmode="numeric" placeholder="Пробег до, км" aria-label="Пробег до"></div>
-        <div class="fld"><select id="fRadius" aria-label="Расстояние"><option value="10">До 10 км</option><option value="25">До 25 км</option><option value="50" selected>До 50 км</option><option value="200">До 200 км</option></select></div>
         <div class="fld"><select id="fDrive" aria-label="Привод"><option value="">Привод</option><option>Передний</option><option>Полный</option><option>Задний</option></select></div>
-        <button class="btn black" type="button" id="showBtn">Показать</button>
+        <div class="fld"><input id="fKm" inputmode="numeric" placeholder="Пробег до, км" aria-label="Пробег до"></div>
+        <div class="fld"><select id="fIdx" aria-label="Состояние по осмотру"><option value="0">Состояние по осмотру</option><option value="70">Индекс от 70</option><option value="80">Индекс от 80</option><option value="90">Индекс от 90</option></select></div>
       </div>
       <div class="chips" id="fToggles">
         <button type="button" class="chip sm" data-k="noPaint" aria-pressed="false">Без окрасов</button>
         <button type="button" class="chip sm" data-k="oneOwner" aria-pressed="false">Один владелец</button>
         <button type="button" class="chip sm" data-k="kmOk" aria-pressed="false">Пробег подтверждён</button>
-        <button type="button" class="chip sm" data-k="noLeaks" aria-pressed="false">Без подтёков</button>
         <button type="button" class="chip sm" data-k="below" aria-pressed="false">Цена ниже рынка</button>
-        <button type="button" class="chip sm" data-k="clean" aria-pressed="false">Чистая история по базам</button>
         <button type="button" class="chip sm" id="resetBtn">Сбросить</button>
+      </div>
       </div>
     </div>
     <div class="res-h" id="results">
@@ -660,7 +687,7 @@ function cityMap(marks,sel,label){
  let s=`<svg viewBox="0 0 800 560" role="img" aria-label="${esc(label||'Карта')}">`+MAPBG;
  const order=marks.slice().sort((a,b)=>(a.id===sel)-(b.id===sel));
  order.forEach(m=>{const on=m.id===sel,x=m.x,y=m.y;
-  if(m.kind==='pt'){s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)">${on?`<circle cx="${x}" cy="${y}" r="27" fill="#DB3727" opacity=".14"/>`:''}<circle cx="${x}" cy="${y}" r="${on?19:16}" fill="${on?'url(#mg)':'#3C7BF2'}" stroke="#fff" stroke-width="3"/><path d="M${x-6.5} ${y+.5}l4.3 4.3 8.7-8.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>`}
+  if(m.kind==='pt'){s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)">${on?`<circle cx="${x}" cy="${y}" r="27" fill="#DB3727" opacity=".14" pointer-events="none"/>`:''}<circle cx="${x}" cy="${y}" r="${on?19:16}" fill="${on?'url(#mg)':'#3C7BF2'}" stroke="#fff" stroke-width="3"/><path d="M${x-6.5} ${y+.5}l4.3 4.3 8.7-8.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>`}
   else{const c=m.color||'#16161A',r=on?19:15;s+=`<g class="mk" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.label)}" filter="url(#msh)"><circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="${on?5:4}"/><text x="${x}" y="${y+4.5}" text-anchor="middle" font-size="${on?14:12.5}" font-weight="800" fill="#16161A">${esc(m.text||'')}</text></g>`}
   if(on&&m.tip){const t=m.tip,w=Math.min(300,t.length*7.4+28),bx=Math.max(8,Math.min(792-w,x-w/2)),by=y-(m.kind==='pt'?58:62);s+=`<g pointer-events="none" filter="url(#msh)"><rect x="${bx}" y="${by}" width="${w}" height="32" rx="16" fill="#16161A"/><text x="${bx+w/2}" y="${by+21}" text-anchor="middle" font-size="13.5" font-weight="600" fill="#fff">${esc(t)}</text></g>`}
  });
@@ -668,26 +695,84 @@ function cityMap(marks,sel,label){
 
 /* ---------- inspection points (shared) ---------- */
 const PLACES=[
- {id:'o1',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'сегодня, без записи',rating:4.9,perk:'Можно без записи, 7:00–23:00',x:386,y:226},
- {id:'s1',type:'sto',ty:'СТО-партнёр',name:'Гараж 24',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике',x:366,y:244},
- {id:'d1',type:'dealer',ty:'Дилерский центр',name:'Север-Авто',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно, если согласны получить предложение по trade-in',x:356,y:150},
- {id:'s2',type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:'',x:432,y:168},
- {id:'o2',type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Люблино',addr:'ул. Краснодарская, 51',dist:16,price:2500,slot:'сегодня, без записи',rating:4.8,perk:'',x:506,y:378},
- {id:'d2',type:'dealer',ty:'Дилерский центр',name:'Восток Моторс',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера',x:566,y:268},
- {id:'d3',type:'dealer',ty:'Дилерский центр',name:'Запад-Авто',addr:'Рублёвское ш., 62',dist:15,price:0,slot:'завтра 12:30',rating:4.7,perk:'Бесплатно с предложением по выкупу',x:246,y:300},
- {id:'s3',type:'sto',ty:'СТО-партнёр',name:'Химки Сервис',addr:'Ленинградское ш., 29',dist:18,price:2500,slot:'сегодня 18:30',rating:4.6,perk:'',x:284,y:132},
+ {id:'o1',ll:[55.8025,37.5835],type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Савёловская',addr:'Бутырская ул., 46',dist:1.6,price:2500,slot:'сегодня, без записи',rating:4.9,perk:'Можно без записи, 7:00–23:00',x:386,y:226},
+ {id:'s1',ll:[55.7935,37.5795],type:'sto',ty:'СТО-партнёр',name:'Гараж 24',addr:'ул. Нижняя Масловка, 6',dist:2.1,price:2500,slot:'сегодня 15:00',rating:4.9,perk:'Осмотр на подъёмнике',x:366,y:244},
+ {id:'d1',ll:[55.8835,37.544],type:'dealer',ty:'Дилерский центр',name:'Север-Авто',addr:'Дмитровское ш., 98',dist:5.2,price:0,slot:'сегодня 17:30',rating:4.8,perk:'Бесплатно, если согласны получить предложение по trade-in',x:356,y:150},
+ {id:'s2',ll:[55.859,37.605],type:'sto',ty:'СТО-партнёр',name:'Техцентр «Мотор»',addr:'ул. Хачатуряна, 14',dist:7.4,price:2500,slot:'завтра 10:00',rating:4.7,perk:'',x:432,y:168},
+ {id:'o2',ll:[55.6735,37.77],type:'own',ty:'Пункт Осмотрено',name:'Осмотрено Люблино',addr:'ул. Краснодарская, 51',dist:16,price:2500,slot:'сегодня, без записи',rating:4.8,perk:'',x:506,y:378},
+ {id:'d2',ll:[55.7575,37.752],type:'dealer',ty:'Дилерский центр',name:'Восток Моторс',addr:'ш. Энтузиастов, 31',dist:14,price:1500,slot:'завтра 11:00',rating:4.6,perk:'Скидка 1 000 ₽ от дилера',x:566,y:268},
+ {id:'d3',ll:[55.759,37.417],type:'dealer',ty:'Дилерский центр',name:'Запад-Авто',addr:'Рублёвское ш., 62',dist:15,price:0,slot:'завтра 12:30',rating:4.7,perk:'Бесплатно с предложением по выкупу',x:246,y:300},
+ {id:'s3',ll:[55.889,37.444],type:'sto',ty:'СТО-партнёр',name:'Химки Сервис',addr:'Ленинградское ш., 29',dist:18,price:2500,slot:'сегодня 18:30',rating:4.6,perk:'',x:284,y:132},
  {id:'m1',type:'mobile',ty:'Выездной сервис подбора',name:'АвтоЭксперт Север',addr:'приедут по вашему адресу',dist:null,price:3500,slot:'сегодня 19:00',rating:4.8,perk:'Приедут через 2–3 часа'},
  {id:'m2',type:'mobile',ty:'Выездной сервис подбора',name:'Подбор Профи',addr:'приедут по вашему адресу',dist:null,price:3200,slot:'завтра 09:00',rating:4.5,perk:'Эндоскоп двигателя в комплекте'}];
 const PTYPE={own:['check','Пункты Осмотрено'],sto:['wrench','СТО-партнёры'],dealer:['building','Дилерские центры'],mobile:['route','Выезд к вам']};
 function placeRow(p,on,tag){tag=tag||'button';
  return `<${tag} ${tag==='button'?'type="button"':''} class="place" data-pid="${p.id}" aria-pressed="${on}"><span class="iconbox ${p.type==='own'?'g':''}">${ic(PTYPE[p.type][0],22)}</span><span><b>${esc(p.name)}</b><span class="m">${p.ty} · ${esc(p.addr)}</span><span class="m">★ ${String(p.rating).replace('.',',')} · ближайшее: ${p.slot}</span>${p.perk?`<span class="perk">${esc(p.perk)}</span>`:''}</span><span class="pr num">${p.price?rub(p.price):'Бесплатно'}<small>${p.dist!=null?String(p.dist).replace('.',',')+' км':'выезд'}</small></span></${tag}>`}
 
+/* ---------- location ---------- */
+const CENTER=[55.7558,37.6173];
+const GEO={ll:[55.7963,37.5880],real:false,label:'Москва'};   // until the browser tells us, assume Savyolovskaya
+function hav(a,b){const R=6371,r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]),h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function dest(o,km,deg){const r=x=>x*Math.PI/180;return [o[0]+km*Math.cos(r(deg))/111.2,o[1]+km*Math.sin(r(deg))/(111.2*Math.cos(r(o[0])))]}
+const round1=d=>d<10?Math.round(d*10)/10:Math.round(d);
+function refreshPlaceDist(){PLACES.forEach(p=>{if(p.ll)p.dist=round1(hav(GEO.ll,p.ll))})}
+let geoAsked=false;
+function locate(done,force){
+ if(!navigator.geolocation||(geoAsked&&!force)){done&&done(false);return}
+ geoAsked=true;
+ try{navigator.geolocation.getCurrentPosition(pos=>{GEO.ll=[pos.coords.latitude,pos.coords.longitude];GEO.real=true;GEO.label='Рядом с вами';refreshPlaceDist();done&&done(true)},()=>{done&&done(false)},{enableHighAccuracy:false,timeout:9000,maximumAge:600000})}catch(e){done&&done(false)}}
+
+/* ---------- real map (site only): Yandex Maps 2.1, Leaflet + OSM as a fallback ---------- */
+// Free key: developer.tech.yandex.ru → «JavaScript API и HTTP Геокодер». Paste it here.
+const YMAPS_KEY='';
+const REALMAP=ON_SITE_CHECK();
+function ON_SITE_CHECK(){return /^\/(market|check)(\/|$)/.test(location.pathname)||location.pathname==='/'||/^\/(market|check)\/index\.html$/.test(location.pathname)}
+function loadJs(src,ms){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=ok;s.onerror=no;document.head.appendChild(s);setTimeout(()=>no(new Error('timeout')),ms||8000)})}
+function loadCss(href){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)}
+let LIB=null;
+function mapLib(){if(LIB)return LIB;LIB=(async()=>{
+ try{await loadJs('https://api-maps.yandex.ru/2.1/?lang=ru_RU'+(YMAPS_KEY?'&apikey='+YMAPS_KEY:''),8000);if(!window.ymaps)throw 0;await new Promise((ok,no)=>{ymaps.ready(ok,no);setTimeout(no,8000)});return 'y'}
+ catch(e){loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');await loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',10000);return 'l'}})();return LIB}
+const MAPS={};
+const shortPrice=n=>n>=1e6?String(Math.round(n/1e5)/10).replace('.',',')+' млн':Math.round(n/1e3)+' тыс';
+function mapSlot(key,marks,sel,label){MAPS[key]=Object.assign(MAPS[key]||{},{marks,sel,label});
+ return `<div class="mapslot" data-map="${key}">${REALMAP?'<div class="maploading">Загружаем карту…</div>':cityMap(marks,sel,label)}</div>`}
+function pick(id,holder){const b=document.createElement('button');b.className='mk';b.dataset.id=id;b.hidden=true;holder.appendChild(b);b.click();b.remove()}
+async function mountSlot(holder){const key=holder.dataset.map,M=MAPS[key];if(!M||!REALMAP)return;holder.classList.add('mounted');
+ let lib;try{lib=await mapLib()}catch(e){holder.innerHTML=cityMap(M.marks,M.sel,M.label);return}
+ if(!M.el){M.el=document.createElement('div');M.el.className='realmap';holder.innerHTML='';holder.appendChild(M.el);M.lib=lib;
+  if(lib==='y'){M.map=new ymaps.Map(M.el,{center:GEO.ll,zoom:10,controls:['zoomControl','geolocationControl']},{suppressMapOpenBlock:true,yandexMapDisablePoiInteractivity:true});M.map.behaviors.disable('scrollZoom');M.coll=new ymaps.GeoObjectCollection();M.cl=new ymaps.Clusterer({preset:'islands#invertedBlueClusterIcons',hasBalloon:false,clusterDisableClickZoom:false});M.map.geoObjects.add(M.cl).add(M.coll)}
+  else{M.map=L.map(M.el,{scrollWheelZoom:false}).setView(GEO.ll,10);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19}).addTo(M.map);M.layer=L.layerGroup().addTo(M.map)}
+ }else{holder.innerHTML='';holder.appendChild(M.el);if(M.lib==='y')M.map.container.fitToViewport();else M.map.invalidateSize()}
+ drawMarks(M,holder)}
+function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
+ if(M.lib==='y'){M.cl.removeAll();M.coll.removeAll();
+  pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
+   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#redStretchyIcon':'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
+   pm.events.add('click',()=>pick(m.id,holder));(on?M.coll:M.cl).add(pm)});
+  if(GEO.real)M.coll.add(new ymaps.Placemark(GEO.ll,{hintContent:'Вы здесь'},{preset:'islands#geolocationIcon'}));
+  const s=pts.find(m=>m.id===M.sel);
+  if(!M.fitted&&pts.length){M.fitted=true;const b=ymaps.util.bounds.fromPoints(pts.map(m=>m.ll).concat(GEO.real?[GEO.ll]:[]));M.map.setBounds(b,{checkZoomRange:true,zoomMargin:40})}
+  else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll,{flying:false});
+ }else{M.layer.clearLayers();
+  pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
+   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
+   L.marker(m.ll,{icon,zIndexOffset:on?1000:0,title:m.tip||m.label}).on('click',()=>pick(m.id,holder)).addTo(M.layer)});
+  if(GEO.real)L.marker(GEO.ll,{icon:L.divIcon({className:'',html:'<span class="lm-me"></span>',iconSize:null}),title:'Вы здесь'}).addTo(M.layer);
+  const s=pts.find(m=>m.id===M.sel);
+  if(!M.fitted&&pts.length){M.fitted=true;M.map.fitBounds(L.latLngBounds(pts.map(m=>m.ll).concat(GEO.real?[GEO.ll]:[])),{padding:[40,40],maxZoom:13})}
+  else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll);
+ }
+ M.lastSel=M.sel}
+if(REALMAP&&window.MutationObserver){new MutationObserver(()=>document.querySelectorAll('.mapslot:not(.mounted)').forEach(mountSlot)).observe(document.documentElement,{childList:true,subtree:true})}
+function refitMaps(){Object.values(MAPS).forEach(M=>M.fitted=false)}
+
 /* ---------- points page, auto.ru dealers layout ---------- */
 const PHONES={o1:'+7 495 120-44-10',s1:'+7 495 648-21-07',d1:'+7 495 777-02-98',s2:'+7 499 403-15-60',o2:'+7 495 120-44-11',d2:'+7 495 989-31-31',d3:'+7 495 741-62-00',s3:'+7 495 572-29-29',m1:'+7 925 310-80-80',m2:'+7 916 222-04-15'};
 const PDAYS=['Сегодня','Завтра','Ср 21','Чт 22','Пт 23','Сб 24'],PTIMES=['10:00','12:30','15:00','17:30','19:00'];
 function pointsView(P,o){
  if(!P.ph)P.ph=new Set();
- const L=PLACES.filter(p=>(!P.type||p.type===P.type)&&(!P.free||!p.price));
+ const L=PLACES.filter(p=>(!P.type||p.type===P.type)&&(!P.free||!p.price)).sort((a,b)=>GEO.real?(a.dist??999)-(b.dist??999):0);
  if(L.length&&!L.some(p=>p.id===P.sel))P.sel=L[0].id;
  const tabs=[['','Все'],...Object.entries(PTYPE).map(([k,[,l]])=>[k,l])];
  const book=p=>P.booked?`<div class="dbook"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="okdot">${ic('check',18)}</span><div><b>Вы записаны: ${PDAYS[P.day].toLowerCase()}, ${PTIMES[P.time]}</b><p class="fine">${esc(p.addr)}. ${o.bookedNote||'Отчёт — через 2 часа после осмотра.'}</p></div></div><button class="btn grey sm" type="button" id="rebook">Перенести</button></div>`
@@ -703,7 +788,7 @@ function pointsView(P,o){
   ${p.perk?`<div class="dperk">${esc(p.perk)}</div>`:''}
   <div class="dact"><button class="btn line sm" type="button" data-pick="${p.id}">${on&&!P.booked?'Выберите время ниже':'Записаться'}</button><button class="btn line sm" type="button" data-phone="${p.id}">${P.ph.has(p.id)?ic('phone',16)+' '+PHONES[p.id]:'Показать телефон'}</button></div>
   ${on?book(p):''}</article>`};
- const marks=L.filter(p=>p.x).map(p=>({id:p.id,kind:'pt',x:p.x,y:p.y,label:p.name,tip:p.name+' · '+(p.price?rub(p.price):'бесплатно')}));
+ const marks=L.filter(p=>p.x).map(p=>({id:p.id,kind:'pt',x:p.x,y:p.y,ll:p.ll,label:p.name,tip:p.name+' · '+(p.price?rub(p.price):'бесплатно')}));
  return `<div class="dmap"><div class="dlist">
   <div class="crumbs">${o.crumbs.map(c=>`<span>${c}</span>`).join('')}</div>
   <h1 class="dh">${o.title}</h1>
@@ -712,7 +797,7 @@ function pointsView(P,o){
   <label class="cbx"><input type="checkbox" id="onlyFree" ${P.free?'checked':''}><span class="box-ic">${ic('check',14)}</span>Только бесплатные</label>
   <div class="drows">${L.length?L.map(row).join(''):'<p class="muted" style="padding:24px 0">Ничего не нашли — снимите фильтр.</p>'}</div>
  </div>
- <div class="dmapcol"><div class="mapbox full">${cityMap(marks,P.sel,'Пункты осмотра на карте').replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}<div class="mapzoom" aria-hidden="true"><span>${ic('plus',18)}</span><span>${ic('nav',18)}</span></div><div class="maplegend"><span><i style="background:#3C7BF2"></i>пункт</span><span><i style="background:#DB3727"></i>выбран</span></div></div></div></div>`}
+ <div class="dmapcol"><div class="mapbox full">${mapSlot('points',marks,P.sel,'Пункты осмотра на карте').replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}${GEO.real?'':`<button type="button" class="geo-btn" id="geoBtn">${ic('nav',16)} Определить, где я</button>`}</div></div></div>`}
 function pointsClick(t,P,rerender,onBook){
  const pt=t.closest('[data-pt]');if(pt){P.type=pt.dataset.pt;P.booked=false;rerender();return true}
  if(t.closest('#onlyFree')){P.free=t.closest('#onlyFree').checked;P.booked=false;rerender();return true}
@@ -721,13 +806,14 @@ function pointsClick(t,P,rerender,onBook){
  const bt=t.closest('[data-bt]');if(bt){P.time=+bt.dataset.bt;rerender();return true}
  if(t.closest('#bookBtn')){P.booked=true;if(onBook)onBook();toast('Записали на осмотр');rerender();return true}
  if(t.closest('#rebook')){P.booked=false;rerender();return true}
+ if(t.closest('#geoBtn')){t.closest('#geoBtn').textContent='Определяем…';locate(ok=>{if(!ok)toast('Не получилось определить место — разрешите доступ к геопозиции в браузере');refitMaps();rerender()},true);return true}
  if(t.closest('input,.fld'))return true;
  const pl=t.closest('[data-pid]')||t.closest('.mk');if(pl){const id=pl.dataset.pid||pl.dataset.id;if(id!==P.sel){P.sel=id;P.booked=false;rerender();const r=document.querySelector(`.drow[data-pid="${id}"]`);if(r&&t.closest('.mk'))r.scrollIntoView({block:'nearest',behavior:'smooth'})}return true}
  return false}
 
 /* ---------- misc ---------- */
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,2600)}
-const ON_SITE=/^\/(market|check)(\/|$)/.test(location.pathname)||location.pathname==='/';
+const ON_SITE=REALMAP;
 function siteGo(path,label){if(ON_SITE)location.href=path;else toast('На сайте здесь откроется '+label)}
 function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>toast('Не удалось скопировать — выделите текст вручную'))}catch(e){toast('Не удалось скопировать — выделите текст вручную')}}
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
@@ -757,7 +843,8 @@ const CARS=[
 ];
 const AUC={4:{bid:2040000,reserve:2150000,h:14,n:9},7:{bid:2210000,reserve:2200000,h:3,n:17},12:{bid:2300000,reserve:2400000,h:21,n:5}};
 CARS.forEach(c=>{if(AUC[c.id])c.auc=AUC[c.id];c.legal=c.legal||'ok';c.dtp=c.dtp||0;c.taxi=!!c.taxi;
- const a=(c.dir-90)*Math.PI/180,r=Math.min(c.dist,60)*4.1+22;c.x=Math.round(Math.max(28,Math.min(772,400+Math.cos(a)*r*1.25)));c.y=Math.round(Math.max(28,Math.min(532,280+Math.sin(a)*r)));});
+ const a=(c.dir-90)*Math.PI/180,r=Math.min(c.dist,60)*4.1+22;c.x=Math.round(Math.max(28,Math.min(772,400+Math.cos(a)*r*1.25)));c.y=Math.round(Math.max(28,Math.min(532,280+Math.sin(a)*r)));c.ll=dest(CENTER,Math.min(c.dist,60)*.8+1,c.dir);});
+function refreshCarDist(){CARS.forEach(c=>{c.dist=Math.max(1,Math.round(hav(GEO.ll,c.ll)))})}
 const MAKES=['Toyota','Kia','Hyundai','Haval','Volkswagen','Skoda','Mazda','Lada'];
 const PANELS=['bumperF','hood','fenderFL','fenderFR','doorFL','doorFR','doorRL','doorRR','roof','fenderRL','fenderRR','trunk','bumperR'];
 const PNAME={bumperF:'Передний бампер',hood:'Капот',fenderFL:'Крыло переднее левое',fenderFR:'Крыло переднее правое',doorFL:'Дверь передняя левая',doorFR:'Дверь передняя правая',doorRL:'Дверь задняя левая',doorRR:'Дверь задняя правая',roof:'Крыша',fenderRL:'Крыло заднее левое',fenderRR:'Крыло заднее правое',trunk:'Крышка багажника',bumperR:'Задний бампер'};
@@ -832,9 +919,9 @@ function renderBuy(){
 }
 function renderBuyMap(L){
  if(!L.some(c=>c.id===S.mapSel))S.mapSel=L.length?L[0].id:null;
- $('#buyMap').innerHTML=cityMap(L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,color:c.st==='done'?getComputedStyle(document.documentElement).getPropertyValue('--'+scoreCls(c.idx)).trim():'#9A9AA3',text:c.st==='done'?c.idx:'?',label:`${c.make} ${c.model}, ${rub(priceOf(c))}`,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),S.mapSel,'Осмотренные и неосмотренные машины на карте');
+ $('#buyMap').innerHTML=mapSlot('buy',L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,ll:c.ll,price:shortPrice(priceOf(c)),color:c.st==='done'?getComputedStyle(document.documentElement).getPropertyValue('--'+scoreCls(c.idx)).trim():'#9A9AA3',text:c.st==='done'?c.idx:'?',label:`${c.make} ${c.model}, ${rub(priceOf(c))}`,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),S.mapSel,'Осмотренные и неосмотренные машины на карте');
  const c=byId(S.mapSel);
- $('#mapSel').innerHTML=c?`<div class="lrow"><div class="photo ${scene(c.id)}">${car(c.color,c.body)}</div><div class="stack" style="gap:6px">${stPill(c)}<h3>${esc(c.make)} ${esc(c.model)}, ${c.year}</h3><div class="muted num">${kmf(c.km)} · ${c.box} · ${c.dist} км, ${esc(c.where)}</div><div class="p num" style="font-size:20px;font-weight:800">${rub(priceOf(c))}</div><div class="row"><button class="btn black sm" type="button" data-open="${c.id}">Открыть</button><button class="btn grey sm" type="button" data-fav="${c.id}" aria-pressed="${FAV.has(c.id)}">${ic('heart',18)} В подборку</button></div></div></div><p class="fine">Цифра в кружке — индекс состояния по осмотру; «?» — машину ещё не осматривали.</p>`:'';
+ $('#mapSel').innerHTML=c?`<div class="lrow"><div class="photo ${scene(c.id)}">${car(c.color,c.body)}</div><div class="stack" style="gap:6px">${stPill(c)}<h3>${esc(c.make)} ${esc(c.model)}, ${c.year}</h3><div class="muted num">${kmf(c.km)} · ${c.box} · ${c.dist} км, ${esc(c.where)}</div><div class="p num" style="font-size:20px;font-weight:800">${rub(priceOf(c))}</div><div class="row"><button class="btn black sm" type="button" data-open="${c.id}">Открыть</button><button class="btn grey sm" type="button" data-fav="${c.id}" aria-pressed="${FAV.has(c.id)}">${ic('heart',18)} В подборку</button></div></div></div>`:'';
 }
 function syncControls(){$('#fBody').value=S.body;$('#fBox').value=S.box;$('#fIdx').value=S.idx;$('#fPmin').value=S.pmin?S.pmin.toLocaleString('ru-RU'):'';$('#fPmax').value=S.pmax?S.pmax.toLocaleString('ru-RU'):'';$('#fYmin').value=S.ymin||'';$('#fYmax').value=S.ymax||'';$('#fKm').value=S.kmax?S.kmax.toLocaleString('ru-RU'):'';$('#fRadius').value=S.radius;$('#fDrive').value=S.drive;$('#fSort').value=S.sort;$('#locR').textContent='+'+S.radius+' км';$$('.fld select').forEach(s=>s.classList.toggle('ph',!s.value||s.value==='0'))}
 function resetF(){Object.assign(S,{mode:'all',make:'',body:'',box:'',idx:0,pmin:0,pmax:0,ymin:0,ymax:0,kmax:0,radius:50,drive:'',cheap:false,ai:null});S.chk.clear();$('#aiNote').hidden=true;$('#aiInput').value='';syncControls();renderBuy()}
@@ -965,7 +1052,7 @@ function renderList(){const L=[...FAV].map(byId).filter(Boolean),un=L.filter(c=>
   <form class="row" id="extForm" style="flex-wrap:nowrap"><div class="fld grow"><input id="extLink" placeholder="Вставьте ссылку с Авто.ру, Авито или Дрома" aria-label="Ссылка на объявление с другой площадки"></div><button class="btn black" type="submit">Добавить</button></form>
   ${!L.length?`<div class="soft"><h3>Подборка пуста</h3><p class="fine" style="margin-top:6px">Нажмите на сердечко у машины в поиске или вставьте ссылку на объявление с другой площадки.</p><button class="btn black sm" type="button" data-go="buy" style="margin-top:14px">Перейти к поиску</button></div>`:
   listView==='cmp'?`<div class="tablewrap"><table class="cmp"><thead><tr><th scope="col">Итоговая оценка</th>${L.map((c,i)=>`<th scope="col"><div class="carh">${i===top?'<span class="firstpick">Смотреть первой</span>':''}<div class="photo ${scene(c.id)}">${car(c.color,c.body)}</div><b>${esc(c.make)} ${esc(c.model)}, ${c.year}</b><span class="score ${scoreCls(sc[i])}">${sc[i]}</span><button type="button" class="x" data-fav="${c.id}">убрать</button></div></th>`).join('')}</tr></thead><tbody>${cmpRows(L)}</tbody></table></div>`:
-  listView==='map'?`<div class="mapbox" id="listMap">${cityMap(L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,color:c.st==='done'?'#14965A':'#9A9AA3',text:c.st==='done'?c.idx:'?',label:c.make+' '+c.model,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),L[0]&&L[0].id,'Подборка на карте')}</div>`:
+  listView==='map'?`<div class="mapbox" id="listMap">${mapSlot('list',L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,ll:c.ll,price:shortPrice(priceOf(c)),color:c.st==='done'?'#14965A':'#9A9AA3',text:c.st==='done'?c.idx:'?',label:c.make+' '+c.model,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),L[0]&&L[0].id,'Подборка на карте')}</div>`:
   `<div class="list">${L.map(c=>`<div class="lrow"><button type="button" class="photo ${scene(c.id)}" data-open="${c.id}" aria-label="Открыть ${esc(c.make+' '+c.model)}">${car(c.color,c.body)}</button><div class="stack" style="gap:6px"><div class="row" style="gap:8px">${stPill(c)}${c.src?`<span class="tag grey">с ${c.src}</span>`:''}</div><h3>${esc(c.make)} ${esc(c.model)}, ${c.year}</h3><div class="muted num">${kmf(c.km)} · ${c.dist} км, ${esc(c.where)}</div><div class="num" style="font-weight:800;font-size:19px">${rub(priceOf(c))}</div>
    <div class="row" style="gap:8px">${c.st==='done'?`<button class="btn black xs" type="button" data-open="${c.id}">Открыть протокол</button>`:c.src?`<button class="btn black xs" type="button" data-ext="${c.id}">Запросить осмотр</button>`:`<button class="btn black xs" type="button" data-open="${c.id}">Осмотр: запросить или скинуться</button>`}<button class="btn grey xs" type="button" data-fav="${c.id}">Убрать</button></div></div></div>`).join('')}</div>`}
  </div>
@@ -979,68 +1066,88 @@ function renderList(){const L=[...FAV].map(byId).filter(Boolean),un=L.filter(c=>
 }
 
 /* ================= SELL WIZARD ================= */
-const W={step:0,link:'https://auto.ru/cars/used/sale/kia/rio/1123948571',loaded:false,owner:false,photoSrc:'listing',history:true,price:1290000,desc:'Один владелец, обслуживание у дилера, вторая резина на дисках. Не такси, не битая. Торг у машины.',sync:true,bargain:true,insp:'later',pool:true,place:'o1',paid:false};
-const WSTEPS=['Ссылка','Владелец','Фото','Цена','Осмотр','Оплата'];
+const DEMO_CAR={title:'Kia Rio',year:2020,km:54200,engine:'1.6 л, 123 л.с.',transmission:'автомат',price:1290000,photos:[],vin:'Z94C251BBLR••••12',source:'Авто.ру',demo:true};
+const W={step:0,link:'',imp:null,car:null,owner:false,photoSrc:'listing',price:0,desc:'',sync:true,insp:'now',pool:true,place:'o1',paid:false};
+const WSTEPS=['Машина','Владелец','Цена','Осмотр и оплата'];
 const SRC=[['Авто.ру','#DB3727','А'],['Авито','#00AAFF','А'],['Дром','#D7271F','Д']];
+const myTitle=()=>W.car?`${W.car.title}${W.car.year?', '+W.car.year:''}`:'Kia Rio, 2020';
 function wizTotal(){return W.insp==='now'?2500:500}
+async function importLink(raw){
+ const v=raw.trim();W.link=v;W.car=null;
+ if(!v){W.imp={st:'err',msg:'Вставьте ссылку, VIN или госномер'};renderSell();return}
+ const isUrl=/^https?:\/\//i.test(v);
+ if(!isUrl){ // VIN or plate: no listing to read, ask for the basics
+  W.imp={st:'manual',msg:'Объявления нет — заполните три поля, остальное возьмём из отчёта по VIN.'};W.car={title:'',year:null,km:null,price:null,photos:[],vin:/^[A-HJ-NPR-Z0-9]{17}$/i.test(v)?v.toUpperCase():null};renderSell();return}
+ const guess=carFromLink(v);
+ if(!ON_SITE){W.imp={st:'demo',msg:'В демо-версии сайты площадок не загружаются. Марку и модель взяли из ссылки, остальное — пример.'};W.car=Object.assign({},DEMO_CAR,guess?{title:guess.title,year:guess.year||DEMO_CAR.year,demo:true}:{});W.price=W.car.price;renderSell();return}
+ W.imp={st:'loading'};renderSell();
+ try{const r=await fetch('/api/parse?url='+encodeURIComponent(v));const j=await r.json();
+  if(j.ok){const d=j.data;W.car={title:d.title||[d.make,d.model].filter(Boolean).join(' ')||(guess&&guess.title)||'',year:d.year,km:d.km,engine:d.engine,transmission:d.transmission,price:d.price,photos:d.photos||[],vin:d.vin,source:d.source,city:d.city};W.desc=W.desc||d.description||'';if(d.price)W.price=d.price;
+   W.imp={st:j.partial?'partial':'ok',msg:j.partial?'Часть данных площадка не показала — допишите их ниже.':''}}
+  else{W.car={title:guess?guess.title:'',year:guess&&guess.year,km:null,price:null,photos:[]};W.imp={st:'blocked',msg:(j.error||'Не удалось прочитать объявление')+'. Марку и модель взяли из ссылки — допишите год, пробег и цену.'}}
+ }catch(e){W.car={title:guess?guess.title:'',photos:[]};W.imp={st:'blocked',msg:'Сервер загрузки недоступен. Заполните данные вручную.'}}
+ renderSell()}
+const carReady=()=>W.car&&W.car.title&&W.car.year&&W.car.km&&(W.car.price||W.price);
+function carFields(){const c=W.car,miss=k=>!c[k];
+ const f=[];
+ if(!c.title||W.imp.st==='manual')f.push(`<div><label class="flabel" for="cTitle">Марка и модель</label><div class="fld"><input id="cTitle" data-cf="title" value="${esc(c.title||'')}" placeholder="Например, Kia Rio"></div></div>`);
+ if(miss('year')||W.imp.st!=='ok')f.push(`<div><label class="flabel" for="cYear">Год</label><div class="fld"><input id="cYear" data-cf="year" inputmode="numeric" value="${c.year||''}" placeholder="2020"></div></div>`);
+ if(miss('km')||W.imp.st!=='ok')f.push(`<div><label class="flabel" for="cKm">Пробег, км</label><div class="fld"><input id="cKm" data-cf="km" inputmode="numeric" value="${c.km?c.km.toLocaleString('ru-RU'):''}" placeholder="54 000"></div></div>`);
+ if(miss('price')||W.imp.st!=='ok')f.push(`<div><label class="flabel" for="cPrice">Цена, ₽</label><div class="fld"><input id="cPrice" data-cf="price" inputmode="numeric" value="${c.price?c.price.toLocaleString('ru-RU'):''}" placeholder="1 290 000"></div></div>`);
+ return f.length?`<div class="cfields">${f.join('')}</div>`:''}
+function photoBox(c,i){const u=c&&c.photos&&c.photos[i];return u?`<img class="phimg" src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}
 function renderSell(){
  if(W.paid){renderMy();show('my');return}
- const s=W.step;let main='';
- if(s===0)main=`<h2>Вставьте ссылку на своё объявление</h2><p class="lead" style="margin-bottom:18px">Заберём фото, цену, пробег и описание. Нет объявления — введите VIN или госномер.</p>
-  <div class="srcs" style="margin-bottom:14px">${SRC.map(([n,c,l])=>`<span class="src"><b style="background:${c}">${l}</b>${n}</span>`).join('')}<span class="src"><b style="background:#16161A">#</b>VIN или госномер</span></div>
-  <form class="row" id="wLinkForm" style="flex-wrap:nowrap"><div class="fld grow"><input id="wLink" value="${esc(W.link)}" aria-label="Ссылка на объявление, VIN или госномер"></div><button class="btn black" type="submit">${W.loaded?'Загрузить снова':'Загрузить'}</button></form>
-  ${W.loaded?`<div class="box import" style="margin-top:18px"><div class="row" style="gap:10px"><span class="tag good">${ic('check',14)} Нашли объявление на ${srcOf(W.link)}</span><span class="fine">${carFromLink(W.link)||/^\s*[A-HJ-NPR-Z0-9]{17}\s*$/i.test(W.link)||!/^https?:/i.test(W.link)?'Демо-данные: прототип не ходит на сайты площадок':'Ссылку не распознали — показываем пример'}</span></div>
-   <div class="importrow"><div class="photo ph-studio" style="border-radius:12px">${car('#B8282E','sedan')}</div><div>${(()=>{const L=carFromLink(W.link);return L&&!/^Kia Rio/.test(L.title)?`<h3>${esc(L.title)}${L.year?', '+L.year:''}</h3><div class="muted">Марку и модель взяли из ссылки. Год, пробег, цену и фото подтянет сервер — в прототипе его нет, поэтому дальше показан пример с Kia Rio.</div>`:`<h3>Kia Rio, 2020</h3><div class="muted num">54 200 км · 1.6 л, 123 л.с. · автомат · седан</div><div class="num" style="font-weight:800;font-size:18px;margin-top:4px">${rub(W.price)}</div>`})()}</div></div>
-   <dl class="kv"><dt>Фото</dt><dd>9 шт.</dd><dt>Описание</dt><dd>${esc(W.desc.slice(0,60))}…</dd><dt>VIN</dt><dd class="mono">Z94C251BBLR••••12</dd></dl></div>`:''}`;
- if(s===1)main=`<h2>Подтвердите, что вы владелец</h2><p class="lead" style="margin-bottom:18px">Сверим ФИО и VIN с базой ГИБДД. Так мы не дадим выложить чужую машину.</p>
-  ${W.owner?`<div class="box row" style="gap:14px;flex-wrap:nowrap"><span class="iconbox g">${ic('check')}</span><div><b>Иван П. — владелец по данным ГИБДД</b><p class="fine" style="margin-top:2px">VIN совпадает с ЭПТС. Покупатели увидят отметку «Продаёт собственник».</p></div></div>`
-  :`<div class="stack"><button class="btn gosu block" type="button" id="wGosu">Войти через Госуслуги</button><button class="btn grey block" type="button" id="wCode">Подтвердить кодом в тексте объявления</button><p class="fine">Или кодом из СМС на номер, указанный в объявлении. Без подтверждения объявление выйдет с пометкой «Продаёт представитель».</p></div>`}`;
- if(s===2)main=`<h2>Фотографии</h2><p class="lead" style="margin-bottom:18px">Выберите, откуда взять фото. Чужие снимки в галерею не ставим.</p>
+ const s=W.step,c=W.car,I=W.imp;let main='';
+ if(s===0){
+  const st=I?{loading:['grey','Загружаем объявление…'],ok:['good','Нашли объявление на '+(c&&c.source||srcOf(W.link))],partial:['warn','Нашли объявление, но не всё'],blocked:['warn','Не удалось прочитать объявление'],demo:['grey','Демо-режим'],manual:['grey','Без объявления'],err:['bad','Нужна ссылка']}[I.st]:null;
+  main=`<h2>Ссылка на ваше объявление</h2><p class="lead" style="margin-bottom:16px">Заберём фото, цену и пробег с Авто.ру, Авито или Дрома. Объявления нет — введите VIN.</p>
+  <form class="row" id="wLinkForm" style="flex-wrap:nowrap"><div class="fld grow"><input id="wLink" value="${esc(W.link)}" placeholder="https://auto.ru/cars/used/sale/…" aria-label="Ссылка на объявление или VIN" autocomplete="off"></div><button class="btn black" type="submit" ${I&&I.st==='loading'?'disabled':''}>${I&&I.st==='loading'?'Загружаем…':'Загрузить'}</button></form>
+  <div class="srcs" style="margin-top:12px">${SRC.map(([n,col,l])=>`<span class="src"><b style="background:${col}">${l}</b>${n}</span>`).join('')}</div>
+  ${st?`<div class="box import" style="margin-top:18px"><div class="row" style="gap:10px"><span class="tag ${st[0]}">${I.st==='ok'?ic('check',14)+' ':''}${st[1]}</span></div>${I.msg?`<p class="fine" style="font-size:14.5px">${esc(I.msg)}</p>`:''}
+   ${c&&I.st!=='loading'?`<div class="importrow"><div class="photo ph-studio" style="border-radius:12px">${photoBox(c,0)||car('#B8282E','sedan')}</div><div><h3>${esc(c.title||'Марка и модель')}${c.year?', '+c.year:''}</h3><div class="muted num">${[c.km&&kmf(c.km),c.engine,c.transmission].filter(Boolean).join(' · ')||'—'}</div>${c.price?`<div class="num" style="font-weight:800;font-size:18px;margin-top:4px">${rub(c.price)}</div>`:''}</div></div>
+   ${carFields()}
+   ${I.st!=='manual'?`<div><span class="flabel">Фото</span><div class="seg sm" role="group" aria-label="Откуда фото"><button type="button" data-ps="listing" aria-pressed="${W.photoSrc==='listing'}">Из объявления${c.photos&&c.photos.length?' · '+c.photos.length:''}</button><button type="button" data-ps="camera" aria-pressed="${W.photoSrc==='camera'}">Сниму сам</button></div></div>`:''}
+   ${c.photos&&c.photos.length>1&&W.photoSrc==='listing'?`<div class="phgrid">${c.photos.slice(0,8).map((u,i)=>`<div class="photo ph-studio">${photoBox(c,i)}</div>`).join('')}</div>`:''}`:''}</div>`:''}`}
+ if(s===1)main=`<h2>Подтвердите, что вы владелец</h2><p class="lead" style="margin-bottom:18px">Сверим ФИО и VIN с ГИБДД — так никто не выложит чужую машину.</p>
+  ${W.owner?`<div class="box row" style="gap:14px;flex-wrap:nowrap"><span class="okdot">${ic('check',18)}</span><div><b>Вы владелец по данным ГИБДД</b><p class="fine" style="margin-top:2px">Покупатели увидят отметку «Продаёт собственник».</p></div></div>`
+  :`<div class="stack"><button class="btn gosu block" type="button" id="wGosu">Войти через Госуслуги</button><button class="btn line block" type="button" id="wCode">Нет Госуслуг — подтвердить кодом по СМС</button></div>`}`;
+ if(s===2){const base=W.price||(c&&c.price)||1290000,lo=Math.round(base*.96/1e4)*1e4,hi=Math.round(base*1.06/1e4)*1e4,pos=Math.max(2,Math.min(98,(W.price-base*.88)/(base*.3)*100));
+  main=`<h2>Цена и описание</h2><p class="lead" style="margin-bottom:18px">Подсказка — по похожим машинам того же года и пробега.</p>
+  <label class="flabel" for="wPrice">Цена, ₽</label><div class="fld"><input id="wPrice" inputmode="numeric" class="num" value="${W.price?W.price.toLocaleString('ru-RU'):''}"></div>
+  <div class="pricebar"><i style="left:${pos}%"></i></div><div class="pricebar-l num"><span>Быстро продать</span><span>Рынок · ${rub(lo)}–${rub(hi)}</span><span>Дорого</span></div>
+  <label class="flabel" for="wDesc" style="margin-top:18px">Описание</label><div class="fld area"><textarea id="wDesc" placeholder="Сколько владельцев, где обслуживалась, что поменяли">${esc(W.desc)}</textarea></div>
+  ${/^https?:/i.test(W.link)?`<div class="box toggle" style="margin-top:18px"><span><b>Обновлять цену вслед за ${srcOf(W.link)}</b><span class="fine" style="display:block">Поменяли там — спросим, поменять ли здесь</span></span><button type="button" class="sw" role="switch" aria-checked="${W.sync}" id="wSync" aria-label="Обновлять цену вслед за исходным объявлением"></button></div>`:''}`}
+ if(s===3){const near=PLACES.filter(p=>p.ll).sort((a,b)=>a.dist-b.dist).slice(0,3);if(!near.some(p=>p.id===W.place))W.place=near[0].id;
+  main=`<h2>Осмотр и оплата</h2><p class="lead" style="margin-bottom:18px">С осмотром машина выше в поиске, её можно купить онлайн и выставить на аукцион.</p>
   <div class="stack">
-   <button type="button" class="opt" data-ps="listing" aria-pressed="${W.photoSrc==='listing'}"><span class="iconbox">${ic('link')}</span><span><b>Из вашего объявления на ${srcOf(W.link)}</b><small>9 фото, порядок сохраним</small></span><span class="r">9</span></button>
-   <button type="button" class="opt" data-ps="camera" aria-pressed="${W.photoSrc==='camera'}"><span class="iconbox">${ic('camera')}</span><span><b>Снять сейчас</b><small>Подскажем 8 ракурсов и проверим качество</small></span><span class="r">8</span></button>
-   <button type="button" class="opt" data-ps="report" aria-pressed="${W.photoSrc==='report'}" aria-disabled="${W.insp!=='now'}"><span class="iconbox g">${ic('shield')}</span><span><b>Из протокола осмотра</b><small>${W.insp==='now'?'Профессиональные фото появятся после осмотра':'Станет доступно, если добавите осмотр на шаге «Осмотр»'}</small></span><span class="r">40+</span></button>
+   <button type="button" class="opt" data-wi="now" aria-pressed="${W.insp==='now'}"><span class="iconbox g">${ic('shield')}</span><span><b>С осмотром</b><small>Размещение бесплатно. Отчёт останется у вас, даже если передумаете продавать</small></span><span class="r num">2 500 ₽</span></button>
+   <button type="button" class="opt" data-wi="later" aria-pressed="${W.insp==='later'}"><span class="iconbox">${ic('clock')}</span><span><b>Без осмотра</b><small>Покупатели смогут попросить осмотр или скинуться на него</small></span><span class="r num">500 ₽</span></button>
   </div>
-  <div class="phgrid" style="margin-top:18px">${['Спереди слева','Сзади справа','Салон','Двигатель'].map((l,i)=>`<div class="photo ${['ph-studio','ph-warm','ph-cool','ph-dark'][i]}">${car('#B8282E','sedan')}<span class="ck">${ic('check',14)}</span><span class="lbl">${l}</span></div>`).join('')}</div>
-  <div class="box toggle" style="margin-top:18px"><span><b>История фото по номеру</b><span class="fine" style="display:block">4 снимка из открытых источников за 2023–2025 годы. Покажем в отчёте как историю, не в галерее.</span></span><button type="button" class="sw" role="switch" aria-checked="${W.history}" id="wHist" aria-label="Показывать историю фото по номеру"></button></div>`;
- if(s===3){const lo=1250000,hi=1380000,pos=Math.max(2,Math.min(98,(W.price-1150000)/(1500000-1150000)*100));
-  main=`<h2>Цена и описание</h2><p class="lead" style="margin-bottom:18px">Подсказываем цену по похожим машинам с учётом года, пробега и состояния.</p>
-  <label class="flabel" for="wPrice">Цена, ₽</label><div class="fld"><input id="wPrice" inputmode="numeric" class="num" value="${W.price.toLocaleString('ru-RU')}"></div>
-  <div class="pricebar"><i style="left:${pos}%"></i></div><div class="pricebar-l num"><span>Быстро продать · до ${rub(lo)}</span><span>Рынок · ${rub(lo)}–${rub(hi)}</span><span>Выше рынка</span></div>
-  ${W.price>hi*1.1?'<p class="note high" style="margin-top:8px">Цена выше рынка больше чем на 10% — такие машины продаются дольше</p>':''}
-  <label class="flabel" for="wDesc" style="margin-top:18px">Описание</label><div class="fld area"><textarea id="wDesc">${esc(W.desc)}</textarea></div>
-  <div class="box stack" style="margin-top:18px"><div class="toggle"><span><b>Следить за объявлением на ${srcOf(W.link)}</b><span class="fine" style="display:block">Изменили цену там — предложим обновить здесь. Сняли — спросим, продали ли.</span></span><button type="button" class="sw" role="switch" aria-checked="${W.sync}" id="wSync" aria-label="Следить за исходным объявлением"></button></div><div class="hr"></div><div class="toggle"><span><b>Торг уместен</b></span><button type="button" class="sw" role="switch" aria-checked="${W.bargain}" id="wBarg" aria-label="Торг уместен"></button></div></div>`}
- if(s===4)main=`<h2>Добавить осмотр?</h2><p class="lead" style="margin-bottom:18px">Осмотренные машины выше в поиске, а онлайн-сделка и аукцион доступны только им.</p>
-  <div class="stack">
-   <button type="button" class="opt" data-wi="now" aria-pressed="${W.insp==='now'}"><span class="iconbox g">${ic('shield')}</span><span><b>Осмотр сейчас — размещение в подарок</b><small>Отчёт ваш в любом случае. Отметка «Осмотрено» на 45 дней</small></span><span class="r num">2 500 ₽<small style="display:block">вместо 3 000 ₽</small></span></button>
-   <button type="button" class="opt" data-wi="later" aria-pressed="${W.insp==='later'}"><span class="iconbox">${ic('clock')}</span><span><b>Разместить без осмотра</b><small>Покупатели смогут запросить осмотр или скинуться на него</small></span><span class="r num">500 ₽</span></button>
-  </div>
-  ${W.insp==='now'?`<h3 style="margin-top:24px">Где осмотреть</h3><div class="places" style="margin-top:12px">${PLACES.slice(0,4).map(p=>placeRow(p,p.id===W.place)).join('')}</div><button class="link" type="button" data-go="points" style="margin-top:10px">Все пункты на карте</button>`
-  :`<div class="box toggle" style="margin-top:18px"><span><b>Разрешить складчину на осмотр</b><span class="fine" style="display:block">Покупатели оплатят осмотр сами. Взамен вы 14 дней не поднимаете цену и 30 дней продаёте через приложение. <button type="button" class="link" id="wPoolTerms">Подробнее</button></span></span><button type="button" class="sw" role="switch" aria-checked="${W.pool}" id="wPool" aria-label="Разрешить складчину на осмотр"></button></div>`}`;
- if(s===5)main=`<h2>Оплата и публикация</h2><p class="lead" style="margin-bottom:18px">Объявление будет активно 30 дней. Продление — 300 ₽.</p>
-  <div class="box stack"><div class="row" style="justify-content:space-between"><span>Размещение на 30 дней</span><b class="num">${W.insp==='now'?'<s class="muted" style="font-weight:400">500 ₽</s> 0 ₽':'500 ₽'}</b></div>
-   ${W.insp==='now'?`<div class="row" style="justify-content:space-between"><span>Осмотр · ${esc(PLACES.find(p=>p.id===W.place).name)}</span><b class="num">2 500 ₽</b></div>`:''}
+  ${W.insp==='now'?`<h3 style="margin-top:24px">Где осмотреть — ближайшие к вам</h3><div class="places" style="margin-top:12px">${near.map(p=>placeRow(p,p.id===W.place)).join('')}</div><p class="fine" style="margin-top:8px">Время выберете после оплаты. <button class="link" type="button" data-go="points">Все пункты на карте</button></p>`
+  :`<div class="box toggle" style="margin-top:18px"><span><b>Разрешить покупателям скинуться на осмотр</b><span class="fine" style="display:block">Тогда 14 дней не поднимаете цену и продаёте через приложение. <button type="button" class="link" id="wPoolTerms">Условия</button></span></span><button type="button" class="sw" role="switch" aria-checked="${W.pool}" id="wPool" aria-label="Разрешить складчину на осмотр"></button></div>`}
+  <div class="box stack" style="margin-top:18px"><div class="row" style="justify-content:space-between"><span>Размещение на 30 дней</span><b class="num">${W.insp==='now'?'<s class="muted" style="font-weight:400">500 ₽</s> 0 ₽':'500 ₽'}</b></div>
+   ${W.insp==='now'?`<div class="row" style="justify-content:space-between"><span>Осмотр</span><b class="num">2 500 ₽</b></div>`:''}
    <div class="hr"></div><div class="row" style="justify-content:space-between"><b>Итого</b><b class="num" style="font-size:22px">${rub(wizTotal())}</b></div>
-   <button class="btn brand block" type="button" id="wPay">Оплатить и опубликовать</button></div>`;
- const c={color:'#B8282E',body:'sedan'};
+   <button class="btn brand block" type="button" id="wPay">Оплатить и опубликовать</button></div>`}
+ const cc={color:'#B8282E',body:'sedan'};
  $('#v-sell').innerHTML=`
- <div class="crumbs"><span>Продавцу</span><span>Новое объявление</span></div>
- <div class="head"><div><h1>Продать машину</h1><p class="lead">Две минуты, если машина уже где-то выставлена. <button type="button" class="link" data-why="sell">Зачем это мне</button></p></div></div>
+ <div class="head" style="padding-top:22px"><div><h1>Продать машину</h1><p class="lead">Две минуты, если машина уже выставлена на другой площадке. <button type="button" class="link" data-why="sell">Зачем это мне</button></p></div></div>
  <div class="wsteps" style="margin-bottom:28px">${WSTEPS.map((t,i)=>`<button type="button" class="wstep ${i<s?'done':i===s?'now':''}" data-ws="${i}" ${i>s&&!canGo(i)?'disabled':''}><i>${i<s?ic('check',14):i+1}</i>${t}</button>`).join('')}</div>
  <div class="split"><div>${main}
-   <div class="row" style="margin-top:28px;justify-content:space-between">${s>0?`<button class="btn grey" type="button" id="wPrev">${ic('back',18)} Назад</button>`:'<span></span>'}${s<5?`<button class="btn black" type="button" id="wNext" ${canGo(s+1)?'':'disabled'}>Дальше</button>`:''}</div></div>
-  <aside class="aside"><div class="box stack preview"><span class="muted small">Так увидят покупатели</span><div class="photo ph-studio">${W.loaded?car(c.color,c.body):''}<span class="over-tl" style="position:absolute;top:10px;left:10px">${W.insp==='now'?`<span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено · после осмотра</span>`:'<span class="gpill none">Без осмотра · можно запросить</span>'}</span></div>
-   <h3>${W.loaded?'Kia Rio, 2020':'Ваша машина'}</h3><div class="num" style="font-weight:800;font-size:20px">${W.loaded?rub(W.price):'—'}</div>
-   <div class="row" style="gap:6px">${W.owner?'<span class="tag good">Продаёт собственник</span>':''}${W.loaded?'<span class="tag grey">История по базам: чисто</span>':''}</div></div>
-   <div class="soft stack"><b>Что будет дальше</b><p class="fine">Покупатели смогут запросить осмотр или скинуться на него. Вы получите уведомление и решите сами.</p></div></aside>
+   <div class="row" style="margin-top:28px;justify-content:space-between">${s>0?`<button class="btn grey" type="button" id="wPrev">${ic('back',18)} Назад</button>`:'<span></span>'}${s<3?`<button class="btn black" type="button" id="wNext" ${canGo(s+1)?'':'disabled'}>Дальше</button>`:''}</div></div>
+  <aside class="aside"><div class="box stack preview"><span class="muted small">Так увидят покупатели</span><div class="photo ph-studio">${c?(photoBox(c,0)||car(cc.color,cc.body)):''}<span class="over-tl" style="position:absolute;top:10px;left:10px">${W.insp==='now'?`<span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено</span>`:'<span class="gpill none">Без осмотра</span>'}</span></div>
+   <h3>${c&&c.title?esc(myTitle()):'Ваша машина'}</h3><div class="num" style="font-weight:800;font-size:20px">${W.price?rub(W.price):'—'}</div>
+   <div class="muted small num">${c?[c.km&&kmf(c.km),c.transmission].filter(Boolean).join(' · '):''}</div>
+   ${W.owner?'<div class="row"><span class="tag good">Продаёт собственник</span></div>':''}</div></aside>
  </div>`;
 }
-function canGo(i){if(i<=0)return true;if(i>=1&&!W.loaded)return false;if(i>=2&&!W.owner)return false;return true}
+function canGo(i){if(i<=0)return true;if(i>=1&&!carReady())return false;if(i>=2&&!W.owner)return false;return true}
 
 /* ================= MY LISTINGS (seller) ================= */
 const MY={st:'none',req:3,pool:{sum:800,goal:2500,n:2,h:58},poolOk:false,price:1290000,srcPrice:1250000,notes:['req','pool','sync']};
 function renderMy(){const done=MY.st==='done';
- const N={req:`<div class="notif"><span class="ib">${ic('bell')}</span><div><b>3 покупателя просят осмотр вашей Kia Rio</b><p>Без осмотра машину не купить онлайн, а на карточке видно, что осмотр просили. Ответ — до 21 октября.</p><div class="acts"><button class="btn brand xs" type="button" data-my="pay">Оплатить осмотр · 2 500 ₽</button><button class="btn black xs" type="button" data-my="allow">Разрешить складчину</button><button class="btn grey xs" type="button" data-my="refuse">Отказаться</button></div></div></div>`,
+ const N={req:`<div class="notif"><span class="ib">${ic('bell')}</span><div><b>3 покупателя просят осмотр вашей ${esc(myTitle().split(',')[0])}</b><p>Без осмотра машину не купить онлайн, а на карточке видно, что осмотр просили. Ответ — до 21 октября.</p><div class="acts"><button class="btn brand xs" type="button" data-my="pay">Оплатить осмотр · 2 500 ₽</button><button class="btn black xs" type="button" data-my="allow">Разрешить складчину</button><button class="btn grey xs" type="button" data-my="refuse">Отказаться</button></div></div></div>`,
   pool:`<div class="notif"><span class="ib">${ic('users')}</span><div><b>Покупатели собирают на осмотр: ${rub(MY.pool.sum)} из ${rub(MY.pool.goal)}</b><p>Примите фиксацию цены — и осмотр будет для вас бесплатным.</p><div class="pool" style="max-width:360px"><div class="pbar"><i style="width:${MY.pool.sum/MY.pool.goal*100}%"></i></div></div><div class="acts"><button class="btn black xs" type="button" data-my="allow">Принять условия</button><button class="btn grey xs" type="button" data-my="terms">Условия</button></div></div></div>`,
   sync:`<div class="notif"><span class="ib">${ic('refresh')}</span><div><b>На Авто.ру цена изменилась: ${rub(MY.srcPrice)}</b><p>Здесь сейчас ${rub(MY.price)}. Обновить цену?</p><div class="acts"><button class="btn black xs" type="button" data-my="sync">Обновить до ${rub(MY.srcPrice)}</button><button class="btn grey xs" type="button" data-my="keep">Оставить</button></div></div></div>`};
  $('#notifBadge').textContent=MY.notes.length;$('#notifBadge').hidden=!MY.notes.length;
@@ -1049,7 +1156,7 @@ function renderMy(){const done=MY.st==='done';
  <div class="head"><div><h1>Мои объявления</h1><p class="lead">Запросы покупателей, складчина на осмотр и синхронизация с другими площадками. <button type="button" class="link" data-why="sell">Зачем это мне</button></p></div><button class="btn black" type="button" data-go="sell">${ic('plus',20)} Новое объявление</button></div>
  <div class="split"><div class="stack" style="gap:28px">
   <div class="box"><div class="mylisting"><div class="photo ph-studio">${car('#B8282E','sedan')}</div><div class="stack" style="gap:6px"><div class="row" style="gap:8px">${done?`<span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено · 88</span>`:MY.st==='paid'?'<span class="gpill none">Осмотр оплачен — выберите время</span>':MY.st==='poolok'?'<span class="gpill none">Складчина разрешена · цена зафиксирована</span>':MY.st==='refused'?'<span class="gpill none" style="color:var(--bad)">Вы отказались от осмотра</span>':'<span class="gpill none">Без осмотра</span>'}<span class="tag good">Опубликовано</span><span class="tag grey">Синхронизация с Авто.ру</span></div>
-   <h3 style="font-size:20px">Kia Rio, 2020</h3><div class="num" style="font-weight:800;font-size:20px">${rub(MY.price)}</div><div class="muted small">Активно до 18 ноября · №5112</div>
+   <h3 style="font-size:20px">${esc(myTitle())}</h3><div class="num" style="font-weight:800;font-size:20px">${rub(MY.price)}</div><div class="muted small">Активно до 18 ноября · №5112</div>
    <div class="mystats"><div class="stat"><span>Просмотры</span><b class="num">312</b></div><div class="stat"><span>В подборках</span><b class="num">18</b></div><div class="stat"><span>Просят осмотр</span><b class="num">${MY.req}</b></div><div class="stat"><span>Звонки</span><b class="num">6</b></div></div>
    ${MY.st==='paid'?`<div class="row" style="margin-top:8px"><button class="btn black sm" type="button" data-go="points">Выбрать пункт и время</button></div>`:''}</div></div></div>
   <section><h2>Уведомления</h2><div class="stack" style="margin-top:16px">${MY.notes.length?MY.notes.map(k=>N[k]).join(''):'<div class="soft"><p class="fine" style="font-size:15px">Новых уведомлений нет.</p></div>'}</div></section>
@@ -1131,7 +1238,7 @@ let cur='buy';
 const VIEWS=['buy','car','list','sell','my','points','dealer','insp'];
 const RENDER={list:renderList,sell:renderSell,my:renderMy,points:renderPoints,dealer:renderDealer,insp:renderInsp};
 function show(v){cur=v;VIEWS.forEach(k=>$('#v-'+k).hidden=k!==v);const navKey=v==='car'?'buy':v;$$('#nav [data-go]').forEach(b=>b.toggleAttribute('aria-current',b.dataset.go===navKey));$$('#nav [aria-current]').forEach(b=>b.setAttribute('aria-current','page'))}
-function go(v){$('#menu').hidden=true;$('#avaBtn').setAttribute('aria-expanded','false');if(RENDER[v])RENDER[v]();if(v==='buy')renderBuy();show(v);window.scrollTo(0,0);if(['sell','dealer','insp'].includes(v)&&!seen.has(v)){seen.add(v);openWhy(v)}}
+function go(v){$('#menu').hidden=true;if(RENDER[v])RENDER[v]();if(v==='buy')renderBuy();show(v);window.scrollTo(0,0);}
 
 /* ================= EVENTS ================= */
 document.addEventListener('click',e=>{const t=e.target;
@@ -1169,7 +1276,7 @@ document.addEventListener('click',e=>{const t=e.target;
  }
  if(cur==='sell'){
   const ws=t.closest('[data-ws]');if(ws&&!ws.disabled){W.step=+ws.dataset.ws;renderSell();return}
-  if(t.closest('#wNext')){W.step=Math.min(5,W.step+1);renderSell();window.scrollTo(0,0);return}
+  if(t.closest('#wNext')){W.step=Math.min(3,W.step+1);renderSell();window.scrollTo(0,0);return}
   if(t.closest('#wPrev')){W.step=Math.max(0,W.step-1);renderSell();return}
   if(t.closest('#wGosu')||t.closest('#wCode')){W.owner=true;toast('Владение подтверждено');renderSell();return}
   const ps=t.closest('[data-ps]');if(ps){if(ps.getAttribute('aria-disabled')==='true'){toast('Сначала добавьте осмотр на шаге «Осмотр»');return}W.photoSrc=ps.dataset.ps;renderSell();return}
@@ -1177,11 +1284,12 @@ document.addEventListener('click',e=>{const t=e.target;
   const pl=t.closest('[data-pid]');if(pl){W.place=pl.dataset.pid;renderSell();return}
   if(t.closest('#wPoolTerms')){poolTerms();return}
   const sw=t.closest('.sw');if(sw){const k={wHist:'history',wSync:'sync',wBarg:'bargain',wPool:'pool'}[sw.id];if(k){W[k]=!W[k];sw.setAttribute('aria-checked',W[k])}return}
-  if(t.closest('#wPay')){W.paid=true;MY.price=W.price;if(W.insp==='now'){MY.st='paid';MY.notes=['sync']}toast('Объявление опубликовано');go('my');return}
+  if(t.closest('#wPay')){W.paid=true;MY.price=W.price;MY.srcPrice=Math.round(W.price*.97/1e4)*1e4;if(W.insp==='now'){MY.st='paid';MY.notes=['sync']}toast('Объявление опубликовано');go('my');return}
  }
  if(cur==='my'){const a=t.closest('[data-my]');if(a){myAct(a.dataset.my);return}}
  if(cur==='points'){
   if(t.closest('[data-why]'))return void openWhy(t.closest('[data-why]').dataset.why);
+  if(t.closest('#geoBtn')){locate(ok=>{onGeo(ok);if(!ok)toast('Разрешите доступ к геопозиции в браузере')},true);return}
   if(pointsClick(t,P,renderPoints,()=>{if(MY.st==='paid'||MY.st==='poolok')MY.st='sched'}))return;
  }
  if(cur==='dealer'){
@@ -1201,22 +1309,23 @@ document.addEventListener('click',e=>{const t=e.target;
 document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;
  if(f.id==='aiForm'){const q=$('#aiInput').value.trim();if(q)parseAI(q);else{go('buy')}}
  if(f.id==='extForm'){const v=$('#extLink').value.split(/[\s,]+/).filter(Boolean);if(!v.length)return;v.forEach(addExt);toast(v.length>1?`Добавлено машин: ${v.length}`:'Машина добавлена — проверили по базам');renderList()}
- if(f.id==='wLinkForm'){W.link=$('#wLink').value.trim()||W.link;W.loaded=true;toast('Объявление найдено, данные загружены');renderSell()}
+ if(f.id==='wLinkForm'){importLink($('#wLink').value)}
  if(f.matches('[data-of]')){const v=+f.querySelector('input').value.replace(/\D/g,'');toast(v?`Предложение ${rub(v)} отправлено владельцу`:'Укажите сумму предложения')}
 });
 document.addEventListener('input',e=>{const t=e.target;
  if(t.id==='wPrice'){W.price=+t.value.replace(/\D/g,'')||W.price}
+ if(t.dataset&&t.dataset.cf&&W.car){const k=t.dataset.cf;W.car[k]=k==='title'?t.value.trim():(+t.value.replace(/\D/g,'')||null);if(k==='price'&&W.car.price)W.price=W.car.price;const n=$('#wNext');if(n)n.disabled=!canGo(1);$$('[data-ws]').forEach(b=>{const i=+b.dataset.ws;if(i>W.step)b.disabled=!canGo(i)})}
  if(t.id==='wDesc'){W.desc=t.value}
 });
 document.addEventListener('change',e=>{if(e.target.id==='wPrice')renderSell()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#modal').hidden)closeModal();$('#menu').hidden=true}
  if((e.key==='Enter'||e.key===' ')&&e.target.matches('.card')){e.preventDefault();openCar(e.target.dataset.id)}
  if((e.key==='Enter'||e.key===' ')&&e.target.matches('.mk')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
-$('#burgerBtn').onclick=e=>{e.stopPropagation();const m=$('#menu');m.classList.add('left');m.hidden=!m.hidden};
-$('#aiIco').onclick=()=>{go('buy');setTimeout(()=>$('#aiInput').focus(),50)};
-$('#avaBtn').onclick=e=>{$('#menu').classList.remove('left');e.stopPropagation();const m=$('#menu');m.hidden=!m.hidden;$('#avaBtn').setAttribute('aria-expanded',!m.hidden)};
-document.addEventListener('click',e=>{if(!e.target.closest('#menu')&&!e.target.closest('#avaBtn')&&!e.target.closest('#burgerBtn'))$('#menu').hidden=true},true);
-$('#locBtn').onclick=()=>{const r=[10,25,50,200],i=(r.indexOf(S.radius)+1)%r.length;S.radius=r[i];syncControls();renderBuy();toast('Радиус поиска: '+(S.radius===200?'до 200 км':'+'+S.radius+' км'))};
+$('#burgerBtn').onclick=e=>{e.stopPropagation();const m=$('#menu');m.hidden=!m.hidden;$('#burgerBtn').setAttribute('aria-expanded',!m.hidden)};
+document.addEventListener('click',e=>{if(!e.target.closest('#menu')&&!e.target.closest('#burgerBtn'))$('#menu').hidden=true},true);
+function onGeo(ok){if(ok){refreshCarDist();$('#locName').textContent='Рядом с вами';S.sort='dist';syncControls();refitMaps();const v=VIEWS.find(k=>!$('#v-'+k).hidden);if(v==='buy')renderBuy();else if(RENDER[v])RENDER[v]();}}
+$('#locBtn').onclick=()=>{if(!GEO.real){toast('Определяем, где вы…');locate(ok=>{onGeo(ok);if(!ok)toast('Разрешите доступ к геопозиции в браузере')},true);return}const r=[10,25,50,200],i=(r.indexOf(S.radius)+1)%r.length;S.radius=r[i];syncControls();renderBuy();toast('Радиус: '+(S.radius===200?'до 200 км':'+'+S.radius+' км'))};
+locate(onGeo);
 
 /* filter wiring */
 $('#fMakes').innerHTML=`<button type="button" class="chip" data-make="" aria-pressed="true">Все марки</button>`+MAKES.map(m=>`<button type="button" class="chip" data-make="${m}" aria-pressed="false">${m}</button>`).join('');
@@ -1236,7 +1345,7 @@ $('#resetBtn').onclick=resetF;
 $('#fMode').onclick=e=>{const b=e.target.closest('[data-m]');if(b){S.mode=b.dataset.m;renderBuy()}};
 $('#fView').onclick=e=>{const b=e.target.closest('[data-v]');if(b){S.view=b.dataset.v;renderBuy()}};
 $('#fSort').onchange=e=>{S.sort=e.target.value;renderBuy()};
-$('#fOpen').onclick=()=>{const f=$('#filters'),o=f.classList.toggle('open');$('#fOpen').setAttribute('aria-expanded',o);$('#fOpen').textContent=o?'Скрыть фильтры':'Все фильтры'};
+$('#fOpen').onclick=()=>{const f=$('#filters'),o=f.classList.toggle('open');$('#fOpen').setAttribute('aria-expanded',o);$('#fOpen').textContent=o?'Скрыть':'Ещё фильтры'};
 $('#showBtn').onclick=()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
 
 hydrate();headerShadow();updFav();syncControls();renderBuy();
