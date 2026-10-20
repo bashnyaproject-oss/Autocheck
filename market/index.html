@@ -159,7 +159,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .note{font-size:14.5px;font-weight:500;display:flex;align-items:center;gap:5px}
 .note.good{color:var(--good)} .note.mid{color:var(--muted)} .note.high{color:var(--warn)} .note.brand{color:var(--brand)} .note.bad{color:var(--bad)}
 .score{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;padding:0 7px;border-radius:7px;font-weight:800;font-size:14px;color:#fff}
-.score.good{background:var(--good)} .score.warn{background:var(--warn)} .score.bad{background:var(--bad)}
+.score.good{background:#16A34A} .score.mid{background:#8DB82B} .score.low{background:#E8B500;color:#3A2E00} .score.warn{background:#E8B500;color:#3A2E00} .score.bad{background:#E8B500;color:#3A2E00}
 .score.big{min-width:56px;height:40px;font-size:20px;border-radius:10px}
 .gpill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 4px;border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink);box-shadow:0 1px 3px rgba(22,22,26,.12)}
 .gpill .gd{width:20px;height:20px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#fff}
@@ -464,6 +464,12 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .rules li::before{position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
 .rules li.ok::before{content:"✓";background:var(--green)}
 .rules li.no::before{content:"₽";background:var(--brand)}
+.lm-car.good{background:#16A34A}.lm-car.mid{background:#8DB82B}.lm-car.low{background:#E8B500;color:#3A2E00}.lm-car.on{background:var(--ink);color:#fff}
+.gosu{background:#0D4CD3;color:#fff}.gosu:hover{background:#0B42B8}
+.gscale{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--ink-2);margin-top:12px}
+.gscale i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.gdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.lockbox{display:flex;gap:16px;align-items:flex-start;border-radius:18px;padding:20px;background:var(--fill)}
 
 .ai-hint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--brand-soft);border-radius:16px;padding:14px 16px;margin-bottom:22px}
 .ai-hint .chips{gap:6px}
@@ -672,7 +678,10 @@ function car(color,body){const id='cv'+(++carN),B=BODY[body]||BODY.sedan;
  <rect x="${B.hl[0]}" y="${B.hl[1]}" width="16" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="${B.tl[0]-6}" y="${B.tl[1]}" width="10" height="6" rx="2" fill="#d6363a"/>${B.wh.map(([x,r])=>wheel(x,148,r)).join('')}</svg>`}
 const SCENES=['ph-studio','ph-warm','ph-cool','ph-studio','ph-green','ph-studio'];
 const scene=id=>SCENES[(typeof id==='number'?id:String(id).length)%SCENES.length];
-const scoreCls=v=>v>=85?'good':v>=70?'warn':'bad';
+// Grade scale: yellow → lime → green. No red: listings below 60 are not published.
+const scoreCls=v=>v>=85?'good':v>=72?'mid':'low';
+const GRADE_COL={good:'#16A34A',mid:'#8DB82B',low:'#E8B500'};
+const gradeColor=v=>GRADE_COL[scoreCls(v)];
 
 /* ---------- map ---------- */
 const MAPBG=`<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E5412F"/><stop offset="1" stop-color="#D2301F"/></linearGradient><filter id="msh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="1.6" flood-opacity=".25"/></filter></defs>
@@ -753,7 +762,7 @@ async function mountSlot(holder){const key=holder.dataset.map,M=MAPS[key];if(!M|
 function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
  if(M.lib==='y'){M.cl.removeAll();M.coll.removeAll();
   pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
-   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#redStretchyIcon':'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
+   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#blackStretchyIcon':m.g?{good:'islands#greenStretchyIcon',mid:'islands#oliveStretchyIcon',low:'islands#yellowStretchyIcon'}[m.g]:'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
    pm.events.add('click',()=>pick(m.id,holder));(on?M.coll:M.cl).add(pm)});
   if(GEO.real)M.coll.add(new ymaps.Placemark(GEO.ll,{hintContent:'Вы здесь'},{preset:'islands#geolocationIcon'}));
   const s=pts.find(m=>m.id===M.sel);
@@ -761,7 +770,7 @@ function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
   else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll,{flying:false});
  }else{M.layer.clearLayers();
   pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
-   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
+   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}${m.g?' '+m.g:''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
    L.marker(m.ll,{icon,zIndexOffset:on?1000:0,title:m.tip||m.label}).on('click',()=>pick(m.id,holder)).addTo(M.layer)});
   if(GEO.real)L.marker(GEO.ll,{icon:L.divIcon({className:'',html:'<span class="lm-me"></span>',iconSize:null}),title:'Вы здесь'}).addTo(M.layer);
   const s=pts.find(m=>m.id===M.sel);
@@ -824,11 +833,12 @@ function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(o
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
 
 /* ---------- buyer pass ---------- */
-const PASS_PERKS=['Полные отчёты по всем машинам на «Осмотрено» — без лимита','10 проверок любых машин по VIN или ссылке','Сравнение объявлений с данными по базам','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
-function passCard(){const on=typeof PASS!=='undefined'&&PASS.on;
+const PASS_LIMIT=30;
+const PASS_PERKS=['Оценка состояния каждой машины на карте и в поиске — от жёлтого до зелёного','До 30 глубоких отчётов в неделю: история по базам, протокол осмотра и оценка','Только через Госуслуги: один человек — один пропуск','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
+function passCard(){const on=typeof PASS!=='undefined'&&PASS.on,gosu=typeof PASS!=='undefined'&&PASS.gosu;
  return `<div class="box stack passcard"><div class="row" style="justify-content:space-between"><h3>Пропуск покупателя</h3>${on?'<span class="tag good">активен</span>':''}</div>
-  ${on?'<p class="fine" style="font-size:14.5px">До 19 ноября. Отчёты по машинам площадки — без лимита, проверок по VIN осталось 10.</p>':`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
-  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul><button class="btn brand block" type="button" data-pass>Оформить пропуск</button>`}</div>`}
+  ${on?`<p class="fine" style="font-size:14.5px">До 19 ноября. Глубоких отчётов на этой неделе: ${PASS.seen.size} из ${PASS_LIMIT}. Лимит обновится в понедельник.</p>`:`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
+  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul>${gosu?'<p class="fine">Личность подтверждена через Госуслуги</p><button class="btn brand block" type="button" data-pass>Оплатить 990 ₽</button>':'<button class="btn gosu block" type="button" data-pass>Войти через Госуслуги</button><p class="fine">Без Госуслуг пропуск не оформить — так перекупы не заводят десятки аккаунтов.</p>'}`}</div>`}
 
 (function(){
 /* ================= DATA ================= */
@@ -871,11 +881,11 @@ const priceOf=c=>c.auc?c.auc.bid:c.price;
 const pct=c=>Math.round((c.price-c.market)/c.market*100);
 function mkt(c){const d=pct(c);if(d<=-3)return{cls:'good',t:`Ниже рынка на ${-d}%`};if(d>=3)return{cls:'high',t:`Выше рынка на ${d}%`};return{cls:'mid',t:'Цена в рынке'}}
 function stPill(c){switch(c.st){
- case 'done':return `<span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено · ${c.idx}</span>`;
+ case 'done':return PASS.on?`<span class="gpill"><span class="gd" style="background:${gradeColor(c.idx)}">${ic('check',12)}</span>Осмотрено · ${c.idx}</span>`:`<span class="gpill"><span class="gd">${ic('check',12)}</span>Осмотрено</span>`;
  case 'booked':return `<span class="gpill none">Забронирована · осмотр до ${c.bookedTill}</span>`;
  case 'sched':return `<span class="gpill none">Осмотр ${c.sched}</span>`;
  case 'refused':return `<span class="gpill none" style="color:var(--bad)">Продавец отказал покупателю</span>`;
- default:return `<span class="gpill none">Без осмотра</span>`}}
+ default:return PASS.on?`<span class="gpill none"><span class="gdot" style="background:${gradeColor(grade(c))}"></span>Оценка по базам · ${grade(c)}</span>`:`<span class="gpill none">Без осмотра</span>`}}
 function stText(c){return {done:`Осмотрено ${c.date} · индекс ${c.idx}`,booked:`Забронирована, осмотр до ${c.bookedTill}`,sched:`Осмотр назначен на ${c.sched}`,refused:'Продавец отказал покупателю с бронью',none:'Осмотра не было'}[c.st]}
 function cardHTML(c){const m=mkt(c);
  return `<article class="card" data-id="${c.id}" tabindex="0" aria-label="${esc(c.make+' '+c.model)}, ${c.year}, ${rub(priceOf(c))}">
@@ -928,9 +938,10 @@ function renderBuy(){
 }
 function renderBuyMap(L){
  if(!L.some(c=>c.id===S.mapSel))S.mapSel=L.length?L[0].id:null;
- $('#buyMap').innerHTML=mapSlot('buy',L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,ll:c.ll,price:shortPrice(priceOf(c)),color:c.st==='done'?getComputedStyle(document.documentElement).getPropertyValue('--'+scoreCls(c.idx)).trim():'#9A9AA3',text:c.st==='done'?c.idx:'?',label:`${c.make} ${c.model}, ${rub(priceOf(c))}`,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),S.mapSel,'Осмотренные и неосмотренные машины на карте');
+ $('#buyMap').innerHTML=mapSlot('buy',L.map(c=>({id:c.id,kind:'car',x:c.x,y:c.y,ll:c.ll,price:shortPrice(priceOf(c)),g:PASS.on?scoreCls(grade(c)):'',color:PASS.on?gradeColor(grade(c)):'#9A9AA3',text:PASS.on?grade(c):'',label:`${c.make} ${c.model}, ${rub(priceOf(c))}`,tip:`${c.make} ${c.model} · ${rub(priceOf(c))}`})),S.mapSel,'Осмотренные и неосмотренные машины на карте');
  const c=byId(S.mapSel);
  $('#mapSel').innerHTML=c?`<div class="lrow"><div class="photo ${scene(c.id)}">${car(c.color,c.body)}</div><div class="stack" style="gap:6px">${stPill(c)}<h3>${esc(c.make)} ${esc(c.model)}, ${c.year}</h3><div class="muted num">${kmf(c.km)} · ${c.box} · ${c.dist} км, ${esc(c.where)}</div><div class="p num" style="font-size:20px;font-weight:800">${rub(priceOf(c))}</div><div class="row"><button class="btn black sm" type="button" data-open="${c.id}">Открыть</button><button class="btn grey sm" type="button" data-fav="${c.id}" aria-pressed="${FAV.has(c.id)}">${ic('heart',18)} В подборку</button></div></div></div>`:'';
+ $('#mapSel').innerHTML+=PASS.on?`<div class="gscale"><b>Оценка состояния:</b><span><i style="background:#E8B500"></i>60–71</span><span><i style="background:#8DB82B"></i>72–84</span><span><i style="background:#16A34A"></i>85 и выше</span><span class="muted">Ниже 60 не публикуем</span></div>`:`<div class="soft row" style="margin-top:14px;justify-content:space-between"><span>Цвет метки — оценка состояния, от жёлтого до зелёного. Видна с пропуском покупателя.</span><button class="btn brand sm" type="button" data-pass>Показать оценки</button></div>`;
 }
 function syncControls(){$('#fBody').value=S.body;$('#fBox').value=S.box;$('#fIdx').value=S.idx;$('#fPmin').value=S.pmin?S.pmin.toLocaleString('ru-RU'):'';$('#fPmax').value=S.pmax?S.pmax.toLocaleString('ru-RU'):'';$('#fYmin').value=S.ymin||'';$('#fYmax').value=S.ymax||'';$('#fKm').value=S.kmax?S.kmax.toLocaleString('ru-RU'):'';$('#fRadius').value=S.radius;$('#fDrive').value=S.drive;$('#fSort').value=S.sort;$('#locR').textContent='+'+S.radius+' км';$$('.fld select').forEach(s=>s.classList.toggle('ph',!s.value||s.value==='0'))}
 function resetF(){Object.assign(S,{mode:'all',make:'',body:'',box:'',idx:0,pmin:0,pmax:0,ymin:0,ymax:0,kmax:0,radius:50,drive:'',cheap:false,ai:null});S.chk.clear();$('#aiNote').hidden=true;$('#aiInput').value='';syncControls();renderBuy()}
@@ -953,7 +964,10 @@ function resetQuiet(){Object.assign(S,{mode:'all',make:'',body:'',box:'',idx:0,p
 
 /* ================= CAR PAGE ================= */
 let CUR=null,deal=-1,galIdx=0;
-const PASS={on:false};
+const PASS={on:false,gosu:false,seen:new Set()};
+const deepOf=c=>PASS.on&&PASS.seen.has(c.id);
+// estimated grade for cars without inspection: from base history only
+function grade(c){if(c.st==='done')return c.idx;let g=82-(c.owners-1)*4-(c.dtp?8:0)-(c.taxi?12:0)-(c.legal!=='ok'?6:0)-Math.max(0,(c.km-80000)/10000);return Math.round(Math.max(60,Math.min(84,g)))}
 const DEAL=[['Бронь','Залог 2 500 ₽ блокируется на карте. Цена фиксируется на 7 дней, машина скрыта из поиска.','Забронировать'],['Экспресс-пересмотр','Специалист за 15 минут сверяет пробег, кузов и ограничения с протоколом.','Пересмотр пройден'],['Деньги на эскроу','Сумма блокируется в банке-партнёре. Продавец видит, что деньги есть.','Перевести на эскроу'],['Договор в «Госключе»','Договор купли-продажи заполняется сам, обе стороны подписывают его на Госуслугах.','Подписать'],['Передача и приёмка','Самовывоз или перегон. У вас 24 часа, чтобы принять машину.','Принять машину'],['Готово','Банк переводит деньги продавцу. Поможем с ОСАГО и регистрацией за 10 дней.','']];
 function addDays(d,n){const [dd,mm,yy]=d.split('.');return new Date(+yy,+mm-1,+dd+n).toLocaleDateString('ru-RU')}
 function openCar(id){CUR=byId(id);deal=-1;galIdx=0;show('car');renderCar();window.scrollTo(0,0)}
@@ -972,7 +986,7 @@ function bodyMap(c){const R={bumperF:[36,8,128,22],hood:[36,34,128,64],fenderFL:
  let s=`<svg viewBox="0 0 200 344" role="img" aria-label="Схема кузова с толщиной покрытия"><rect x="4" y="2" width="192" height="340" rx="44" fill="#F2F3F5"/><path d="M42 102 L158 102 L150 146 L50 146 Z" fill="#C9D2DC"/><path d="M50 240 L150 240 L158 262 L42 262 Z" fill="#C9D2DC"/>`;
  PANELS.forEach(p=>{const [x,y,w,h]=R[p],v=c.th[p],[f,st]=k(v);s+=`<g><title>${PNAME[p]}: ${v} мкм</title><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${f}" stroke="${st}" stroke-width="1.6"/>${w>40?`<text x="${x+w/2}" y="${y+h/2+4.5}" text-anchor="middle" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="#16161A">${v}</text>`:''}</g>`});
  return s+'</svg>'}
-function histBlock(c){return `<div class="histrow"><div class="hist"><span>Розыск и запреты</span><b style="color:var(--${c.legal==='ok'?'good':'warn'})">${c.legal==='ok'?'Не найдено':'Погашенный залог'}</b></div><div class="hist"><span>ДТП в базах</span><b>${c.dtp?c.dtp+' '+plural(c.dtp,'запись','записи','записей'):'Не найдено'}</b></div><div class="hist"><span>Владельцев</span><b>${c.owners}</b></div><div class="hist"><span>Такси и лизинг</span><b style="color:var(--${c.taxi?'bad':'good'})">${c.taxi?'Было такси':'Не найдено'}</b></div></div>`}
+function histBlock(c){return `<div class="histrow"><div class="hist"><span>Розыск и запреты</span><b style="color:var(--${c.legal==='ok'?'good':'warn'})">${c.legal==='ok'?'Не найдено':'Погашенный залог'}</b></div><div class="hist"><span>ДТП в базах</span><b>${c.dtp?c.dtp+' '+plural(c.dtp,'запись','записи','записей'):'Не найдено'}</b></div><div class="hist"><span>Владельцев</span><b>${c.owners}</b></div><div class="hist"><span>Такси и лизинг</span><b style="color:var(--${c.taxi?'warn':'good'})">${c.taxi?'Было такси':'Не найдено'}</b></div></div>`}
 function renderCar(){const c=CUR,m=mkt(c),done=c.st==='done',scs=['ph-studio','ph-warm','ph-cool','ph-dark'];
  $('#v-car').innerHTML=`
  <div class="crumbs"><button type="button" data-go="buy">${ic('back',16)} Все предложения</button><span>${esc(c.make)}</span><span>${esc(c.model)}</span></div>
@@ -984,8 +998,8 @@ function renderCar(){const c=CUR,m=mkt(c),done=c.st==='done',scs=['ph-studio','p
     <div class="thumbs">${scs.map((sc,i)=>`<button type="button" class="photo ${sc}" data-gal="${i}" aria-current="${i===galIdx}" aria-label="Фото ${i+1}">${car(c.color,c.body)}</button>`).join('')}</div></div>
    <section><h2>Характеристики</h2><dl class="kv" style="margin-top:18px">
     <dt>Год выпуска</dt><dd>${c.year}</dd><dt>Пробег</dt><dd class="num">${kmf(c.km)} ${c.st==='done'?(c.kmOk?'<span class="tag good">подтверждён</span>':'<span class="tag warn">есть расхождение</span>'):''}</dd><dt>Двигатель</dt><dd>${c.eng}</dd><dt>Коробка</dt><dd>${c.box}</dd><dt>Привод</dt><dd>${c.drive}</dd><dt>Владельцев по ПТС</dt><dd>${c.owners}</dd><dt>VIN</dt><dd class="mono">XW8ZZZ••••••${String(4821+(+c.id||7)*37).slice(-4)}</dd></dl></section>
-   <section><div class="sect-h" style="margin-bottom:12px"><h2>История по базам</h2>${PASS.on?'<span class="tag good">Полный отчёт открыт · пропуск</span>':`<button class="btn grey sm" type="button" data-pass>${ic('doc',18)} Полный отчёт — в пропуске</button>`}</div>${histBlock(c)}${PASS.on?fullRep(c):'<p class="fine" style="margin-top:10px">Краткий статус — всем. Полный отчёт с датами и источниками — бесплатно по всем машинам площадки с пропуском покупателя.</p>'}</section>
-   ${done?`<section><div class="sect-h" style="margin-bottom:6px"><h2>Протокол осмотра</h2><span class="score big ${scoreCls(c.idx)}">${c.idx}</span></div><p class="fine">Осмотр ${c.date}, действует до ${addDays(c.date,45)}. Гарантия — на пункты «Подтверждено».</p><div class="list" style="margin-top:8px">${protocol(c)}</div></section>
+   <section><div class="sect-h" style="margin-bottom:12px"><h2>История по базам</h2>${deepOf(c)?'<span class="tag good">Глубокий отчёт открыт</span>':''}</div>${histBlock(c)}${deepOf(c)?fullRep(c):deepCta(c)}</section>
+   ${done&&!deepOf(c)?lockedProto(c):done?`<section><div class="sect-h" style="margin-bottom:6px"><h2>Протокол осмотра</h2><span class="score big ${scoreCls(c.idx)}">${c.idx}</span></div><p class="fine">Осмотр ${c.date}, действует до ${addDays(c.date,45)}. Гарантия — на пункты «Подтверждено».</p><div class="list" style="margin-top:8px">${protocol(c)}</div></section>
    <section><h2>Кузов: толщина покрытия, мкм</h2><div class="bodymap" style="margin-top:18px">${bodyMap(c)}<ul class="legend"><li><i style="background:#E7F7EE;box-shadow:inset 0 0 0 1.6px #14965A"></i>до 160 — заводское покрытие</li><li><i style="background:#FFF3E2;box-shadow:inset 0 0 0 1.6px #C9741F"></i>160–300 — перекрашено</li><li><i style="background:#FDECEC;box-shadow:inset 0 0 0 1.6px #E0383B"></i>больше 300 — шпаклёвка</li><li class="fine">Толщиномер, 5 точек на деталь. Наведите на деталь — покажем значение.</li></ul></div></section>
    <section><h2>Кто осматривал</h2><div class="person" style="margin-top:16px"><span class="pa">${c.who.split(' ').map(w=>w[0]).join('')}</span><div><b>${esc(c.who)}</b><div class="muted">Специалист сети · 412 осмотров · ★ 4,9 · назначен платформой</div></div></div></section>`
    :`<section id="noInsp"></section>`}
@@ -994,6 +1008,11 @@ function renderCar(){const c=CUR,m=mkt(c),done=c.st==='done',scs=['ph-studio','p
  </div>`;
  if(!done)renderNoInsp();renderBuyBox();
 }
+function deepCta(c){const left=PASS_LIMIT-PASS.seen.size;
+ if(!PASS.on)return `<div class="lockbox" style="margin-top:12px"><span class="iconbox" style="background:#fff">${ic('lock')}</span><div class="stack" style="gap:8px"><b>Глубокий отчёт и оценка состояния — в пропуске покупателя</b><p class="fine">Основные параметры открыты всем. Даты, источники, протокол осмотра и оценка — 990 ₽ на 30 дней, до 30 машин в неделю.</p><button class="btn brand sm" type="button" data-pass style="align-self:flex-start">Оформить пропуск</button></div></div>`;
+ if(left<=0)return `<div class="lockbox" style="margin-top:12px"><span class="iconbox" style="background:#fff">${ic('clock')}</span><div><b>Лимит 30 отчётов на этой неделе исчерпан</b><p class="fine" style="margin-top:4px">Обновится в понедельник. Лимит защищает продавцов от массовых выгрузок.</p></div></div>`;
+ return `<div class="lockbox" style="margin-top:12px"><span class="iconbox" style="background:#fff">${ic('doc')}</span><div class="stack" style="gap:8px"><b>Открыть глубокий отчёт по этой машине</b><p class="fine">История с датами и источниками${c.st==='done'?', протокол осмотра и толщиномер':''}. Осталось ${left} из ${PASS_LIMIT} на этой неделе.</p><button class="btn black sm" type="button" data-deep style="align-self:flex-start">Открыть отчёт</button></div></div>`}
+function lockedProto(c){return `<section><div class="sect-h" style="margin-bottom:12px"><h2>Протокол осмотра</h2><span class="muted">${c.date}</span></div><div class="lockbox"><span class="iconbox" style="background:#fff">${ic('lock')}</span><div class="stack" style="gap:6px"><b>Оценка, толщиномер по 13 деталям, 40+ пунктов и фото специалиста</b><p class="fine">${PASS.on?'Откройте глубокий отчёт выше — протокол откроется вместе с ним.':'Видно с пропуском покупателя.'}</p></div></div></section>`}
 function fullRep(c){const rows=[['Розыск и запреты',c.legal==='ok'?'Не найдено · МВД, ФССП, 19.10.2026':'Залог погашен в 2023 · ФНП','legal'],['ДТП',c.dtp?c.dtp+' '+plural(c.dtp,'запись','записи','записей')+' · ГИБДД':'Не найдено · ГИБДД','dtp'],['Владельцы',c.owners+' по ПТС · последняя смена 2022','own'],['Такси и лизинг',c.taxi?'Лицензия такси 2019–2021':'Не найдено · реестры регионов','taxi'],['Пробеги из объявлений и ТО',kmf(c.km)+' сейчас · без скруток','km']];
  return `<div class="list" style="margin-top:10px">${rows.map(([a,b])=>`<div class="rowline"><b>${a}</b><span class="muted small">${b}</span></div>`).join('')}</div>`}
 function renderNoInsp(){const c=CUR,el=$('#noInsp');if(!el)return;
@@ -1022,9 +1041,16 @@ function renderBuyBox(){const c=CUR,m=mkt(c);let h='';
  }
  $('#buyBox').innerHTML=h;
 }
-function passModal(after){openModal(`<span class="eyebrow gtext">Пропуск покупателя</span><h2 id="mT">990 ₽ на 30 дней — и все отчёты бесплатно</h2>
+function passModal(after){
+ if(!PASS.gosu){openModal(`<span class="eyebrow gtext">Пропуск покупателя · шаг 1 из 2</span><h2 id="mT">Подтвердите личность через Госуслуги</h2>
+  <p class="fine" style="font-size:15px">Один человек — один пропуск. Так перекупы не заводят десятки аккаунтов, а продавцы знают, что к ним приходят реальные покупатели.</p>
+  <ul class="rules"><li class="ok">Берём только ФИО и подтверждённую учётную запись</li><li class="ok">Продавец видит «Покупатель подтверждён», но не ваши данные</li></ul>
+  <button class="btn gosu block" type="button" id="passGosu">Войти через Госуслуги</button><button class="btn grey block" type="button" data-close>Не сейчас</button>`);
+  $('#passGosu').onclick=()=>{PASS.gosu=true;toast('Личность подтверждена');passModal(after)};return}
+ openModal(`<span class="eyebrow gtext">Пропуск покупателя · шаг 2 из 2</span><h2 id="mT">990 ₽ на 30 дней</h2>
  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul>
- <button class="btn brand block" type="button" id="passOk">Оформить за 990 ₽</button><button class="btn grey block" type="button" data-close>Не сейчас</button>`);
+ <p class="fine">Основные параметры всех машин — год, пробег, цена, был ли осмотр — открыты и без пропуска.</p>
+ <button class="btn brand block" type="button" id="passOk">Оплатить 990 ₽</button><button class="btn grey block" type="button" data-close>Не сейчас</button>`);
  $('#passOk').onclick=()=>{PASS.on=true;closeModal();toast('Пропуск активен до 19 ноября');updPass();after&&after()}}
 function updPass(){$$('.passchip').forEach(e=>e.hidden=!PASS.on)}
 
@@ -1129,6 +1155,7 @@ function renderSell(){
   ${W.insp==='now'?`<h3 style="margin-top:24px">Где осмотреть — ближайшие к вам</h3><div class="places" style="margin-top:12px">${near.map(p=>placeRow(p,p.id===W.place)).join('')}</div><p class="fine" style="margin-top:8px">Время выберете после оплаты. <button class="link" type="button" data-go="points">Все пункты на карте</button></p>`:''}
   <div class="box stack" style="margin-top:18px"><b>Гарантия продажи — 2 500 ₽ блокируем на карте</b><p class="fine" style="font-size:14.5px">Это не списание. Вы пришли продать — мы защищаем покупателей от «воздуханов».</p>
    <ul class="rules">${SELL_RULES.map(([k,t])=>`<li class="${k}">${t}</li>`).join('')}</ul></div>
+  <p class="fine" style="margin-top:12px">Машины с оценкой ниже 60, в розыске, под действующим залогом или с запретами не публикуем. Подтвердится обман — снимем объявление, спишем гарантию и закроем аккаунт.</p>
   <div class="box stack" style="margin-top:14px"><div class="row" style="justify-content:space-between"><span>Размещение</span><b class="num">0 ₽</b></div>
    ${W.insp==='now'?`<div class="row" style="justify-content:space-between"><span>Осмотр</span><b class="num">2 500 ₽</b></div>`:''}
    <div class="row" style="justify-content:space-between"><span>Гарантия продажи</span><b class="num muted">блокировка 2 500 ₽</b></div>
@@ -1251,7 +1278,8 @@ document.addEventListener('click',e=>{const t=e.target;
  const site=t.closest('[data-site]');if(site){e.preventDefault();siteGo(site.dataset.site,site.dataset.label);return}
  if(t.closest('[data-close]')||t===$('#modal')){closeModal();return}
  const w=t.closest('[data-why]');if(w){openWhy(w.dataset.why);return}
- if(t.closest('[data-pass]')){passModal(()=>{const v=VIEWS.find(k=>!$('#v-'+k).hidden);if(v==='car')renderCar();else if(RENDER[v])RENDER[v]()});return}
+ if(t.closest('[data-deep]')&&CUR){if(PASS.seen.size<PASS_LIMIT){PASS.seen.add(CUR.id);toast(`Глубокий отчёт открыт · ${PASS.seen.size} из ${PASS_LIMIT} на этой неделе`)}renderCar();return}
+ if(t.closest('[data-pass]')){passModal(()=>{refitMaps();const v=VIEWS.find(k=>!$('#v-'+k).hidden);if(v==='car')renderCar();else if(v==='buy')renderBuy();else if(RENDER[v])RENDER[v]()});return}
  const op=t.closest('[data-open]');if(op){openCar(op.dataset.open);return}
  const cd=t.closest('.card');if(cd&&cur==='buy'){openCar(cd.dataset.id);return}
  if(cur==='buy'){const mk=t.closest('#buyMap .mk');if(mk){S.mapSel=isNaN(+mk.dataset.id)?mk.dataset.id:+mk.dataset.id;renderBuyMap(listBuy())}}

@@ -159,7 +159,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .note{font-size:14.5px;font-weight:500;display:flex;align-items:center;gap:5px}
 .note.good{color:var(--good)} .note.mid{color:var(--muted)} .note.high{color:var(--warn)} .note.brand{color:var(--brand)} .note.bad{color:var(--bad)}
 .score{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;padding:0 7px;border-radius:7px;font-weight:800;font-size:14px;color:#fff}
-.score.good{background:var(--good)} .score.warn{background:var(--warn)} .score.bad{background:var(--bad)}
+.score.good{background:#16A34A} .score.mid{background:#8DB82B} .score.low{background:#E8B500;color:#3A2E00} .score.warn{background:#E8B500;color:#3A2E00} .score.bad{background:#E8B500;color:#3A2E00}
 .score.big{min-width:56px;height:40px;font-size:20px;border-radius:10px}
 .gpill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 4px;border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--ink);box-shadow:0 1px 3px rgba(22,22,26,.12)}
 .gpill .gd{width:20px;height:20px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#fff}
@@ -464,6 +464,12 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .rules li::before{position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
 .rules li.ok::before{content:"✓";background:var(--green)}
 .rules li.no::before{content:"₽";background:var(--brand)}
+.lm-car.good{background:#16A34A}.lm-car.mid{background:#8DB82B}.lm-car.low{background:#E8B500;color:#3A2E00}.lm-car.on{background:var(--ink);color:#fff}
+.gosu{background:#0D4CD3;color:#fff}.gosu:hover{background:#0B42B8}
+.gscale{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--ink-2);margin-top:12px}
+.gscale i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.gdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.lockbox{display:flex;gap:16px;align-items:flex-start;border-radius:18px;padding:20px;background:var(--fill)}
 
 .hero{padding-block:56px 40px;display:flex;flex-direction:column;gap:14px;max-width:780px}
 .hero h1{font-size:clamp(34px,5vw,58px)}
@@ -562,7 +568,10 @@ function car(color,body){const id='cv'+(++carN),B=BODY[body]||BODY.sedan;
  <rect x="${B.hl[0]}" y="${B.hl[1]}" width="16" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="${B.tl[0]-6}" y="${B.tl[1]}" width="10" height="6" rx="2" fill="#d6363a"/>${B.wh.map(([x,r])=>wheel(x,148,r)).join('')}</svg>`}
 const SCENES=['ph-studio','ph-warm','ph-cool','ph-studio','ph-green','ph-studio'];
 const scene=id=>SCENES[(typeof id==='number'?id:String(id).length)%SCENES.length];
-const scoreCls=v=>v>=85?'good':v>=70?'warn':'bad';
+// Grade scale: yellow → lime → green. No red: listings below 60 are not published.
+const scoreCls=v=>v>=85?'good':v>=72?'mid':'low';
+const GRADE_COL={good:'#16A34A',mid:'#8DB82B',low:'#E8B500'};
+const gradeColor=v=>GRADE_COL[scoreCls(v)];
 
 /* ---------- map ---------- */
 const MAPBG=`<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E5412F"/><stop offset="1" stop-color="#D2301F"/></linearGradient><filter id="msh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="1.6" flood-opacity=".25"/></filter></defs>
@@ -643,7 +652,7 @@ async function mountSlot(holder){const key=holder.dataset.map,M=MAPS[key];if(!M|
 function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
  if(M.lib==='y'){M.cl.removeAll();M.coll.removeAll();
   pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
-   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#redStretchyIcon':'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
+   const pm=new ymaps.Placemark(m.ll,{hintContent:m.tip||m.label,iconContent:car?m.price:''},{preset:car?(on?'islands#blackStretchyIcon':m.g?{good:'islands#greenStretchyIcon',mid:'islands#oliveStretchyIcon',low:'islands#yellowStretchyIcon'}[m.g]:'islands#blueStretchyIcon'):(on?'islands#redCircleDotIcon':'islands#blueCircleDotIcon'),zIndex:on?1000:1});
    pm.events.add('click',()=>pick(m.id,holder));(on?M.coll:M.cl).add(pm)});
   if(GEO.real)M.coll.add(new ymaps.Placemark(GEO.ll,{hintContent:'Вы здесь'},{preset:'islands#geolocationIcon'}));
   const s=pts.find(m=>m.id===M.sel);
@@ -651,7 +660,7 @@ function drawMarks(M,holder){const pts=M.marks.filter(m=>m.ll);
   else if(s&&M.lastSel!==M.sel)M.map.panTo(s.ll,{flying:false});
  }else{M.layer.clearLayers();
   pts.forEach(m=>{const on=m.id===M.sel,car=m.kind==='car';
-   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
+   const icon=L.divIcon({className:'',html:car?`<span class="lm-car${on?' on':''}${m.g?' '+m.g:''}">${m.price}</span>`:`<span class="lm-pt${on?' on':''}"></span>`,iconSize:null});
    L.marker(m.ll,{icon,zIndexOffset:on?1000:0,title:m.tip||m.label}).on('click',()=>pick(m.id,holder)).addTo(M.layer)});
   if(GEO.real)L.marker(GEO.ll,{icon:L.divIcon({className:'',html:'<span class="lm-me"></span>',iconSize:null}),title:'Вы здесь'}).addTo(M.layer);
   const s=pts.find(m=>m.id===M.sel);
@@ -714,11 +723,12 @@ function copyText(t,okMsg){try{navigator.clipboard.writeText(t).then(()=>toast(o
 function headerShadow(){const t=$('#top');const f=()=>t.classList.toggle('scrolled',window.scrollY>4);window.addEventListener('scroll',f,{passive:true});f()}
 
 /* ---------- buyer pass ---------- */
-const PASS_PERKS=['Полные отчёты по всем машинам на «Осмотрено» — без лимита','10 проверок любых машин по VIN или ссылке','Сравнение объявлений с данными по базам','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
-function passCard(){const on=typeof PASS!=='undefined'&&PASS.on;
+const PASS_LIMIT=30;
+const PASS_PERKS=['Оценка состояния каждой машины на карте и в поиске — от жёлтого до зелёного','До 30 глубоких отчётов в неделю: история по базам, протокол осмотра и оценка','Только через Госуслуги: один человек — один пропуск','Купите через приложение — 990 ₽ засчитаем в сервисный сбор'];
+function passCard(){const on=typeof PASS!=='undefined'&&PASS.on,gosu=typeof PASS!=='undefined'&&PASS.gosu;
  return `<div class="box stack passcard"><div class="row" style="justify-content:space-between"><h3>Пропуск покупателя</h3>${on?'<span class="tag good">активен</span>':''}</div>
-  ${on?'<p class="fine" style="font-size:14.5px">До 19 ноября. Отчёты по машинам площадки — без лимита, проверок по VIN осталось 10.</p>':`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
-  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul><button class="btn brand block" type="button" data-pass>Оформить пропуск</button>`}</div>`}
+  ${on?`<p class="fine" style="font-size:14.5px">До 19 ноября. Глубоких отчётов на этой неделе: ${PASS.seen.size} из ${PASS_LIMIT}. Лимит обновится в понедельник.</p>`:`<div class="row" style="align-items:baseline;gap:6px"><b class="bigprice num">990 ₽</b><span class="muted">на 30 дней</span></div>
+  <ul class="rules">${PASS_PERKS.map(t=>`<li class="ok">${t}</li>`).join('')}</ul>${gosu?'<p class="fine">Личность подтверждена через Госуслуги</p><button class="btn brand block" type="button" data-pass>Оплатить 990 ₽</button>':'<button class="btn gosu block" type="button" data-pass>Войти через Госуслуги</button><p class="fine">Без Госуслуг пропуск не оформить — так перекупы не заводят десятки аккаунтов.</p>'}`}</div>`}
 
 hydrate();headerShadow();document.getElementById('p1').innerHTML=car('#4E6E93','sedan');document.getElementById('p2').innerHTML=car('#B8282E','suv');
 </script>
