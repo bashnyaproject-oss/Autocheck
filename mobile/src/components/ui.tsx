@@ -3,12 +3,12 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, t
 
 import { C, Font, R, S, gradeColor, gradeText } from '@/constants/theme';
 
-type BtnKind = 'black' | 'green' | 'grey' | 'line' | 'gosu' | 'tid';
+type BtnKind = 'black' | 'green' | 'grey' | 'line' | 'gosu' | 'tid' | 'brand';
 
 export function Button({ title, onPress, kind = 'black', disabled, loading, style, sub }: {
   title: string; onPress?: () => void; kind?: BtnKind; disabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle>; sub?: string;
 }) {
-  const bg = { black: C.ink, green: C.green, grey: C.fill, line: '#fff', gosu: C.gosu, tid: '#FFDD2D' }[kind];
+  const bg = { black: C.ink, green: C.green, grey: C.fill, line: '#fff', gosu: C.gosu, tid: '#FFDD2D', brand: C.brand }[kind];
   const fg = kind === 'grey' || kind === 'line' || kind === 'tid' ? C.ink : '#fff';
   return (
     <Pressable
@@ -64,8 +64,8 @@ export function Row({ children, style, gap = S.s }: { children: ReactNode; style
 export function Rule({ kind, children }: { kind: 'ok' | 'pay'; children: ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-      <View style={[st.dot, { backgroundColor: kind === 'ok' ? C.green : C.brand }]}>
-        <Text style={st.dotText}>{kind === 'ok' ? '✓' : '₽'}</Text>
+      <View style={[st.dot, { backgroundColor: kind === 'ok' ? C.ink : C.fill2 }]}>
+        <Text style={[st.dotText, kind === 'pay' && { color: C.ink }]}>{kind === 'ok' ? '✓' : '₽'}</Text>
       </View>
       <Text style={[tx.body, { flex: 1 }]}>{children}</Text>
     </View>

@@ -31,10 +31,10 @@ function wheel(x: number, y: number, r: number) {
 }
 
 const BACKDROPS = [
-  ['#FFFFFF', '#E9ECF0', '#DCE1E7'],
-  ['#F7EFE6', '#EEE1D2', '#DCCBB6'],
-  ['#EAF1F8', '#DAE5EF', '#C6D2DE'],
-  ['#EAF2E6', '#DCE8D6', '#C7D4BF'],
+  ['#FFFFFF', '#EEEFF1', '#E2E3E6'],
+  ['#F6F6F7', '#E9EAEC', '#D9DADD'],
+  ['#FAFAFA', '#ECECEE', '#DEDFE2'],
+  ['#F2F2F3', '#E4E5E8', '#D3D4D8'],
 ];
 
 /** Scene 400×300 with backdrop, floor and the car. */

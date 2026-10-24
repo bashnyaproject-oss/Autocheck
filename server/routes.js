@@ -47,6 +47,11 @@ async function currentUser(db, headers) {
     await db.query('insert into users (id,name,provider,subject) values ($1,$2,$3,$4) on conflict do nothing', [p.uid, p.name, p.provider, p.subject]);
     ({ rows } = await db.query('select * from users where id=$1', [p.uid]));
   }
+  // Demo without DATABASE_URL: each serverless instance has its own memory, so a paid demo pass
+  // travels inside the token and is restored here. With a real database this never triggers.
+  if (rows[0] && p.pass_until && !process.env.DATABASE_URL && new Date(p.pass_until) > new Date()) {
+    await db.query('insert into passes (user_id, ends_at) values ($1,$2) on conflict (user_id) do update set ends_at = greatest(passes.ends_at, excluded.ends_at)', [p.uid, p.pass_until]);
+  }
   return rows[0] || null;
 }
 async function passOf(db, userId) {
@@ -59,18 +64,43 @@ async function usedThisWeek(db, userId) {
   return rows.map((r) => r.listing_id);
 }
 
-function listingOut(l, insp, { showGrade, from }) {
-  return {
-    id: l.id, make: l.make, model: l.model, year: l.year, price: l.price, market_price: l.market_price, km: l.km,
-    engine: l.engine, gearbox: l.gearbox, drive: l.drive, body: l.body, color: l.color, city: l.city, district: l.district,
-    owners: l.owners, status: l.status,
-    distance_km: from && l.lat ? Math.round(km(from, [l.lat, l.lng])) : null,
-    inspected_at: insp && insp.done_at ? new Date(insp.done_at).toLocaleDateString('ru-RU') : null,
-    inspected_by: insp ? insp.inspector : null,
-    grade: showGrade && insp ? insp.grade : null,
-    flags: insp ? insp.flags : [],
+/**
+ * What each access level may see (docs/FLOWS.md). Closed fields are not sent at all.
+ *  guest  — not signed in: name, year, city, price, "inspected"; photos blurred on the client (none sent)
+ *  member — signed in, no pass: + km, engine, gearbox, distance, first photo
+ *  full   — active pass (or the seller himself): everything
+ */
+function listingOut(l, insp, { level, from, seller }) {
+  const o = {
+    id: l.id, make: l.make, model: l.model, year: l.year, price: l.price, city: l.city, body: l.body, color: l.color,
+    status: l.status, inspected: !!insp, inspected_at: insp && insp.done_at ? new Date(insp.done_at).toLocaleDateString('ru-RU') : null,
+    access: level, photos: [],
   };
+  if (level === 'guest') return o;
+  const photos = Array.isArray(l.photos) ? l.photos : [];
+  Object.assign(o, {
+    km: l.km, engine: l.engine, gearbox: l.gearbox, drive: l.drive, owners: l.owners,
+    distance_km: from && l.lat ? Math.round(km(from, [l.lat, l.lng])) : null,
+    photos: photos.slice(0, 1), photo_count: photos.length,
+  });
+  if (level === 'member') return o;
+  return Object.assign(o, {
+    photos, market_price: l.market_price, district: l.district, description: l.description,
+    grade: insp ? insp.grade : null, flags: insp ? insp.flags : [], inspected_by: insp ? insp.inspector : null,
+    seller: seller ? { id: seller.id, name: seller.name, verified: true } : null,
+  });
 }
+async function accessOf(db, user) {
+  if (!user) return 'guest';
+  return (await passOf(db, user.id)) ? 'full' : 'member';
+}
+const HOME = [55.7963, 37.588];
+const CATEGORY = {
+  suv: (l) => l.body === 'suv', sedan: (l) => l.body === 'sedan', hatch: (l) => l.body === 'hatch',
+  cheap: (l) => l.price <= 1500000, fresh: (l) => l.published_at && Date.now() - new Date(l.published_at) < 7 * 864e5,
+  top: (l, insp) => insp && insp.grade >= 85,
+};
+
 async function lastInspection(db, listingId) {
   const { rows } = await db.query("select * from inspections where listing_id=$1 and status='done' order by done_at desc limit 1", [listingId]);
   return rows[0] || null;
@@ -120,21 +150,32 @@ on('GET', '/v1/health', null, async (c) => ok({ ok: true, db: c.db.kind, payment
 on('GET', '/v1/points', null, async () => ok({ items: POINTS }));
 
 on('GET', '/v1/feed', null, async ({ db, user, query }) => {
-  const from = query.lat && query.lng ? [Number(query.lat), Number(query.lng)] : [55.7963, 37.588];
-  const radius = Number(query.radius_km || 100);
-  const showGrade = !!(await passOf(db, user && user.id));
-  const { rows } = await db.query("select * from listings where status='published' order by published_at desc limit 200");
+  const level = await accessOf(db, user);
+  const from = query.lat && query.lng ? [Number(query.lat), Number(query.lng)] : HOME;
+  const radius = Number(query.radius_km || 300);
+  const q = String(query.q || '').trim().toLowerCase();
+  const { rows } = await db.query("select * from listings where status='published' order by published_at desc limit 300");
   const items = [];
   for (const l of rows) {
     const insp = await lastInspection(db, l.id);
     if (!insp || insp.grade < MIN_GRADE) continue;
-    const out = listingOut(l, insp, { showGrade, from });
-    if (out.distance_km != null && out.distance_km > radius) continue;
+    if (q && !`${l.make} ${l.model}`.toLowerCase().includes(q)) continue;
+    if (query.price_min && l.price < Number(query.price_min)) continue;
     if (query.price_max && l.price > Number(query.price_max)) continue;
-    items.push(out);
+    if (query.year_min && l.year < Number(query.year_min)) continue;
+    if (query.body && l.body !== query.body) continue;
+    if (query.gearbox && l.gearbox !== query.gearbox) continue;
+    if (query.category && CATEGORY[query.category] && !CATEGORY[query.category](l, insp)) continue;
+    const d = l.lat ? km(from, [l.lat, l.lng]) : null;
+    if (d != null && d > radius) continue;
+    // Grade filters work only for people who can see grades.
+    if (query.category === 'top' && level !== 'full') continue;
+    items.push({ out: listingOut(l, insp, { level, from }), d: d ?? 999 });
   }
-  items.sort((a, b) => (a.distance_km ?? 999) - (b.distance_km ?? 999));
-  return ok({ items, pass_active: showGrade });
+  if (query.sort === 'price') items.sort((a, b) => a.out.price - b.out.price);
+  else if (query.sort === 'new') items.sort((a, b) => b.out.year - a.out.year);
+  else items.sort((a, b) => a.d - b.d);
+  return ok({ items: items.map((x) => x.out), access: level });
 });
 
 on('GET', '/v1/listings/:id', null, async ({ db, user, params, query }) => {
@@ -142,9 +183,13 @@ on('GET', '/v1/listings/:id', null, async ({ db, user, params, query }) => {
   const l = rows[0];
   const mine = l && user && l.seller_id === user.id;
   if (!l || (l.status !== 'published' && !mine)) return err(404, 'Объявление не найдено');
-  const showGrade = mine || !!(await passOf(db, user && user.id));
-  const from = query.lat && query.lng ? [Number(query.lat), Number(query.lng)] : [55.7963, 37.588];
-  return ok(listingOut(l, await lastInspection(db, l.id), { showGrade, from }));
+  const level = mine ? 'full' : await accessOf(db, user);
+  const from = query.lat && query.lng ? [Number(query.lat), Number(query.lng)] : HOME;
+  const seller = l.seller_id ? (await db.query('select id,name from users where id=$1', [l.seller_id])).rows[0] : null;
+  const out = listingOut(l, await lastInspection(db, l.id), { level, from, seller });
+  if (user) out.liked = !!(await db.query('select 1 from likes where user_id=$1 and listing_id=$2', [user.id, l.id])).rows.length;
+  out.mine = !!mine;
+  return ok(out);
 });
 
 // ---------- auth ----------
@@ -155,8 +200,10 @@ on('GET', '/v1/auth/providers', null, async () => ok({
 on('POST', '/v1/auth/demo', null, async ({ db, body }) => {
   if (!auth.demoAllowed()) return err(403, 'Демо-вход выключен');
   const provider = ['esia', 'tid', 'sberid'].includes(body.provider) ? body.provider : 'esia';
-  // Demo identity: one "person" per device id, mimicking the unique (provider, subject) rule.
-  const subject = 'demo-' + String(body.device || 'anon').slice(0, 64);
+  // Demo identity mimics the unique (provider, subject) rule: the test login (phone) is the person;
+  // without one, the device is. Same login on any device → same account.
+  const login = String(body.login || '').replace(/\D/g, '').slice(-10);
+  const subject = login.length >= 6 ? 'demo-p' + login : 'demo-' + String(body.device || 'anon').slice(0, 64);
   const name = String(body.name || 'Покупатель').slice(0, 60);
   const { rows } = await db.query('select * from users where provider=$1 and subject=$2', [provider, subject]);
   let u = rows[0];
@@ -190,7 +237,9 @@ on('POST', '/v1/pass/checkout', 'user', async ({ db, user }) => {
   const r = await pay.createPayment({ id, amount: PRICE.pass, description: 'Пропуск покупателя на 30 дней' });
   await savePayment(db, { id, user_id: user.id, kind: 'pass', amount: PRICE.pass, status: 'pending', provider_id: r.provider_id });
   if (r.status === 'succeeded') await applySucceeded(db, id);
-  return ok({ payment_id: id, status: r.status, confirmation_url: r.confirmation_url || null });
+  const until = await passOf(db, user.id);
+  const token = until && !process.env.DATABASE_URL ? auth.sign({ uid: user.id, name: user.name, provider: user.provider, subject: user.subject, pass_until: new Date(until).toISOString() }) : undefined;
+  return ok({ payment_id: id, status: r.status, confirmation_url: r.confirmation_url || null, token });
 });
 
 on('POST', '/v1/listings/:id/report', 'user', async ({ db, user, params }) => {
@@ -223,16 +272,113 @@ on('DELETE', '/v1/listings/:id/like', 'user', async ({ db, user, params }) => {
   return ok({ liked: false });
 });
 on('GET', '/v1/favorites', 'user', async ({ db, user }) => {
-  const showGrade = !!(await passOf(db, user.id));
+  const level = await accessOf(db, user);
   const { rows } = await db.query("select l.* from likes k join listings l on l.id=k.listing_id where k.user_id=$1 and l.status='published' order by k.created_at desc", [user.id]);
   const items = [];
-  for (const l of rows) items.push(listingOut(l, await lastInspection(db, l.id), { showGrade, from: [55.7963, 37.588] }));
+  for (const l of rows) items.push(listingOut(l, await lastInspection(db, l.id), { level, from: HOME }));
   return ok({ items });
 });
-on('POST', '/v1/listings/:id/viewings', 'user', async ({ db, user, params }) => {
-  const id = pay.newId('v');
-  await db.query('insert into viewings (id,listing_id,buyer_id) values ($1,$2,$3)', [id, params.id, user.id]);
-  return ok({ id, status: 'requested' }, 201);
+async function needFull(db, user) {
+  return (await accessOf(db, user)) === 'full' ? null : err(402, 'Нужен доступ покупателя: 990 ₽ на 30 дней');
+}
+const newId = (p) => pay.newId(p);
+async function threadFor(db, listing, buyerId) {
+  const ex = (await db.query('select * from threads where listing_id=$1 and buyer_id=$2', [listing.id, buyerId])).rows[0];
+  if (ex) return ex;
+  const t = { id: newId('t'), listing_id: listing.id, buyer_id: buyerId, seller_id: listing.seller_id };
+  await db.query('insert into threads (id,listing_id,buyer_id,seller_id) values ($1,$2,$3,$4)', [t.id, t.listing_id, t.buyer_id, t.seller_id]);
+  return t;
+}
+async function addMessage(db, threadId, authorId, text) {
+  const id = newId('m');
+  await db.query('insert into messages (id,thread_id,author_id,text) values ($1,$2,$3,$4)', [id, threadId, authorId, String(text).slice(0, 2000)]);
+  return id;
+}
+const fmtAt = (d) => new Date(d).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' });
+
+on('POST', '/v1/listings/:id/viewings', 'user', async ({ db, user, params, body }) => {
+  const e = await needFull(db, user);
+  if (e) return e;
+  const l = (await db.query("select * from listings where id=$1 and status='published'", [params.id])).rows[0];
+  if (!l) return err(404, 'Объявление не найдено');
+  if (l.seller_id === user.id) return err(409, 'Это ваша машина');
+  const at = body.at ? new Date(body.at) : null;
+  if (!at || isNaN(at) || at < now()) return err(400, 'Выберите день и время');
+  const active = (await db.query("select 1 from viewings where listing_id=$1 and buyer_id=$2 and status in ('requested','confirmed')", [l.id, user.id])).rows.length;
+  if (active) return err(409, 'Вы уже записаны на эту машину');
+  const id = newId('v');
+  await db.query('insert into viewings (id,listing_id,buyer_id,at,note) values ($1,$2,$3,$4,$5)', [id, l.id, user.id, at.toISOString(), body.note ? String(body.note).slice(0, 500) : null]);
+  const t = await threadFor(db, l, user.id);
+  await addMessage(db, t.id, null, `Заявка на просмотр: ${fmtAt(at)}`);
+  if (body.note) await addMessage(db, t.id, user.id, body.note);
+  return ok({ id, status: 'requested', thread_id: t.id }, 201);
+});
+
+const viewingRow = (v) => ({ id: v.id, listing_id: v.listing_id, at: v.at, status: v.status, note: v.note, title: `${v.make} ${v.model}, ${v.year}`, price: v.price, color: v.color, body: v.body, district: v.status === 'confirmed' || v.status === 'done' ? v.district : null, buyer: v.buyer_name ? { id: v.buyer_id, name: v.buyer_name } : undefined, thread_id: v.thread_id });
+on('GET', '/v1/viewings', 'user', async ({ db, user }) => {
+  const { rows } = await db.query(
+    `select v.*, l.make, l.model, l.year, l.price, l.color, l.body, l.district, t.id as thread_id
+       from viewings v join listings l on l.id=v.listing_id left join threads t on t.listing_id=v.listing_id and t.buyer_id=v.buyer_id
+      where v.buyer_id=$1 order by v.at desc`, [user.id]);
+  const bought = (await db.query("select id, make, model, year, price, color, body from listings where buyer_id=$1 and status='sold'", [user.id])).rows;
+  return ok({ items: rows.map(viewingRow), bought });
+});
+on('GET', '/v1/seller/viewings', 'user', async ({ db, user }) => {
+  const { rows } = await db.query(
+    `select v.*, l.make, l.model, l.year, l.price, l.color, l.body, l.district, u.name as buyer_name, t.id as thread_id
+       from viewings v join listings l on l.id=v.listing_id join users u on u.id=v.buyer_id left join threads t on t.listing_id=v.listing_id and t.buyer_id=v.buyer_id
+      where l.seller_id=$1 order by v.at`, [user.id]);
+  return ok({ items: rows.map(viewingRow) });
+});
+on('POST', '/v1/seller/viewings/:id/:action', 'user', async ({ db, user, params }) => {
+  const next = { confirm: 'confirmed', decline: 'declined', done: 'done' }[params.action];
+  if (!next) return err(404, 'Нет такого действия');
+  const v = (await db.query('select v.*, l.seller_id, l.make, l.model from viewings v join listings l on l.id=v.listing_id where v.id=$1', [params.id])).rows[0];
+  if (!v || v.seller_id !== user.id) return err(404, 'Заявка не найдена');
+  await db.query('update viewings set status=$2 where id=$1', [v.id, next]);
+  const t = (await db.query('select id from threads where listing_id=$1 and buyer_id=$2', [v.listing_id, v.buyer_id])).rows[0];
+  if (t) await addMessage(db, t.id, null, { confirmed: `Продавец подтвердил просмотр: ${fmtAt(v.at)}`, declined: 'Продавец не сможет в это время — выберите другое', done: 'Просмотр состоялся' }[next]);
+  return ok({ id: v.id, status: next });
+});
+on('POST', '/v1/viewings/:id/cancel', 'user', async ({ db, user, params }) => {
+  const v = (await db.query('select * from viewings where id=$1 and buyer_id=$2', [params.id, user.id])).rows[0];
+  if (!v) return err(404, 'Заявка не найдена');
+  await db.query("update viewings set status='cancelled' where id=$1", [v.id]);
+  return ok({ id: v.id, status: 'cancelled' });
+});
+
+// ---------- messages ----------
+on('POST', '/v1/listings/:id/thread', 'user', async ({ db, user, params, body }) => {
+  const e = await needFull(db, user);
+  if (e) return e;
+  const l = (await db.query("select * from listings where id=$1 and status='published'", [params.id])).rows[0];
+  if (!l) return err(404, 'Объявление не найдено');
+  if (l.seller_id === user.id) return err(409, 'Это ваша машина');
+  const t = await threadFor(db, l, user.id);
+  if (body.text) await addMessage(db, t.id, user.id, body.text);
+  return ok({ thread_id: t.id });
+});
+on('GET', '/v1/threads', 'user', async ({ db, user }) => {
+  const { rows } = await db.query(
+    `select t.*, l.make, l.model, l.year, l.color, l.body, b.name as buyer_name, s.name as seller_name,
+            (select text from messages m where m.thread_id=t.id order by created_at desc limit 1) as last_text,
+            (select created_at from messages m where m.thread_id=t.id order by created_at desc limit 1) as last_at
+       from threads t join listings l on l.id=t.listing_id join users b on b.id=t.buyer_id left join users s on s.id=t.seller_id
+      where t.buyer_id=$1 or t.seller_id=$1 order by last_at desc nulls last`, [user.id]);
+  return ok({ items: rows.map((r) => ({ id: r.id, listing_id: r.listing_id, title: `${r.make} ${r.model}, ${r.year}`, color: r.color, body: r.body, with: r.buyer_id === user.id ? r.seller_name : r.buyer_name, role: r.buyer_id === user.id ? 'buyer' : 'seller', last_text: r.last_text, last_at: r.last_at })) });
+});
+on('GET', '/v1/threads/:id', 'user', async ({ db, user, params }) => {
+  const t = (await db.query('select t.*, l.make, l.model, l.year from threads t join listings l on l.id=t.listing_id where t.id=$1', [params.id])).rows[0];
+  if (!t || (t.buyer_id !== user.id && t.seller_id !== user.id)) return err(404, 'Переписка не найдена');
+  const { rows } = await db.query('select id, author_id, text, created_at from messages where thread_id=$1 order by created_at', [t.id]);
+  return ok({ id: t.id, listing_id: t.listing_id, title: `${t.make} ${t.model}, ${t.year}`, me: user.id, messages: rows.map((m) => ({ id: m.id, mine: m.author_id === user.id, system: !m.author_id, text: m.text, at: m.created_at })) });
+});
+on('POST', '/v1/threads/:id/messages', 'user', async ({ db, user, params, body }) => {
+  const t = (await db.query('select * from threads where id=$1', [params.id])).rows[0];
+  if (!t || (t.buyer_id !== user.id && t.seller_id !== user.id)) return err(404, 'Переписка не найдена');
+  const text = String(body.text || '').trim();
+  if (!text) return err(400, 'Пустое сообщение');
+  return ok({ id: await addMessage(db, t.id, user.id, text) }, 201);
 });
 
 // ---------- seller ----------
@@ -241,25 +387,60 @@ on('POST', '/v1/seller/import', 'user', async ({ body }) => {
   const r = await fetchListing(body.url);
   return ok(r.body, r.status);
 });
+const BODIES = ['sedan', 'suv', 'hatch'];
 on('POST', '/v1/seller/listings', 'user', async ({ db, user, body }) => {
   const year = Number(body.year), price = Number(body.price), kmv = Number(body.km);
   const [make, ...rest] = String(body.title || `${body.make || ''} ${body.model || ''}`).trim().split(/\s+/);
   const model = rest.join(' ');
   if (!make || !model || !(year > 1980) || !(price > 10000) || !(kmv >= 0)) return err(400, 'Нужны марка и модель, год, пробег и цена');
   const id = pay.newId('l');
+  const district = body.district ? String(body.district).slice(0, 80) : null;
   await db.query(
-    "insert into listings (id,seller_id,status,make,model,year,price,km,vin,source_url,city,district) values ($1,$2,'awaiting_inspection',$3,$4,$5,$6,$7,$8,$9,$10,$11)",
-    [id, user.id, make, model, year, price, kmv, body.vin || null, body.source_url || null, body.city || 'Москва', body.district || null],
+    `insert into listings (id,seller_id,status,make,model,year,price,km,vin,source_url,city,district,description,body,gearbox,engine,drive,owners,color,lat,lng)
+     values ($1,$2,'awaiting_inspection',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+    [id, user.id, make, model, year, price, kmv, body.vin || null, body.source_url || null, body.city || 'Москва', district,
+     body.description ? String(body.description).slice(0, 3000) : null, BODIES.includes(body.body) ? body.body : 'sedan',
+     body.gearbox || null, body.engine || null, body.drive || null, Number(body.owners) || 1, body.color || '#7C8A96', HOME[0] + (Math.random() - 0.5) * 0.12, HOME[1] + (Math.random() - 0.5) * 0.2],
   );
   return ok({ id, status: 'awaiting_inspection' }, 201);
 });
+on('PATCH', '/v1/seller/listings/:id', 'user', async ({ db, user, params, body }) => {
+  const [l, e] = await ownListing(db, user, params.id);
+  if (e) return e;
+  const price = body.price != null ? Number(body.price) : l.price;
+  if (l.status === 'published' && price > l.price && (await db.query("select 1 from viewings where listing_id=$1 and status in ('requested','confirmed')", [l.id])).rows.length) return err(409, 'Пока есть записи на просмотр, цену можно только снизить');
+  await db.query('update listings set price=$2, description=coalesce($3, description) where id=$1', [l.id, price, body.description != null ? String(body.description).slice(0, 3000) : null]);
+  return ok({ id: l.id, price });
+});
+on('POST', '/v1/seller/listings/:id/photos', 'user', async ({ db, user, params, body }) => {
+  const [l, e] = await ownListing(db, user, params.id);
+  if (e) return e;
+  const data = String(body.data || '');
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(data)) return err(400, 'Нужна фотография JPEG, PNG или WEBP');
+  if (data.length > 1_600_000) return err(413, 'Фото слишком большое — до 1 МБ');
+  const photos = Array.isArray(l.photos) ? l.photos : [];
+  if (photos.length >= 8) return err(409, 'Не больше 8 фото');
+  photos.push(data);
+  await db.query('update listings set photos=$2 where id=$1', [l.id, JSON.stringify(photos)]);
+  return ok({ count: photos.length }, 201);
+});
+on('GET', '/v1/seller/listings/:id', 'user', async ({ db, user, params }) => {
+  const [l, e] = await ownListing(db, user, params.id);
+  if (e) return e;
+  const insp = await lastInspection(db, l.id);
+  const booked = (await db.query("select point_id from inspections where listing_id=$1 and status='booked' limit 1", [l.id])).rows[0];
+  const buyers = (await db.query("select distinct u.id, u.name from viewings v join users u on u.id=v.buyer_id where v.listing_id=$1 and v.status in ('confirmed','done','requested')", [l.id])).rows;
+  const stats = { likes: Number((await db.query('select count(*)::int n from likes where listing_id=$1', [l.id])).rows[0].n), viewings: buyers.length };
+  return ok({ ...listingOut(l, insp, { level: 'full', from: HOME }), booked_point: booked ? booked.point_id : null, expires_at: l.expires_at, commission_if_sold: commission(l.price), fee_if_not_sold: PRICE.notSold, buyers, stats });
+});
+
 on('GET', '/v1/seller/listings', 'user', async ({ db, user }) => {
   const { rows } = await db.query('select * from listings where seller_id=$1 order by created_at desc', [user.id]);
   const items = [];
   for (const l of rows) {
     const insp = await lastInspection(db, l.id);
     const booked = (await db.query("select point_id from inspections where listing_id=$1 and status='booked' limit 1", [l.id])).rows[0];
-    items.push({ ...listingOut(l, insp, { showGrade: true }), booked_point: booked ? booked.point_id : null, expires_at: l.expires_at, commission_if_sold: commission(l.price), fee_if_not_sold: PRICE.notSold });
+    items.push({ ...listingOut(l, insp, { level: 'full', from: HOME }), booked_point: booked ? booked.point_id : null, expires_at: l.expires_at, commission_if_sold: commission(l.price), fee_if_not_sold: PRICE.notSold });
   }
   return ok({ items });
 });
@@ -282,12 +463,16 @@ on('POST', '/v1/seller/listings/:id/inspection', 'user', async ({ db, user, para
   if (r.status === 'succeeded') await applySucceeded(db, id);
   return ok({ payment_id: id, status: r.status, confirmation_url: r.confirmation_url || null, point });
 });
-on('POST', '/v1/seller/listings/:id/sold', 'user', async ({ db, user, params }) => {
+on('POST', '/v1/seller/listings/:id/sold', 'user', async ({ db, user, params, body }) => {
   const [l, e] = await ownListing(db, user, params.id);
   if (e) return e;
   if (l.status !== 'published') return err(409, 'Объявление не опубликовано');
-  await db.query("update listings set status='sold', closed_at=now() where id=$1", [l.id]);
-  return ok({ status: 'sold', charge: await chargeSeller(db, l, 'commission', commission(l.price), `Комиссия 1%: ${l.make} ${l.model}`) });
+  const buyer = body.buyer_id ? (await db.query('select 1 from viewings where listing_id=$1 and buyer_id=$2', [l.id, body.buyer_id])).rows.length : 0;
+  await db.query("update listings set status='sold', closed_at=now(), buyer_id=$2 where id=$1", [l.id, buyer ? body.buyer_id : null]);
+  const charge = buyer
+    ? await chargeSeller(db, l, 'commission', commission(l.price), `Комиссия 1%: ${l.make} ${l.model}`)
+    : await chargeSeller(db, l, 'not_sold_fee', PRICE.notSold, `Продано вне приложения: ${l.make} ${l.model}`);
+  return ok({ status: 'sold', via_app: !!buyer, charge });
 });
 on('DELETE', '/v1/seller/listings/:id', 'user', async ({ db, user, params }) => {
   const [l, e] = await ownListing(db, user, params.id);

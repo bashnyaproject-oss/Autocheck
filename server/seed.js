@@ -18,14 +18,27 @@ const CHECK = (low) => [
   { title: 'Документы и VIN сверены', ok: true },
 ];
 
+const SELLERS = [['s_demo1', 'Артём'], ['s_demo2', 'Ирина'], ['s_demo3', 'Михаил']];
+const TEXT = [
+  'Один владелец, обслуживание у дилера по регламенту. Вторая резина на дисках. Не такси, не битая.',
+  'Покупал новой, езжу на работу и на дачу. Перекрашен задний бампер после парковки — видно в протоколе.',
+  'Городская машина, гаражное хранение. Масло менял каждые 10 000 км, чеки есть.',
+  'На гарантии дилера до 2028 года. Полный комплект ключей, коврики, сетка в багажник.',
+  'Машина честная, но DSG скоро попросит сцепление — учёл в цене.',
+  'Полный привод, зимой не подводила. Сколы на капоте — от трассы.',
+  'Семейный универсал, детские кресла отдам в подарок.',
+  'Свежая резина, недавно ТО. Перекрашено переднее крыло после мелкого касания.',
+];
+
 async function seed(db) {
   const days = (n) => new Date(Date.now() + n * 864e5).toISOString();
+  for (const [id, name] of SELLERS) await db.query("insert into users (id,name,provider,subject) values ($1,$2,'demo',$1) on conflict do nothing", [id, name]);
   for (const [i, c] of CARS.entries()) {
     const [id, make, model, year, price, market, km, engine, gearbox, drive, body, color, city, district, lat, lng, owners, grade, flags] = c;
     await db.query(
-      `insert into listings (id,status,make,model,year,price,market_price,km,engine,gearbox,drive,body,color,city,district,lat,lng,owners,vin,published_at,expires_at)
-       values ($1,'published',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
-      [id, make, model, year, price, market, km, engine, gearbox, drive, body, color, city, district, lat, lng, owners, `XW8DEMO${String(1000000000 + i).slice(-10)}`, days(-10 + i), days(50 + i)],
+      `insert into listings (id,status,make,model,year,price,market_price,km,engine,gearbox,drive,body,color,city,district,lat,lng,owners,vin,published_at,expires_at,seller_id,description)
+       values ($1,'published',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+      [id, make, model, year, price, market, km, engine, gearbox, drive, body, color, city, district, lat, lng, owners, `XW8DEMO${String(1000000000 + i).slice(-10)}`, days(-10 + i), days(50 + i), SELLERS[i % 3][0], TEXT[i]],
     );
     const paint = [['Капот', 112], ['Крыло ПЛ', 104], ['Дверь ПЛ', 118], ['Крыша', 109], ['Бампер задний', flags.some((f) => f[1].includes('бампер')) ? 240 : 120]].map(([part, microns]) => ({ part, microns }));
     await db.query(

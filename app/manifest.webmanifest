@@ -4,7 +4,7 @@
   "start_url": "/app/",
   "scope": "/app/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
+  "background_color": "#0B0B0C",
   "theme_color": "#FFFFFF",
   "lang": "ru",
   "icons": [

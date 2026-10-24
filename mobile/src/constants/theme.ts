@@ -2,17 +2,20 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-/** Single light look, same palette as the website: ink, red brand, green money actions, grade scale. */
+/** Monochrome premium look: white surfaces, black ink and black actions; colour only for the grade scale. */
 export const C = {
   bg: '#FFFFFF',
-  fill: '#F1F2F4',
+  fill: '#F3F3F4',
   fill2: '#E5E7EA',
   line: '#EBECEF',
-  ink: '#141414',
+  ink: '#0B0B0C',
   ink2: '#3A3A3F',
-  muted: '#8B8C92',
-  brand: '#DB3727',
-  green: '#11A548',
+  muted: '#86878D',
+  brand: '#0B0B0C',
+  night: '#0B0B0C',
+  night2: '#17181B',
+  night3: '#24262A',
+  green: '#0B0B0C',
   link: '#2B6AEB',
   gosu: '#0D4CD3',
   warnSoft: '#FFF6DA',
@@ -41,4 +44,5 @@ export const Font = Platform.select({
 export const rub = (n: number) => Math.round(n).toLocaleString('ru-RU') + ' ₽';
 export const kmf = (n: number) => Math.round(n).toLocaleString('ru-RU') + ' км';
 
-export const MaxContentWidth = 560;
+export const MaxContentWidth = 640;
+export const MaxGridWidth = 1180;

@@ -1,28 +1,29 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 
 import { C } from '@/constants/theme';
-import { useApp } from '@/state/app-state';
 
 export default function AppTabs() {
-  const { liked } = useApp();
   return (
-    <NativeTabs backgroundColor={C.bg} labelStyle={{ selected: { color: C.ink } }} tintColor={C.ink}>
+    <NativeTabs backgroundColor={C.bg} labelStyle={{ selected: { color: C.brand } }} tintColor={C.brand}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Подбор</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'car', selected: 'car.fill' }} md="directions_car" />
+        <NativeTabs.Trigger.Label>Поиск</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="favorites">
+      <NativeTabs.Trigger name="saved">
         <NativeTabs.Trigger.Label>Избранное</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'heart', selected: 'heart.fill' }} md="favorite" />
-        {liked.length ? <NativeTabs.Trigger.Badge>{String(liked.length)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="sell">
-        <NativeTabs.Trigger.Label>Продать</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="plus.circle" md="add_circle" />
+      <NativeTabs.Trigger name="viewings">
+        <NativeTabs.Trigger.Label>Просмотры</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" md="event" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="inbox">
+        <NativeTabs.Trigger.Label>Сообщения</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'message', selected: 'message.fill' }} md="chat" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Профиль</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} md="person" />
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.circle', selected: 'person.circle.fill' }} md="account_circle" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

@@ -1,0 +1,51 @@
+import sys, time
+from playwright.sync_api import sync_playwright
+BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8787'
+OUT = '/tmp/osm_shots/'; __import__('os').makedirs(OUT, exist_ok=True)
+n = [0]
+def shot(p, name):
+    n[0] += 1; p.screenshot(path=f'{OUT}{n[0]:02d}_{name}.png')
+errs = []
+with sync_playwright() as pw:
+    b = pw.chromium.launch()
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    p = ctx.new_page()
+    p.on('pageerror', lambda e: errs.append(str(e)))
+    p.goto(BASE + '/app/', wait_until='networkidle'); time.sleep(1.2)
+    shot(p, 'welcome1_start'); time.sleep(2.5); shot(p, 'welcome1_anim')
+    for k in range(3):
+        p.get_by_text('Далее', exact=True).click(); time.sleep(2.2); shot(p, f'welcome{k+2}')
+    p.get_by_text('Я покупаю машину').click(); time.sleep(1.2); shot(p, 'auth_choose')
+    p.get_by_text('Войти через Госуслуги').click(); time.sleep(.6)
+    p.get_by_placeholder('+7 900 000-00-00').fill('+7 916 111-22-33')
+    p.get_by_placeholder('Иван Петров').fill('Иван Петров'); shot(p, 'auth_provider')
+    p.get_by_text('Войти', exact=True).last.click(); time.sleep(.6); shot(p, 'auth_consent')
+    p.get_by_text('Предоставить').click(); time.sleep(.5); shot(p, 'auth_wait'); time.sleep(1.8); shot(p, 'auth_done')
+    p.get_by_text('Открыть полный доступ · 990 ₽').click(); time.sleep(1.2); shot(p, 'pass')
+    p.get_by_text('Перейти к оплате').click(); time.sleep(.6)
+    p.get_by_text('Подставить тестовую карту').click(); time.sleep(.3); shot(p, 'pay_card')
+    p.get_by_text('Оплатить 990 ₽').click(); time.sleep(.6); shot(p, 'pay_bank'); time.sleep(2); shot(p, 'pay_done')
+    p.get_by_text('Смотреть машины').click(); time.sleep(1.5); shot(p, 'home_full')
+    p.mouse.wheel(0, 600); time.sleep(.8); shot(p, 'home_scroll')
+    p.get_by_text('Kia Rio').first.click(); time.sleep(1.5); shot(p, 'listing')
+    p.get_by_text('Записаться', exact=True).first.click(); time.sleep(1); shot(p, 'book')
+    p.get_by_text('14:00').first.click(); time.sleep(.3)
+    p.get_by_text('Отправить заявку').first.click(); time.sleep(1.5); shot(p, 'viewings')
+    # seller: sign out, second person
+    p.goto(BASE + '/app/profile'); time.sleep(1.5); shot(p, 'profile_buyer')
+    p.get_by_text('Выйти', exact=True).click(); time.sleep(.8)
+    p.goto(BASE + '/app/auth?intent=sell'); time.sleep(1.2)
+    p.get_by_text('Войти через Госуслуги').click(); time.sleep(.5)
+    p.get_by_placeholder('+7 900 000-00-00').fill('+7 926 555-44-33'); p.get_by_placeholder('Иван Петров').fill('Пётр Соколов')
+    p.get_by_text('Войти', exact=True).last.click(); time.sleep(.5); p.get_by_text('Предоставить').click(); time.sleep(2.2)
+    p.get_by_text('Разместить машину').click(); time.sleep(1.2); shot(p, 'sell0')
+    p.get_by_text('Заполню сам').click(); time.sleep(.5)
+    p.get_by_placeholder('Kia Rio').fill('Toyota Camry'); p.get_by_placeholder('2020').fill('2019'); p.get_by_placeholder('54000').fill('72000')
+    shot(p, 'sell1'); p.get_by_text('Дальше').click(); time.sleep(.4); shot(p, 'sell2'); p.get_by_text('Дальше').click(); time.sleep(.4)
+    p.get_by_placeholder('1290000').fill('2450000'); shot(p, 'sell3'); p.get_by_text('Дальше').click(); time.sleep(.4)
+    p.get_by_placeholder('Сокол').fill('Сокол'); p.get_by_text('Дальше').click(); time.sleep(.6); shot(p, 'sell5')
+    p.get_by_text('Перейти к оплате').click(); time.sleep(.5); p.get_by_text('Подставить тестовую карту').click()
+    p.get_by_text('Оплатить осмотр 2 500 ₽').click(); time.sleep(2.6); shot(p, 'sell_paid')
+    p.get_by_text('Открыть мою машину').click(); time.sleep(1.5); shot(p, 'host')
+    b.close()
+print('errors:', errs[:5])

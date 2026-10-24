@@ -12,7 +12,7 @@ shutil.rmtree(OUT, ignore_errors=True)
 shutil.copytree(MOBILE / 'dist', OUT)
 
 def icon(size, path):
-    img = Image.new('RGB', (size, size), '#FFFFFF')
+    img = Image.new('RGB', (size, size), '#0B0B0C')
     d = ImageDraw.Draw(img)
     font = None
     for f in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf']:
@@ -22,10 +22,10 @@ def icon(size, path):
     box = d.textbbox((0, 0), 'о', font=font)
     w, h = box[2] - box[0], box[3] - box[1]
     x, y = (size - w) / 2 - size * 0.06 - box[0], (size - h) / 2 - box[1]
-    d.text((x, y), 'о', fill='#141414', font=font)
+    d.text((x, y), 'о', fill='#FFFFFF', font=font)
     r = size * 0.07
     cx, cy = x + w + box[0] + size * 0.07, y + box[1] + h - r
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill='#DB3727')
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill='#7BD88F')
     img.save(path)
 
 icon(180, OUT / 'apple-touch-icon.png')
@@ -33,7 +33,7 @@ icon(192, OUT / 'icon-192.png')
 icon(512, OUT / 'icon-512.png')
 (OUT / 'manifest.webmanifest').write_text(json.dumps({
     'name': 'Осмотрено', 'short_name': 'Осмотрено', 'start_url': '/app/', 'scope': '/app/', 'display': 'standalone',
-    'background_color': '#FFFFFF', 'theme_color': '#FFFFFF', 'lang': 'ru',
+    'background_color': '#0B0B0C', 'theme_color': '#FFFFFF', 'lang': 'ru',
     'icons': [{'src': '/app/icon-192.png', 'sizes': '192x192', 'type': 'image/png'}, {'src': '/app/icon-512.png', 'sizes': '512x512', 'type': 'image/png'}],
 }, ensure_ascii=False, indent=2))
 
@@ -45,7 +45,9 @@ head = ('<link rel="manifest" href="/app/manifest.webmanifest"/>'
         '<meta name="mobile-web-app-capable" content="yes"/>'
         '<meta name="apple-mobile-web-app-title" content="Осмотрено"/>'
         '<meta name="apple-mobile-web-app-status-bar-style" content="default"/>'
-        '<meta name="theme-color" content="#FFFFFF"/>')
+        '<meta name="theme-color" content="#FFFFFF"/>'
+        '<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
+        '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>')
 html = html.replace('</head>', head + '</head>', 1)
 (OUT / 'index.html').write_text(html)
 print('web app ready in', OUT)

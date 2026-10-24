@@ -47,6 +47,9 @@ create table if not exists listings (
   owners        int not null default 1,
   vin           text,
   source_url    text,
+  description   text,
+  photos        jsonb not null default '[]',
+  buyer_id      text,
   published_at  timestamptz,
   expires_at    timestamptz,
   closed_at     timestamptz,
@@ -79,7 +82,26 @@ create table if not exists viewings (
   id          text primary key,
   listing_id  text not null references listings(id) on delete cascade,
   buyer_id    text not null references users(id) on delete cascade,
-  status      text not null default 'requested',
+  at          timestamptz,
+  note        text,
+  status      text not null default 'requested',   -- requested | confirmed | declined | done | cancelled
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists threads (
+  id          text primary key,
+  listing_id  text not null references listings(id) on delete cascade,
+  buyer_id    text not null references users(id) on delete cascade,
+  seller_id   text references users(id) on delete set null,
+  created_at  timestamptz not null default now(),
+  unique (listing_id, buyer_id)
+);
+
+create table if not exists messages (
+  id          text primary key,
+  thread_id   text not null references threads(id) on delete cascade,
+  author_id   text,                              -- null = system message
+  text        text not null,
   created_at  timestamptz not null default now()
 );
 
@@ -100,3 +122,10 @@ create table if not exists payments (
   meta         jsonb not null default '{}',
   created_at   timestamptz not null default now()
 );
+
+-- Upgrades for databases created by earlier versions.
+alter table listings add column if not exists description text;
+alter table listings add column if not exists photos jsonb not null default '[]';
+alter table listings add column if not exists buyer_id text;
+alter table viewings add column if not exists at timestamptz;
+alter table viewings add column if not exists note text;
