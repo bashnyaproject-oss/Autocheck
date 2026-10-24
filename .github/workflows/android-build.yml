@@ -1,0 +1,32 @@
+# Builds an installable Android APK on Expo (EAS) — free tier.
+# Runs when mobile/BUILD_ANDROID changes, or by hand (Actions → Android build → Run workflow).
+# Needs the repository secret EXPO_TOKEN (expo.dev → Access tokens).
+name: Android build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [mobile/BUILD_ANDROID]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      # Links the app to the Expo project "melix" (owner vova_melix) and prints its ID.
+      - run: eas init --non-interactive --force && grep -A2 '"eas"' app.json || true
+      # Android signing key is generated and stored on Expo on the first build.
+      - run: eas build --platform android --profile preview --non-interactive --no-wait
