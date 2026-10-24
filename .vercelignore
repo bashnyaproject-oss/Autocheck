@@ -1,0 +1,4 @@
+# Vercel skips node_modules by default; the web build keeps a few icons under that path
+!app/assets/node_modules
+!app/assets/node_modules/**
+mobile/

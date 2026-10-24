@@ -1,0 +1,186 @@
+openapi: 3.1.0
+info:
+  title: Осмотрено API (MVP)
+  version: 0.1.0
+  description: |
+    Backend for the app (iOS, Android, web). Hosted in Russia (152-ФЗ).
+    Auth: session token after a verified identity (Госуслуги / Т-ID / Сбер ID).
+    Errors: 401 not signed in, 402 pass required, 429 weekly report limit reached, 403 account blocked.
+servers:
+  - url: https://api.osmotreno.ru
+security:
+  - bearer: []
+
+paths:
+  /v1/auth/{provider}/start:
+    get:
+      summary: Redirect to the identity provider (esia | tid | sberid)
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string, enum: [esia, tid, sberid] } }
+        - { name: redirect_uri, in: query, required: true, schema: { type: string } }
+      responses: { '302': { description: Redirect to provider } }
+  /v1/auth/{provider}/callback:
+    post:
+      summary: Exchange the provider code for a session. Rejects unverified accounts and duplicates.
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string } }
+      requestBody: { content: { application/json: { schema: { type: object, properties: { code: { type: string } }, required: [code] } } } }
+      responses:
+        '200': { description: Session, content: { application/json: { schema: { $ref: '#/components/schemas/Session' } } } }
+        '409': { description: This person already has an account }
+
+  /v1/me:
+    get:
+      summary: Current user with pass status and weekly counter
+      responses: { '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Me' } } }, description: OK } }
+    delete:
+      summary: Delete account (required by App Store and Google Play)
+      responses: { '204': { description: Deleted } }
+
+  /v1/feed:
+    get:
+      summary: Swipe feed. Only published listings (inspected, grade ≥ 60). Grade is null without a pass.
+      security: []
+      parameters:
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: radius_km, in: query, schema: { type: integer, default: 50 } }
+        - { name: price_max, in: query, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Page, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/Listing' } }, next: { type: string } } } } } }
+
+  /v1/listings/{id}:
+    get:
+      summary: Listing with basic data (open to everyone)
+      security: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses: { '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Listing' } } } } }
+  /v1/listings/{id}/report:
+    post:
+      summary: Open the deep report. Counts one unique listing per ISO week, limit 30.
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200': { description: Report, content: { application/json: { schema: { $ref: '#/components/schemas/DeepReport' } } } }
+        '402': { description: Pass required }
+        '429': { description: Weekly limit reached }
+  /v1/listings/{id}/like:
+    put: { summary: Add to favorites, parameters: [{ $ref: '#/components/parameters/id' }], responses: { '204': { description: OK } } }
+    delete: { summary: Remove from favorites, parameters: [{ $ref: '#/components/parameters/id' }], responses: { '204': { description: OK } } }
+  /v1/favorites:
+    get: { summary: Favorites, responses: { '200': { description: OK } } }
+  /v1/listings/{id}/viewings:
+    post:
+      summary: Ask the seller for a viewing (verified buyers only)
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses: { '201': { description: Requested } }
+
+  /v1/pass/checkout:
+    post:
+      summary: Start paying the pass (990 ₽ / 30 days, recurring). Returns ЮKassa confirmation.
+      responses: { '200': { description: OK, content: { application/json: { schema: { type: object, properties: { confirmation_url: { type: string } } } } } } }
+  /v1/pass:
+    delete: { summary: Turn off auto-renewal, responses: { '204': { description: OK } } }
+
+  /v1/seller/import:
+    post:
+      summary: Read the seller's own listing from Авто.ру / Авито / Дром (same parser as /api/parse)
+      requestBody: { content: { application/json: { schema: { type: object, properties: { url: { type: string } }, required: [url] } } } }
+      responses: { '200': { description: Parsed fields; missing ones are null } }
+  /v1/seller/listings:
+    post:
+      summary: Create a draft (VIN, price, km, photos). Requires owner check against ГИБДД/ЭПТС.
+      responses: { '201': { description: Draft } }
+    get:
+      summary: My listings with stats
+      responses: { '200': { description: OK } }
+  /v1/seller/listings/{id}/inspection:
+    post:
+      summary: Book and pay the inspection (2 500 ₽) at a point
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { point_id: { type: string }, slot: { type: string, format: date-time } } } } } }
+      responses: { '200': { description: ЮKassa confirmation } }
+  /v1/seller/listings/{id}:
+    delete:
+      summary: Remove from sale. Not sold through us → 2 990 ₽ charged from the saved card.
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses: { '200': { description: Removed, with charged amount } }
+  /v1/seller/listings/{id}/sold:
+    post:
+      summary: Mark as sold through the app → commission 1% (min 5 000, max 30 000 ₽)
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses: { '200': { description: OK } }
+  /v1/seller/card:
+    post:
+      summary: Save a card for post-pay (ЮKassa save_payment_method, 1 ₽ check refunded)
+      responses: { '200': { description: ЮKassa confirmation } }
+
+  /v1/inspections/{id}/result:
+    post:
+      summary: Inspection point submits the protocol. Grade < 60 → listing rejected; ≥ 60 → published.
+      security: [{ partner: [] }]
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody: { content: { application/json: { schema: { $ref: '#/components/schemas/InspectionResult' } } } }
+      responses: { '200': { description: Listing status after the result } }
+
+  /v1/webhooks/yookassa:
+    post:
+      summary: Payment notifications from ЮKassa (signature check, idempotent)
+      security: []
+      responses: { '200': { description: OK } }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+    partner: { type: apiKey, in: header, name: X-Partner-Key }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: string } }
+  schemas:
+    Session:
+      type: object
+      properties: { token: { type: string }, user: { $ref: '#/components/schemas/Me' } }
+    Me:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        verified_by: { type: string, enum: [esia, tid, sberid] }
+        pass: { type: object, properties: { active: { type: boolean }, until: { type: string, format: date-time }, used_this_week: { type: integer }, weekly_limit: { type: integer, const: 30 } } }
+    Listing:
+      type: object
+      properties:
+        id: { type: string }
+        make: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        price: { type: integer }
+        market_price: { type: integer }
+        km: { type: integer }
+        engine: { type: string }
+        gearbox: { type: string }
+        drive: { type: string }
+        city: { type: string }
+        distance_km: { type: number }
+        photos: { type: array, items: { type: string } }
+        inspected_at: { type: string, format: date }
+        grade: { type: [integer, 'null'], minimum: 60, description: 'null without a pass' }
+        flags: { type: array, items: { type: object, properties: { kind: { type: string, enum: [ok, note] }, text: { type: string } } } }
+    DeepReport:
+      type: object
+      properties:
+        history: { type: array, items: { type: object } }
+        paint: { type: array, items: { type: object } }
+        checklist: { type: array, items: { type: object } }
+        used_this_week: { type: integer }
+    InspectionResult:
+      type: object
+      required: [grade, checklist]
+      properties:
+        grade: { type: integer, minimum: 0, maximum: 100 }
+        km_confirmed: { type: boolean }
+        flags: { type: array, items: { type: object } }
+        checklist: { type: array, items: { type: object } }
+        paint: { type: array, items: { type: object } }
+        photos: { type: array, items: { type: string } }
