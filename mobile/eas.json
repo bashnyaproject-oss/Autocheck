@@ -8,10 +8,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://autocheck-nu.vercel.app/api",
+        "EXPO_PUBLIC_PARSE_URL": "https://autocheck-nu.vercel.app/api/parse",
+        "EXPO_PUBLIC_SITE_URL": "https://autocheck-nu.vercel.app"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://autocheck-nu.vercel.app/api",
+        "EXPO_PUBLIC_PARSE_URL": "https://autocheck-nu.vercel.app/api/parse",
+        "EXPO_PUBLIC_SITE_URL": "https://autocheck-nu.vercel.app"
+      }
     }
   },
   "submit": {
