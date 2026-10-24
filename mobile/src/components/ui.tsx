@@ -31,8 +31,8 @@ export function Button({ title, onPress, kind = 'black', disabled, loading, styl
   );
 }
 
-export function T({ children, style, v = 'body', numberOfLines }: { children: ReactNode; style?: StyleProp<TextStyle>; v?: keyof typeof tx; numberOfLines?: number }) {
-  return <Text numberOfLines={numberOfLines} style={[tx[v], style]}>{children}</Text>;
+export function T({ children, style, v = 'body', numberOfLines, onPress }: { children: ReactNode; style?: StyleProp<TextStyle>; v?: keyof typeof tx; numberOfLines?: number; onPress?: () => void }) {
+  return <Text numberOfLines={numberOfLines} onPress={onPress} accessibilityRole={onPress ? 'link' : undefined} style={[tx[v], style]}>{children}</Text>;
 }
 
 export function GradePill({ grade, compact }: { grade: number; compact?: boolean }) {

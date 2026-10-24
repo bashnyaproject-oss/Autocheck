@@ -12,13 +12,13 @@ import { useApp } from '@/state/app-state';
 export default function CarScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { pass, reports, saveReport, liked, toggleLike, user, toast } = useApp();
+  const { pass, reports, openReport: open, liked, toggleLike, user, toast } = useApp();
   const [l, setL] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    api.listing(id).then((x) => setL(x ?? null));
-  }, [id]);
+    api.listing(id).then((x) => setL(x ?? null)).catch(() => setL(null));
+  }, [id, pass.active]);
   if (!l) return null;
 
   const report = reports[l.id];
@@ -27,7 +27,7 @@ export default function CarScreen() {
 
   const openReport = async () => {
     setLoading(true);
-    saveReport(await api.openReport(l.id));
+    await open(l.id);
     setLoading(false);
   };
 

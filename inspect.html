@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Протокол осмотра</title>
+<style>
+:root{--ink:#141414;--muted:#8B8C92;--fill:#F1F2F4;--line:#EBECEF;--green:#11A548;--brand:#DB3727;--warn:#7A5A00}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 64px}
+h1{font-size:30px;letter-spacing:-.03em;margin:0 0 4px}
+h2{font-size:19px;margin:28px 0 10px}
+p.m{color:var(--muted);margin:0 0 16px}
+label{display:block;font-size:14px;color:var(--muted);margin:12px 0 6px}
+input,select,textarea{width:100%;font:inherit;border:0;background:var(--fill);border-radius:12px;padding:13px 14px;color:var(--ink)}
+textarea{min-height:96px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1;min-width:120px}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:14px 20px;cursor:pointer;background:var(--ink);color:#fff}
+button.g{background:var(--green)}
+button.l{background:var(--fill);color:var(--ink)}
+.q{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ck{display:flex;gap:10px;align-items:center;padding:8px 0;color:var(--ink);font-size:15px}
+.ck input{width:20px;height:20px}
+.out{margin-top:16px;padding:14px 16px;border-radius:12px;background:var(--fill);font-weight:600}
+.out.ok{background:#E7F7EE;color:#0E7A3D}.out.no{background:#FFF6DA;color:var(--warn)}
+.grade{font-size:40px;font-weight:800;text-align:center;border-radius:14px;padding:6px 0;color:#fff;background:#16A34A}
+</style>
+</head>
+<body>
+<main>
+  <h1>Протокол осмотра</h1>
+  <p class="m">Для пунктов осмотра. Оценка от 60 — объявление публикуется сразу. Ниже 60 — не публикуется, отчёт остаётся у продавца.</p>
+
+  <label for="key">Ключ пункта</label>
+  <div class="row"><input id="key" value="demo-partner" autocomplete="off"><button class="l" id="load" type="button">Показать очередь</button></div>
+  <div id="queue"></div>
+
+  <form id="f">
+    <h2>Машина</h2>
+    <label for="lid">Номер объявления</label>
+    <input id="lid" required placeholder="Выберите из очереди выше">
+
+    <h2>Оценка</h2>
+    <div class="row">
+      <div><label for="grade">Индекс состояния, 0–100</label><input id="grade" type="number" min="0" max="100" value="85" required></div>
+      <div style="max-width:140px"><div class="grade" id="gview">85</div></div>
+    </div>
+
+    <h2>Чек-лист</h2>
+    <div id="checks"></div>
+
+    <h2>Толщина покрытия, мкм</h2>
+    <div class="row" id="paint"></div>
+
+    <h2>Отметки для покупателя</h2>
+    <label for="flags">По одной в строке. «!» в начале — замечание (жёлтым), без него — плюс (зелёным)</label>
+    <textarea id="flags">Пробег подтверждён
+Без окрасов</textarea>
+
+    <label for="who">Кто осматривал</label>
+    <input id="who" value="Пункт «Осмотрено Савёловская»">
+    <div style="margin-top:20px"><button class="g" type="submit">Отправить протокол</button></div>
+    <div id="out"></div>
+  </form>
+</main>
+<script>
+const CHECKS=['Двигатель: запуск, шумы, подтёки','Коробка: переключения, рывки','Ходовая на подъёмнике','Ошибки в электронных блоках','Документы и VIN сверены'];
+const PARTS=['Капот','Крыло ПЛ','Дверь ПЛ','Крыша','Бампер задний'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+$('#checks').innerHTML=CHECKS.map((t,i)=>`<label class="ck"><input type="checkbox" id="c${i}" checked> ${t}</label>`).join('');
+$('#paint').innerHTML=PARTS.map((t,i)=>`<div><label for="p${i}">${t}</label><input id="p${i}" type="number" value="110"></div>`).join('');
+const col=g=>g>=85?'#16A34A':g>=72?'#8DB82B':g>=60?'#E8B500':'#8B8C92';
+function upd(){const g=+$('#grade').value;$('#gview').textContent=g;$('#gview').style.background=col(g)}
+$('#grade').oninput=upd;upd();
+$('#load').onclick=async()=>{
+  const r=await fetch('/api/v1/partner/queue',{headers:{'X-Partner-Key':$('#key').value}});
+  const j=await r.json();
+  if(!r.ok){$('#queue').innerHTML=`<div class="out no">${esc(j.error||'Ошибка')}</div>`;return}
+  $('#queue').innerHTML=j.items.length?j.items.map(x=>`<div class="q"><span><b>${esc(x.make)} ${esc(x.model)}, ${x.year}</b><br><span style="color:var(--muted)">${x.km.toLocaleString('ru-RU')} км · ${esc(x.id)}</span></span><button class="l" type="button" data-id="${esc(x.id)}">Выбрать</button></div>`).join(''):'<p class="m" style="margin-top:12px">Очередь пуста.</p>';
+};
+$('#queue').onclick=e=>{const b=e.target.closest('[data-id]');if(b)$('#lid').value=b.dataset.id};
+$('#f').onsubmit=async e=>{
+  e.preventDefault();
+  const body={
+    grade:+$('#grade').value,
+    checklist:CHECKS.map((t,i)=>({title:t,ok:$('#c'+i).checked})),
+    paint:PARTS.map((t,i)=>({part:t,microns:+$('#p'+i).value})),
+    flags:$('#flags').value.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>s.startsWith('!')?{kind:'note',text:s.slice(1).trim()}:{kind:'ok',text:s}),
+    inspector:$('#who').value
+  };
+  const r=await fetch('/api/v1/inspections/'+encodeURIComponent($('#lid').value.trim())+'/result',{method:'POST',headers:{'Content-Type':'application/json','X-Partner-Key':$('#key').value},body:JSON.stringify(body)});
+  const j=await r.json();
+  $('#out').innerHTML=r.ok?`<div class="out ${j.status==='published'?'ok':'no'}">${j.status==='published'?'Опубликовано: машина появилась в ленте':esc(j.reason)}</div>`:`<div class="out no">${esc(j.error||'Ошибка')}</div>`;
+  if(r.ok)$('#load').click();
+};
+</script>
+</body>
+</html>

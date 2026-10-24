@@ -100,26 +100,34 @@ function looksBlocked(status, html, finalUrl) {
   return status === 403 || status === 429 || /showcaptcha|captcha|Доступ ограничен|Подтвердите, что запросы отправляли вы|firewall/i.test(html.slice(0, 20000)) || /captcha|blocked/i.test(finalUrl || '');
 }
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=600');
-  const raw = (req.query && req.query.url) || new URL(req.url, 'http://x').searchParams.get('url');
+// Shared by this endpoint and the app backend (POST /v1/seller/import).
+async function fetchListing(raw) {
   let u;
-  try { u = new URL(String(raw || '').trim()); } catch (e) { return res.status(400).json({ ok: false, error: 'Нужна ссылка вида https://auto.ru/...' }); }
-  if (!/^https?:$/.test(u.protocol) || !HOSTS.some(h => h.test(u.hostname))) return res.status(400).json({ ok: false, error: 'Поддерживаем ссылки Авто.ру, Авито и Дрома' });
+  try { u = new URL(String(raw || '').trim()); } catch (e) { return { status: 400, body: { ok: false, error: 'Нужна ссылка вида https://auto.ru/...' } }; }
+  if (!/^https?:$/.test(u.protocol) || !HOSTS.some(h => h.test(u.hostname))) return { status: 400, body: { ok: false, error: 'Поддерживаем ссылки Авто.ру, Авито и Дрома' } };
   const guess = fromUrl(u);
   try {
     const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
     const r = await fetch(u.href, { redirect: 'follow', signal: ctl.signal, headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'ru-RU,ru;q=0.9' } });
     clearTimeout(tm);
     const html = (await r.text()).slice(0, 3_000_000);
-    if (looksBlocked(r.status, html, r.url)) return res.status(200).json({ ok: false, blocked: true, status: r.status, guess, error: 'Площадка попросила капчу — сервер не смог прочитать объявление' });
-    if (!r.ok) return res.status(200).json({ ok: false, status: r.status, guess, error: r.status === 404 ? 'Объявление не найдено или снято' : 'Площадка ответила ошибкой ' + r.status });
+    if (looksBlocked(r.status, html, r.url)) return { status: 200, body: { ok: false, blocked: true, status: r.status, guess, error: 'Площадка попросила капчу — сервер не смог прочитать объявление' } };
+    if (!r.ok) return { status: 200, body: { ok: false, status: r.status, guess, error: r.status === 404 ? 'Объявление не найдено или снято' : 'Площадка ответила ошибкой ' + r.status } };
     const data = parse(html, u);
     const filled = ['price', 'year', 'km', 'photos'].filter(k => k === 'photos' ? data.photos.length : data[k]).length;
-    return res.status(200).json({ ok: filled >= 1, partial: filled < 4, data, guess });
+    return { status: 200, body: { ok: filled >= 1, partial: filled < 4, data, guess } };
   } catch (e) {
-    return res.status(200).json({ ok: false, guess, error: e.name === 'AbortError' ? 'Площадка не ответила за 9 секунд' : 'Не удалось загрузить страницу' });
+    return { status: 200, body: { ok: false, guess, error: e.name === 'AbortError' ? 'Площадка не ответила за 9 секунд' : 'Не удалось загрузить страницу' } };
   }
+}
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 's-maxage=600');
+  const raw = (req.query && req.query.url) || new URL(req.url, 'http://x').searchParams.get('url');
+  const out = await fetchListing(raw);
+  return res.status(out.status).json(out.body);
 };
 module.exports.parse = parse; // for local tests
+module.exports.fetchListing = fetchListing;
+module.exports.fromUrl = fromUrl;

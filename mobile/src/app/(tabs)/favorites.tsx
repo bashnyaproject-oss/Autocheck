@@ -15,8 +15,8 @@ export default function FavoritesScreen() {
   const { liked, pass, toggleLike } = useApp();
   const [all, setAll] = useState<Listing[]>([]);
   useEffect(() => {
-    api.feed().then(setAll);
-  }, []);
+    api.feed().then((r) => setAll(r.items));
+  }, [pass.active]);
   const list = liked.map((id) => all.find((l) => l.id === id)).filter(Boolean) as Listing[];
 
   return (

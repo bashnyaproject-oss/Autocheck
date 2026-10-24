@@ -31,11 +31,12 @@ export default function PassScreen() {
             <T v="h1">Шаг 1. Кто вы</T>
             <T v="muted">Один человек — один пропуск. Так перекупы не заводят десятки аккаунтов, а продавцы знают, что к ним идут настоящие покупатели.</T>
             <View style={{ gap: 10 }}>
-              <Button kind="gosu" title="Войти через Госуслуги" onPress={() => { signIn('gosuslugi'); toast('Личность подтверждена'); }} />
-              <Button kind="tid" title="Войти с Т-ID" onPress={() => { signIn('tid'); toast('Личность подтверждена'); }} />
-              <Button kind="green" title="Войти со Сбер ID" onPress={() => { signIn('sberid'); toast('Личность подтверждена'); }} />
+              <Button kind="gosu" title="Войти через Госуслуги" onPress={() => signIn('gosuslugi').then(() => toast('Личность подтверждена'), () => toast('Не удалось войти'))} />
+              <Button kind="tid" title="Войти с Т-ID" onPress={() => signIn('tid').then(() => toast('Личность подтверждена'), () => toast('Не удалось войти'))} />
+              <Button kind="green" title="Войти со Сбер ID" onPress={() => signIn('sberid').then(() => toast('Личность подтверждена'), () => toast('Не удалось войти'))} />
             </View>
             <T v="small">Берём только ФИО и признак подтверждённой учётной записи. Продавец видит «Покупатель подтверждён», но не ваши данные.</T>
+            <T v="small">Бета: вход и оплата работают в тестовом режиме, деньги не списываются.</T>
           </>
         ) : (
           <>
@@ -49,7 +50,7 @@ export default function PassScreen() {
                 <Rule kind="ok">Отмена в любой момент</Rule>
               </View>
               {SELL_IN_APP ? (
-                <Button kind="green" title="Оплатить 990 ₽" onPress={() => { buyPass(); toast('Пропуск активен'); }} />
+                <Button kind="green" title="Оплатить 990 ₽" onPress={() => buyPass().then(() => toast('Оплата прошла'), () => toast('Оплата не прошла'))} />
               ) : (
                 <T v="muted">Пропуск не активен.</T>
               )}

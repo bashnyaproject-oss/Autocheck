@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api } from '@/api/client';
+import { api, ApiError, usingServer } from '@/api/client';
 import type { ImportedListing } from '@/api/types';
 import { Button, Card, Row, Rule, T } from '@/components/ui';
 import { COMMISSION, NOT_SOLD_FEE } from '@/constants/pricing';
@@ -29,6 +29,19 @@ export default function SellScreen() {
     const r = await api.importListing(link.trim());
     setCar(r.data ?? {});
     setNote(r.ok ? '' : (r.error ?? 'Не удалось прочитать объявление') + '. Допишите данные ниже.');
+    setBusy(false);
+  };
+  const submit = async () => {
+    if (!car) return;
+    if (!usingServer) return setDone(true);
+    setBusy(true);
+    try {
+      const l = await api.createListing({ title: car.title!, year: car.year!, km: car.km!, price: car.price!, source_url: link.trim() || undefined });
+      await api.bookInspection(l.id, point);
+      setDone(true);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Не удалось записаться');
+    }
     setBusy(false);
   };
   const num = (s: string) => Number(s.replace(/\D/g, '')) || undefined;
@@ -96,11 +109,11 @@ export default function SellScreen() {
                 <Rule kind="pay">Подтвердился обман — снимаем объявление и блокируем аккаунт</Rule>
               </View>
               {!user ? (
-                <Button kind="gosu" title="Подтвердить владельца через Госуслуги" onPress={() => { signIn('gosuslugi'); toast('Владелец подтверждён'); }} />
+                <Button kind="gosu" title="Подтвердить владельца через Госуслуги" onPress={() => signIn('gosuslugi').then(() => toast('Владелец подтверждён'), () => toast('Не удалось войти'))} />
               ) : !sellerCard ? (
-                <Button kind="black" title="Привязать карту" onPress={() => { linkSellerCard(); toast('Карта привязана'); }} />
+                <Button kind="black" title="Привязать карту" onPress={() => linkSellerCard().then(() => toast('Карта привязана'), () => toast('Не удалось привязать карту'))} />
               ) : (
-                <Button kind="green" title="Оплатить осмотр 2 500 ₽" onPress={() => setDone(true)} />
+                <Button kind="green" title="Оплатить осмотр 2 500 ₽" onPress={submit} loading={busy} />
               )}
             </Card>
           </>

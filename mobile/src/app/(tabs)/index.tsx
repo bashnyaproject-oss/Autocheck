@@ -19,8 +19,8 @@ export default function FeedScreen() {
   const deck = useRef<{ swipe: (dir: SwipeDir) => void } | null>(null);
 
   useEffect(() => {
-    api.feed().then(setItems);
-  }, [round]);
+    api.feed().then((r) => setItems(r.items));
+  }, [round, pass.active]);
 
   const onSwipe = (l: Listing, dir: SwipeDir) => {
     if (dir === 'right' && !liked.includes(l.id)) {

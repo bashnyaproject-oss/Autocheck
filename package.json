@@ -1,0 +1,14 @@
+{
+  "name": "osmotreno",
+  "private": true,
+  "description": "Website, listing parser and app backend (Vercel functions). The mobile app lives in mobile/.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test server/test/*.test.js",
+    "dev:api": "node server/dev.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.2.17",
+    "pg": "8.13.1"
+  }
+}

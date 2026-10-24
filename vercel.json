@@ -3,8 +3,24 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/v1/:path*",
+      "destination": "/api/v1?route=:path*"
+    },
+    {
       "source": "/app/:path((?!_expo/|assets/|favicon).*)",
       "destination": "/app/index.html"
+    }
+  ],
+  "functions": {
+    "api/v1.js": {
+      "includeFiles": "{server/**,node_modules/@electric-sql/pglite/dist/**}",
+      "maxDuration": 20
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/cron/expire",
+      "schedule": "0 3 * * *"
     }
   ]
 }
