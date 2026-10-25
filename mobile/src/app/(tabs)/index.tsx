@@ -4,8 +4,8 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, filterCount, loadQuiz, seenWelcome, type Listing, type Pick } from '@/api/client';
-import { CategoryBar, ListingCard } from '@/components/car';
-import { FilterPanel, SORTS, useFacets } from '@/components/filters';
+import { CategoryBar, ListingCard, ListingRow } from '@/components/car';
+import { AppliedTags, FilterPanel, SearchSuggest, SortSelect, offers, useFacets } from '@/components/filters';
 import { Appear, PressScale } from '@/components/motion';
 import { MatchBadge, PickCard, quizSummary } from '@/components/picks';
 import { C, Font, MaxGridWidth, plural } from '@/constants/theme';
@@ -23,7 +23,7 @@ export default function ExploreScreen() {
   const [picks, setPicks] = useState<Pick[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [q, setQ] = useState(filters.q ?? '');
+  const [view, setView] = useState<'list' | 'grid'>('list');
   const { width } = useWindowDimensions();
   const quiz = loadQuiz();
   const facets = useFacets();
@@ -42,51 +42,47 @@ export default function ExploreScreen() {
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [version, access]);
   useEffect(() => { if (quiz) api.match(quiz).then((r) => setPicks(r.items.slice(0, 6)), () => setPicks([])); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [version, access]);
 
-  // desktop search box: apply after the user stops typing
-  const typing = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onQ = (v: string) => {
-    setQ(v);
-    if (typing.current) clearTimeout(typing.current);
-    typing.current = setTimeout(() => setFilters({ ...filters, q: v.trim() || undefined }), 350);
-  };
   const nf = filterCount(filters);
-  const sortLabel = SORTS.find(([k]) => k === (filters.sort ?? ''))?.[1] ?? 'Сначала свежие';
 
   const results = (
     <View style={{ gap: 14 }}>
-      <View style={st.resultsHead}>
+      <View style={[st.resultsHead, { zIndex: 40 }]}>
         <View style={{ flexShrink: 1 }}>
-          <Text style={st.section}>{filters.q || nf ? 'Результаты поиска' : wide ? 'Все осмотренные машины' : 'В продаже'}</Text>
-          <Text style={st.count}>{total} {plural(total, ['машина', 'машины', 'машин'])}{nf ? ` · фильтров: ${nf}` : ''}</Text>
+          <Text style={st.section}>{filters.q || nf ? 'Найдено' : wide ? 'Все осмотренные машины' : 'В продаже'}</Text>
+          <Text style={st.count}>{offers(total)}</Text>
         </View>
-        {wide ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }} style={{ flexGrow: 0, maxWidth: 520 }}>
-            {SORTS.map(([k, label, needFull]) => {
-              const on = (filters.sort ?? '') === k;
-              const locked = needFull && access !== 'full';
-              return (
-                <Pressable key={k} onPress={() => (locked ? router.push('/pass') : setFilters({ ...filters, sort: k || undefined }))} style={[st.sort, on && st.sortOn, locked && { opacity: 0.45 }]}>
-                  <Text style={[st.sortText, on && { color: '#fff' }]}>{locked ? '🔒 ' : ''}{label}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {wide ? (
+            <View style={st.viewToggle}>
+              {(['list', 'grid'] as const).map((v) => (
+                <Pressable key={v} onPress={() => setView(v)} style={[st.vt, view === v && st.vtOn]} accessibilityLabel={v === 'list' ? 'Списком' : 'Плиткой'}>
+                  <Text style={[st.vtText, view === v && { color: '#fff' }]}>{v === 'list' ? '☰' : '▦'}</Text>
                 </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : (
-          <Text style={st.sortLink} onPress={() => router.push('/search')}>{sortLabel} ▾</Text>
-        )}
+              ))}
+            </View>
+          ) : null}
+          <SortSelect value={filters.sort} onChange={(sort) => setFilters({ ...filters, sort })} access={access} onLocked={() => router.push('/pass')} />
+        </View>
       </View>
+      <AppliedTags f={filters} onChange={setFilters} />
       {error ? <Text style={st.empty}>{error}</Text> : null}
       {!items && !error ? <ActivityIndicator style={{ marginTop: 40 }} color={C.ink} /> : null}
       {items && !items.length ? (
         <View style={{ alignItems: 'center', padding: 40, gap: 8 }}>
           <Text style={st.emptyTitle}>Ничего не нашли</Text>
           <Text style={st.empty}>Попробуйте убрать часть фильтров.</Text>
-          <Text style={[st.empty, { color: C.ink, textDecorationLine: 'underline' }]} onPress={() => { setQ(''); setFilters({}); }}>Сбросить фильтры</Text>
+          <Text style={[st.empty, { color: C.ink, textDecorationLine: 'underline' }]} onPress={() => setFilters({})}>Сбросить фильтры</Text>
         </View>
       ) : null}
-      <View style={st.grid}>
-        {items?.map((l, i) => <Appear key={l.id + version} delay={Math.min(i, 6) * 60}><ListingCard l={l} width={cardW} /></Appear>)}
-      </View>
+      {wide && view === 'list' ? (
+        <View style={{ gap: 14 }}>
+          {items?.map((l, i) => <Appear key={l.id + version} delay={Math.min(i, 6) * 50}><ListingRow l={l} /></Appear>)}
+        </View>
+      ) : (
+        <View style={st.grid}>
+          {items?.map((l, i) => <Appear key={l.id + version} delay={Math.min(i, 6) * 60}><ListingCard l={l} width={cardW} /></Appear>)}
+        </View>
+      )}
       {items?.length ? <Text style={[st.empty, { marginTop: 12 }]}>Все машины прошли осмотр с оценкой от 60. Ниже 60 на площадку не попадают. Фото в бете — студийные примеры.</Text> : null}
     </View>
   );
@@ -133,32 +129,29 @@ export default function ExploreScreen() {
   if (wide)
     return (
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={st.desk}>
-        <View style={st.deskHero}>
+        <View style={[st.deskHero, { zIndex: 50 }]}>
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={st.h1Wide}>Машины, которые уже проверили</Text>
             <Text style={st.lead}>Каждая прошла осмотр в сервисе-партнёре. Оценка от 60 до 100, ниже — не публикуем.</Text>
           </View>
-          <View style={st.deskSearch}>
-            <Text style={st.searchIcon}>⌕</Text>
-            <TextInput value={q} onChangeText={onQ} placeholder="Марка или модель" placeholderTextColor={C.muted} style={st.deskInput} />
-            {q ? <Text style={st.clear} onPress={() => onQ('')}>✕</Text> : null}
-          </View>
+          <SearchSuggest value={filters} onPick={setFilters} style={{ width: 460 }} placeholder="Марка или модель, например «Камри»" />
         </View>
         <View style={{ flexDirection: 'row', gap: 32, alignItems: 'flex-start' }}>
           <View style={st.side}>
             <View style={st.sideHead}>
-              <Text style={st.sideTitle}>Фильтры{nf ? ` · ${nf}` : ''}</Text>
-              {nf ? <Text style={st.sortLink} onPress={() => { setQ(''); setFilters({}); }}>Сбросить</Text> : null}
+              <Text style={st.sideTitle}>Параметры</Text>
+              {nf ? <Text style={st.sortLink} onPress={() => setFilters({ sort: filters.sort })}>Сбросить</Text> : null}
             </View>
             <FilterPanel value={filters} onChange={setFilters} access={access} onLocked={() => router.push('/pass')} />
+            <View style={st.sideCount}><Text style={st.sideCountText}>{total ? `Показано ${offers(total)}` : 'Ничего не найдено'}</Text></View>
           </View>
           <View style={{ flex: 1, gap: 28, minWidth: 0 }}>
             <View style={{ marginHorizontal: -20 }}>
               <CategoryBar value={filters.category ?? ''} counts={facets?.categories} total={facets ? facets.makes.reduce((n, m) => n + m.count, 0) : undefined} onChange={(category) => setFilters({ ...filters, category: category || undefined })} />
             </View>
             {promo}
-            {picksBlock}
             {results}
+            {picksBlock}
           </View>
         </View>
       </ScrollView>
@@ -231,6 +224,12 @@ const st = StyleSheet.create({
   deskSearch: { width: 420, height: 58, borderRadius: 18, backgroundColor: C.fill, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, gap: 10 },
   deskInput: { flex: 1, height: 58, fontFamily: Font, fontSize: 16, color: C.ink, outlineStyle: 'none' } as object,
   clear: { fontSize: 15, color: C.muted, padding: 6 },
+  sideCount: { marginTop: 14, borderRadius: 14, backgroundColor: C.night, paddingVertical: 14, alignItems: 'center' },
+  sideCountText: { fontFamily: Font, color: '#fff', fontSize: 15, fontWeight: '800' },
+  viewToggle: { flexDirection: 'row', backgroundColor: C.fill, borderRadius: 10, padding: 3 },
+  vt: { width: 34, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  vtOn: { backgroundColor: C.night },
+  vtText: { fontSize: 15, color: C.ink },
   side: { width: SIDEBAR, position: 'sticky', top: 16, maxHeight: 'calc(100vh - 110px)', overflowY: 'auto', paddingRight: 6 } as object,
   sideHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 4 },
   sideTitle: { fontFamily: Font, fontSize: 20, fontWeight: '800', color: C.ink },

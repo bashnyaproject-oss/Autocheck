@@ -65,6 +65,59 @@ export function ListingCard({ l, width }: { l: Listing; width: number }) {
   );
 }
 
+/** auto.ru-style list row for desktop: photo, specs in a column, price on the right. */
+export function ListingRow({ l }: { l: Listing }) {
+  const router = useRouter();
+  const { access, toast, bump } = useApp();
+  const [liked, setLiked] = useState(!!l.liked);
+  const open = () => router.push(access === 'guest' ? '/auth?intent=buy' : `/listing/${l.id}`);
+  const heart = async () => {
+    if (access === 'guest') return router.push('/auth?intent=buy');
+    setLiked(!liked);
+    try { await api.like(l.id, !liked); bump(); } catch { setLiked(liked); toast('Не получилось'); }
+  };
+  const BODY_RU = { sedan: 'седан', suv: 'внедорожник', hatch: 'хэтчбек' } as const;
+  const below = l.market_price ? Math.round((1 - l.price / l.market_price) * 100) : 0;
+  return (
+    <Pressable onPress={open} style={(s: { pressed: boolean; hovered?: boolean }) => [st.lrow, s.hovered && st.lrowHover]} accessibilityRole="button" accessibilityLabel={`${l.make} ${l.model}, ${l.year}, ${rub(l.price)}`}>
+      <View>
+        <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0] ?? l.cover_blur} small blur={l.access === 'guest'} style={st.lphoto} />
+        <View style={[st.badge, { top: 10, left: 10 }]}><Text style={st.badgeText}>✓ Осмотрено</Text></View>
+        {l.photo_count ? <View style={st.lcount}><Text style={st.counterText}>{l.photo_count} фото</Text></View> : null}
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+        <Text style={st.ltitle} numberOfLines={1}>{l.make} {l.model}</Text>
+        {l.access === 'guest' ? (
+          <Text style={st.lspec}>Характеристики, пробег и фото — после входа через Госуслуги</Text>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 28 }}>
+            <View style={{ gap: 3 }}>
+              <Text style={st.lspec}>{l.engine}{l.fuel ? ` / ${l.fuel}` : ''}</Text>
+              <Text style={st.lspec}>{l.gearbox}</Text>
+              <Text style={st.lspec}>{BODY_RU[l.body]}</Text>
+            </View>
+            <View style={{ gap: 3 }}>
+              <Text style={st.lspec}>{l.drive} привод</Text>
+              <Text style={st.lspec}>{l.owners === 1 ? '1 владелец' : `${l.owners} владельца`}</Text>
+              {l.consumption ? <Text style={st.lspec}>{String(l.consumption).replace('.', ',')} л / 100 км</Text> : null}
+            </View>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 'auto' as unknown as number, alignItems: 'center' }}>
+          {l.grade != null ? <View style={st.rate}><View style={[st.rateDot, { backgroundColor: gradeColor(l.grade) }]} /><Text style={st.rateText}>Оценка {l.grade}/100</Text></View> : <View style={st.rate}><Text style={st.rateText}>🔒 Оценка с доступом</Text></View>}
+          <Text style={st.lmuted}>{l.city}{l.inspected_at ? ` · осмотрено ${l.inspected_at}` : ''}</Text>
+        </View>
+      </View>
+      <View style={{ width: 190, alignItems: 'flex-end', gap: 6 }}>
+        <Text style={st.lprice}>{rub(l.price)}</Text>
+        {l.access === 'full' && below >= 3 ? <Text style={st.lgood}>ниже рынка на {below}%</Text> : null}
+        <Text style={st.lyear}>{l.year}{l.km != null ? ` · ${kmf(l.km)}` : ''}</Text>
+        <Pressable onPress={heart} hitSlop={8} style={st.lheart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}><Text style={{ fontSize: 18, color: C.ink }}>{liked ? '♥' : '♡'}</Text></Pressable>
+      </View>
+    </Pressable>
+  );
+}
+
 /** Horizontal photo gallery with page dots. Photos beyond what the access level allows are blurred placeholders. */
 export function Gallery({ l, access, tall }: { l: Listing; access: Access; tall?: boolean }) {
   const { width } = useWindowDimensions();
@@ -119,6 +172,17 @@ export function CategoryBar({ value, onChange, counts, total }: { value: string;
 }
 
 const st = StyleSheet.create({
+  lrow: { flexDirection: 'row', gap: 20, padding: 14, borderRadius: 22, borderWidth: 1, borderColor: C.line, backgroundColor: '#fff' },
+  lrowHover: { borderColor: C.fill2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } },
+  lphoto: { width: 280, height: 196, borderRadius: 16 },
+  lcount: { position: 'absolute', right: 10, bottom: 10, backgroundColor: 'rgba(20,20,20,.7)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  ltitle: { fontFamily: Font, fontSize: 21, fontWeight: '800', color: C.ink, letterSpacing: -0.4 },
+  lspec: { fontFamily: Font, fontSize: 14.5, color: C.ink2 },
+  lmuted: { fontFamily: Font, fontSize: 13, color: C.muted },
+  lprice: { fontFamily: Font, fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.5 },
+  lgood: { fontFamily: Font, fontSize: 13, fontWeight: '700', color: '#0E7A3D' },
+  lyear: { fontFamily: Font, fontSize: 14.5, color: C.ink2 },
+  lheart: { marginTop: 'auto', width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' } as object,
   tile: { width: 104, gap: 8, alignItems: 'center' },
   tileImgWrap: { width: 104, height: 120, borderRadius: 18, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
   tileOn: { borderColor: C.night },
