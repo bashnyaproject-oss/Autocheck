@@ -217,15 +217,18 @@ on('GET', '/v1/feed', null, async ({ db, user, query }) => {
 /** Values for the filter screen: makes with models and counts, price and year ranges. */
 on('GET', '/v1/facets', null, async ({ db }) => {
   const makes = {};
+  const categories = Object.fromEntries(Object.keys(CATEGORY).map((k) => [k, 0]));
+  const covers = {};
   let pmin = Infinity, pmax = 0, ymin = 9999, ymax = 0;
-  for (const [l] of await published(db)) {
+  for (const [l, insp] of await published(db)) {
+    for (const [k, f] of Object.entries(CATEGORY)) if (f(l, insp)) { categories[k]++; if (!covers[k] && Array.isArray(l.photos) && l.photos[0]) covers[k] = l.photos[0]; }
     const m = (makes[l.make] ||= { make: l.make, count: 0, models: {} });
     m.count++; m.models[l.model] = (m.models[l.model] || 0) + 1;
     pmin = Math.min(pmin, l.price); pmax = Math.max(pmax, l.price); ymin = Math.min(ymin, l.year); ymax = Math.max(ymax, l.year);
   }
   return ok({
     makes: Object.values(makes).sort((a, b) => b.count - a.count || a.make.localeCompare(b.make)).map((m) => ({ make: m.make, count: m.count, models: Object.entries(m.models).map(([model, count]) => ({ model, count })) })),
-    price: [pmin === Infinity ? 0 : pmin, pmax], year: [ymin, ymax],
+    price: [pmin === Infinity ? 0 : pmin, pmax], year: [ymin, ymax], categories, covers,
     gearbox: ['Автомат', 'Робот', 'Вариатор', 'Механика'], drive: ['Передний', 'Полный', 'Задний'], fuel: ['Бензин', 'Дизель', 'Гибрид', 'Электро'],
   });
 });

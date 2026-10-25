@@ -31,42 +31,42 @@ export function GradeBadge({ grade, small }: { grade: number; small?: boolean })
   );
 }
 
-/** Studio card: grey stage with the car, badges on top, name + black price pill below. */
+/** Photo-first card: big photo with badges, then name, rating chip and price. */
 export function ListingCard({ l, width }: { l: Listing; width: number }) {
   const router = useRouter();
   const { access, toast, bump } = useApp();
   const [liked, setLiked] = useState(!!l.liked);
-  const open = () => router.push(access === 'guest' ? '/auth' : `/listing/${l.id}`);
+  const open = () => router.push(access === 'guest' ? '/auth?intent=buy' : `/listing/${l.id}`);
   const heart = async () => {
-    if (access === 'guest') return router.push('/auth');
+    if (access === 'guest') return router.push('/auth?intent=buy');
     setLiked(!liked);
     try { await api.like(l.id, !liked); bump(); } catch { setLiked(liked); toast('Не получилось'); }
   };
-  const sub = l.access === 'guest' ? `${l.city} · фото после входа` : [l.km != null && kmf(l.km), l.gearbox, l.distance_km != null && `${l.distance_km} км от вас`].filter(Boolean).join(' · ');
+  const sub = [String(l.year), l.km != null && kmf(l.km), l.gearbox, l.access === 'guest' && l.city].filter(Boolean).join(' · ');
   return (
-    <PressScale onPress={open} style={[st.card, { width }]} scale={0.98} accessibilityRole="button" accessibilityLabel={`${l.make} ${l.model}, ${l.year}, ${rub(l.price)}`}>
+    <PressScale onPress={open} style={{ width }} scale={0.98} accessibilityRole="button" accessibilityLabel={`${l.make} ${l.model}, ${l.year}, ${rub(l.price)}`}>
       <View>
-        <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0] ?? l.cover_blur} small blur={l.access === 'guest'} style={{ width: width - 16, aspectRatio: 1.45, borderRadius: 20 }} />
+        <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0] ?? l.cover_blur} small blur={l.access === 'guest'} style={{ width, aspectRatio: 1.5, borderRadius: 22 }} />
         <View style={st.badge}><Text style={st.badgeText}>✓ Осмотрено</Text></View>
         <Pressable onPress={heart} hitSlop={10} style={st.heart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}>
           <Text style={[st.heartText, liked && { color: C.ink }]}>{liked ? '♥' : '♡'}</Text>
         </Pressable>
-        {l.grade != null ? <View style={st.gradeOn}><GradeBadge grade={l.grade} /></View> : null}
         {l.access === 'guest' ? <View style={st.lock}><Text style={st.lockText}>🔒 Войдите, чтобы смотреть</Text></View> : null}
       </View>
       <View style={st.row}>
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text style={st.title} numberOfLines={1}>{l.make} {l.model}</Text>
-          <Text style={st.sub} numberOfLines={1}>{l.year} · {sub}</Text>
-        </View>
-        <View style={st.pricePill}><Text style={st.priceText}>{rub(l.price)}</Text></View>
+        <Text style={st.title} numberOfLines={1}>{l.make} {l.model}</Text>
+        {l.grade != null ? (
+          <View style={st.rate}><View style={[st.rateDot, { backgroundColor: gradeColor(l.grade) }]} /><Text style={st.rateText}>{l.grade}</Text></View>
+        ) : <View style={st.rate}><Text style={st.rateText}>🔒</Text></View>}
       </View>
+      <Text style={st.sub} numberOfLines={1}>{sub}</Text>
+      <Text style={st.price}>{rub(l.price)}</Text>
     </PressScale>
   );
 }
 
 /** Horizontal photo gallery with page dots. Photos beyond what the access level allows are blurred placeholders. */
-export function Gallery({ l, access }: { l: Listing; access: Access }) {
+export function Gallery({ l, access, tall }: { l: Listing; access: Access; tall?: boolean }) {
   const { width } = useWindowDimensions();
   const w = Math.min(width, width >= 1024 ? 1000 : 760);
   const [page, setPage] = useState(0);
@@ -80,12 +80,12 @@ export function Gallery({ l, access }: { l: Listing; access: Access }) {
       <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / w))} scrollEventThrottle={32}>
         {slides.map((i) => (
           <View key={i}>
-            <CarImage id={l.id + i} color={l.color} body={l.body} photo={l.photos[i] ?? (i === 0 ? l.cover_blur : l.photos[0])} blur={access === 'guest' || i >= shown} style={{ width: w, aspectRatio: width >= 1024 ? 1.75 : 1.3, borderRadius: width >= 1024 ? 24 : 0 }} />
+            <CarImage id={l.id + i} color={l.color} body={l.body} photo={l.photos[i] ?? (i === 0 ? l.cover_blur : l.photos[0])} blur={access === 'guest' || i >= shown} style={{ width: w, aspectRatio: width >= 1024 ? 1.75 : tall ? 0.95 : 1.3, borderRadius: width >= 1024 ? 24 : 0 }} />
             {i >= shown ? <View style={st.galLock}><Text style={st.galLockText}>🔒 Остальные фото — с доступом</Text></View> : null}
           </View>
         ))}
       </ScrollView>
-      {slides.length > 1 ? <View style={st.counter}><Text style={st.counterText}>{page + 1} / {slides.length}</Text></View> : null}
+      {slides.length > 1 ? <View style={[st.counter, tall && { bottom: 46, left: 16, right: 'auto' as unknown as number }]}><Text style={st.counterText}>{page + 1} / {slides.length}</Text></View> : null}
       {Platform.OS === 'web' && slides.length > 1 ? <>
         {page > 0 ? <Pressable onPress={() => goTo(page - 1)} style={[st.arrow, { left: 14 }]} accessibilityLabel="Предыдущее фото"><Text style={st.arrowText}>‹</Text></Pressable> : null}
         {page < slides.length - 1 ? <Pressable onPress={() => goTo(page + 1)} style={[st.arrow, { right: 14 }]} accessibilityLabel="Следующее фото"><Text style={st.arrowText}>›</Text></Pressable> : null}
@@ -94,18 +94,23 @@ export function Gallery({ l, access }: { l: Listing; access: Access }) {
   );
 }
 
-const CATS = [
-  ['', 'Все'], ['suv', 'Кроссоверы'], ['sedan', 'Седаны'], ['hatch', 'Хэтчбеки'],
-  ['cheap', 'До 1,5 млн'], ['fresh', 'Свежие'], ['top', 'Оценка 85+'],
-] as const;
-export function CategoryBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+const CATS: [string, string, string][] = [
+  ['', 'Все', 'l4'], ['suv', 'Кроссоверы', 'l10'], ['sedan', 'Седаны', 'l9'], ['hatch', 'Хэтчбеки', 'l5'],
+  ['cheap', 'До 1,5 млн', 'l11'], ['fresh', 'Свежие', 'l12'], ['top', 'Оценка 85+', 'l15'],
+];
+/** Photo tiles with counts, like categories in rental apps. */
+export function CategoryBar({ value, onChange, counts, total }: { value: string; onChange: (v: string) => void; counts?: Record<string, number>; total?: number }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
-      {CATS.map(([k, label]) => {
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}>
+      {CATS.map(([k, label, car]) => {
         const on = (value || '') === k;
+        const n = k ? counts?.[k] : total;
         return (
-          <PressScale key={k} onPress={() => onChange(k)} style={[st.cat, on && st.catOn]} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-            <Text style={[st.catLabel, { color: on ? '#fff' : C.ink }]}>{label}</Text>
+          <PressScale key={k} onPress={() => onChange(k)} style={st.tile} accessibilityRole="tab" accessibilityState={{ selected: on }}>
+            <View style={[st.tileImgWrap, on && st.tileOn]}>
+              <Image source={{ uri: photoUrl(`/photos/${car}.jpg`, 'small') }} style={st.tileImg} contentFit="cover" />
+            </View>
+            <Text style={[st.tileLabel, on && { fontWeight: '800' }]} numberOfLines={1}>{label}{n != null ? <Text style={st.tileCount}> {n}</Text> : null}</Text>
           </PressScale>
         );
       })}
@@ -114,7 +119,15 @@ export function CategoryBar({ value, onChange }: { value: string; onChange: (v: 
 }
 
 const st = StyleSheet.create({
-  card: { backgroundColor: C.fill, borderRadius: 26, padding: 8, paddingBottom: 14 },
+  tile: { width: 104, gap: 8, alignItems: 'center' },
+  tileImgWrap: { width: 104, height: 120, borderRadius: 18, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
+  tileOn: { borderColor: C.night },
+  tileImg: { width: '100%', height: '100%' },
+  tileLabel: { fontFamily: Font, fontSize: 13.5, fontWeight: '600', color: C.ink },
+  tileCount: { color: C.muted, fontWeight: '500' },
+  rate: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.fill, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  rateDot: { width: 8, height: 8, borderRadius: 4 },
+  rateText: { fontFamily: Font, fontSize: 13.5, fontWeight: '800', color: C.ink },
   gradeOn: { position: 'absolute', left: 12, bottom: 12 },
   pricePill: { backgroundColor: C.night, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
   priceText: { fontFamily: Font, color: '#fff', fontSize: 14, fontWeight: '800' },
@@ -124,10 +137,10 @@ const st = StyleSheet.create({
   heartText: { fontSize: 19, color: C.ink, lineHeight: 22 },
   lock: { position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' },
   lockText: { fontFamily: Font, backgroundColor: 'rgba(20,20,20,.78)', color: '#fff', fontWeight: '600', fontSize: 13, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingHorizontal: 8 },
-  title: { fontFamily: Font, fontSize: 17, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
-  sub: { fontFamily: Font, fontSize: 13.5, color: C.muted },
-  price: { fontFamily: Font, fontSize: 16, color: C.ink, marginTop: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  title: { flex: 1, fontFamily: Font, fontSize: 18, fontWeight: '800', color: C.ink, letterSpacing: -0.4 },
+  sub: { fontFamily: Font, fontSize: 13.5, color: C.muted, marginTop: 3 },
+  price: { fontFamily: Font, fontSize: 16.5, fontWeight: '800', color: C.ink, marginTop: 4 },
   grade: { borderRadius: 8, paddingHorizontal: 9, height: 26, alignItems: 'center', justifyContent: 'center' },
   gradeText: { fontFamily: Font, fontWeight: '800', fontSize: 14 },
   arrow: { position: 'absolute', top: '50%', marginTop: -22, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,.92)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8 },

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, filterCount, loadQuiz, seenWelcome, type Listing, type Pick } from '@/api/client';
 import { CategoryBar, ListingCard } from '@/components/car';
-import { FilterPanel, SORTS } from '@/components/filters';
+import { FilterPanel, SORTS, useFacets } from '@/components/filters';
 import { Appear, PressScale } from '@/components/motion';
 import { MatchBadge, PickCard, quizSummary } from '@/components/picks';
 import { C, Font, MaxGridWidth, plural } from '@/constants/theme';
@@ -26,6 +26,7 @@ export default function ExploreScreen() {
   const [q, setQ] = useState(filters.q ?? '');
   const { width } = useWindowDimensions();
   const quiz = loadQuiz();
+  const facets = useFacets();
 
   const page = Math.min(width, MaxGridWidth);
   const inner = wide ? page - 64 - SIDEBAR - 32 : page - 40;
@@ -55,7 +56,7 @@ export default function ExploreScreen() {
     <View style={{ gap: 14 }}>
       <View style={st.resultsHead}>
         <View style={{ flexShrink: 1 }}>
-          <Text style={st.section}>{filters.q || nf ? 'Результаты поиска' : 'Все осмотренные машины'}</Text>
+          <Text style={st.section}>{filters.q || nf ? 'Результаты поиска' : wide ? 'Все осмотренные машины' : 'В продаже'}</Text>
           <Text style={st.count}>{total} {plural(total, ['машина', 'машины', 'машин'])}{nf ? ` · фильтров: ${nf}` : ''}</Text>
         </View>
         {wide ? (
@@ -151,7 +152,10 @@ export default function ExploreScreen() {
             </View>
             <FilterPanel value={filters} onChange={setFilters} access={access} onLocked={() => router.push('/pass')} />
           </View>
-          <View style={{ flex: 1, gap: 28 }}>
+          <View style={{ flex: 1, gap: 28, minWidth: 0 }}>
+            <View style={{ marginHorizontal: -20 }}>
+              <CategoryBar value={filters.category ?? ''} counts={facets?.categories} total={facets ? facets.makes.reduce((n, m) => n + m.count, 0) : undefined} onChange={(category) => setFilters({ ...filters, category: category || undefined })} />
+            </View>
             {promo}
             {picksBlock}
             {results}
@@ -160,46 +164,62 @@ export default function ExploreScreen() {
       </ScrollView>
     );
 
+  const chips: [string, boolean, () => void][] = [
+    [filters.price_max ? `до ${(filters.price_max / 1e6).toLocaleString('ru-RU')} млн` : 'Цена', !!(filters.price_max || filters.price_min), () => router.push('/search')],
+    [filters.make?.length ? filters.make.join(', ') : 'Марка', !!filters.make?.length, () => router.push('/search')],
+    [filters.body?.length ? `Кузов · ${filters.body.length}` : 'Кузов', !!filters.body?.length, () => router.push('/search')],
+    [filters.gearbox?.length ? 'Коробка ✓' : 'Коробка', !!filters.gearbox?.length, () => router.push('/search')],
+    [filters.drive?.includes('Полный') ? 'Полный привод ✓' : 'Полный привод', !!filters.drive?.includes('Полный'), () => setFilters({ ...filters, drive: filters.drive?.includes('Полный') ? [] : ['Полный'] })],
+  ];
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={{ paddingBottom: 110 }}>
-        <View style={st.wrap}>
-          <Appear style={st.top}>
-            <Pressable onPress={() => router.navigate('/profile')} style={st.avatar} accessibilityLabel="Профиль">
-              <Text style={st.avatarText}>{me ? me.name[0] : '○'}</Text>
-            </Pressable>
-            <View style={{ flex: 1 }}>
-              <Text style={st.hello}>{me ? `Привет, ${me.name.split(' ')[0]}` : 'Добро пожаловать'}</Text>
-              <Text style={st.city}>Москва и область · {access === 'full' ? 'доступ открыт' : access === 'member' ? 'без доступа' : 'гость'}</Text>
-            </View>
-            <PressScale onPress={() => router.push('/welcome')} style={st.round} accessibilityLabel="Как это работает"><Text style={st.roundText}>?</Text></PressScale>
-          </Appear>
+    <View style={{ flex: 1, backgroundColor: C.night }}>
+      <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor="#fff" />} contentContainerStyle={{ paddingBottom: 110 }} style={{ backgroundColor: C.night }}>
+        <SafeAreaView edges={['top']}>
+          <View style={st.dark}>
+            <Appear style={st.top}>
+              <Pressable onPress={() => router.navigate('/profile')} style={st.avatar} accessibilityLabel="Профиль">
+                <Text style={st.avatarText}>{me ? me.name[0] : '○'}</Text>
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={st.hello}>{me ? `Привет, ${me.name.split(' ')[0]}` : 'Осмотрено'}</Text>
+                <Text style={st.city}>{access === 'full' ? 'Доступ покупателя открыт' : access === 'member' ? 'Без доступа покупателя' : 'Гость'}</Text>
+              </View>
+              <PressScale onPress={() => router.push('/welcome')} style={st.round} accessibilityLabel="Как это работает"><Text style={st.roundText}>?</Text></PressScale>
+            </Appear>
+            <Appear delay={60} style={{ gap: 8 }}>
+              <Pressable style={st.darkChip} onPress={() => router.push('/search')} accessibilityRole="search">
+                <Text style={st.darkChipIcon}>⌕</Text><Text style={st.darkChipText} numberOfLines={1}>{filters.q || 'Марка или модель'}</Text>
+              </Pressable>
+              <View style={st.darkChip}><Text style={st.darkChipIcon}>⌖</Text><Text style={st.darkChipText}>Москва и область · все машины осмотрены</Text></View>
+            </Appear>
+          </View>
+        </SafeAreaView>
 
-          <Appear delay={80}><Text style={st.h1}>Найдите машину,{'\n'}<Text style={{ color: C.muted }}>которую уже проверили</Text></Text></Appear>
-
-          <Appear delay={140} style={st.searchRow}>
-            <Pressable style={st.search} onPress={() => router.push('/search')} accessibilityRole="search" accessibilityLabel="Поиск и фильтры">
-              <Text style={st.searchIcon}>⌕</Text>
-              <Text style={st.searchText} numberOfLines={1}>{filters.q || 'Марка, модель, цена, год…'}</Text>
-            </Pressable>
-            <PressScale onPress={() => router.push('/search')} style={st.filterBtn} accessibilityLabel="Фильтры">
-              <Text style={{ color: '#fff', fontSize: 18 }}>⚙︎</Text>
-              {nf ? <View style={st.badge}><Text style={st.badgeText}>{nf}</Text></View> : null}
+        <View style={st.sheet}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
+            <PressScale onPress={() => router.push('/search')} style={[st.fchip, nf > 0 && st.fchipOn]} accessibilityLabel="Фильтры">
+              <Text style={[st.fchipText, nf > 0 && { color: '#fff' }]}>⚙︎  Все фильтры{nf ? ` · ${nf}` : ''}</Text>
             </PressScale>
+            {chips.map(([label, on, go]) => (
+              <PressScale key={label} onPress={go} style={[st.fchip, on && st.fchipOn]}><Text style={[st.fchipText, on && { color: '#fff' }]} numberOfLines={1}>{label}</Text></PressScale>
+            ))}
+          </ScrollView>
+
+          <Appear delay={120} style={{ marginTop: 18 }}>
+            <CategoryBar value={filters.category ?? ''} counts={facets?.categories} total={facets ? facets.makes.reduce((n, m) => n + m.count, 0) : undefined} onChange={(category) => setFilters({ ...filters, category: category || undefined })} />
           </Appear>
-        </View>
 
-        <Appear delay={200} style={{ marginTop: 16 }}>
-          <CategoryBar value={filters.category ?? ''} onChange={(category) => setFilters({ ...filters, category: category || undefined })} />
-        </Appear>
+          <View style={st.hr} />
 
-        <View style={{ paddingHorizontal: 20, paddingTop: 20, gap: 24 }}>
-          {promo ? <Appear delay={240}>{promo}</Appear> : null}
-          <Appear delay={280}>{picksBlock}</Appear>
-          {results}
+          <View style={{ paddingHorizontal: 20, gap: 24 }}>
+            {promo ? <Appear delay={200}>{promo}</Appear> : null}
+            <Appear delay={240}>{picksBlock}</Appear>
+            {results}
+          </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -217,14 +237,22 @@ const st = StyleSheet.create({
   sort: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: C.fill },
   sortOn: { backgroundColor: C.night },
   sortText: { fontFamily: Font, fontSize: 13, fontWeight: '700', color: C.ink },
-  wrap: { paddingHorizontal: 20, paddingTop: 12, gap: 18 },
+  dark: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 44, gap: 16 },
+  darkChip: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start', maxWidth: '100%', backgroundColor: C.night3, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  darkChipIcon: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  darkChipText: { fontFamily: Font, color: '#fff', fontSize: 15, fontWeight: '600' },
+  sheet: { backgroundColor: C.bg, borderTopLeftRadius: 30, borderTopRightRadius: 30, marginTop: -24, paddingTop: 20, minHeight: 800 },
+  fchip: { borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' },
+  fchipOn: { backgroundColor: C.night, borderColor: C.night },
+  fchipText: { fontFamily: Font, fontSize: 14, fontWeight: '700', color: C.ink },
+  hr: { height: 1, backgroundColor: C.line, marginVertical: 20, marginHorizontal: 20 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.night, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontFamily: Font, fontSize: 18, fontWeight: '800' },
-  hello: { fontFamily: Font, fontSize: 17, fontWeight: '800', color: C.ink },
-  city: { fontFamily: Font, fontSize: 13.5, color: C.muted, marginTop: 1 },
-  round: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  roundText: { fontFamily: Font, fontSize: 17, fontWeight: '800', color: C.ink },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: C.night, fontFamily: Font, fontSize: 18, fontWeight: '800' },
+  hello: { fontFamily: Font, fontSize: 17, fontWeight: '800', color: '#fff' },
+  city: { fontFamily: Font, fontSize: 13.5, color: 'rgba(255,255,255,.6)', marginTop: 1 },
+  round: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,.25)', alignItems: 'center', justifyContent: 'center' },
+  roundText: { fontFamily: Font, fontSize: 17, fontWeight: '800', color: '#fff' },
   h1: { fontFamily: Font, fontSize: 31, lineHeight: 36, fontWeight: '800', letterSpacing: -1, color: C.ink },
   searchRow: { flexDirection: 'row', gap: 10 },
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, height: 56, paddingHorizontal: 18, backgroundColor: C.fill },

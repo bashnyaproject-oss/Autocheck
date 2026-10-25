@@ -30,7 +30,7 @@ export type Filters = {
   q?: string; make?: string[]; model?: string[]; price_min?: number; price_max?: number; year_min?: number; year_max?: number; km_max?: number;
   body?: Body[]; gearbox?: string[]; drive?: string[]; fuel?: string[]; owners_max?: number; grade_min?: number; category?: string; sort?: string;
 };
-export type Facets = { makes: { make: string; count: number; models: { model: string; count: number }[] }[]; price: [number, number]; year: [number, number] };
+export type Facets = { makes: { make: string; count: number; models: { model: string; count: number }[] }[]; price: [number, number]; year: [number, number]; categories?: Record<string, number> };
 export type Quiz = { purpose?: 'city' | 'family' | 'trips' | 'first'; budget_max?: number; body?: Body[]; gearbox?: 'auto' | 'manual' | 'any'; drive?: 'awd' | 'any'; priorities?: string[] };
 export type Pick = Listing & { match: number; why: string[]; warn: string[] };
 /** Count of active filters, for the filter button badge. */

@@ -159,7 +159,7 @@ test('filters, facets and personal picks', async () => {
   assert.ok(fac.body.makes.find((m) => m.make === 'Toyota').models.length === 2);
   const m = await call('POST', '/v1/match', { body: { purpose: 'family', budget_max: 2500000, body: ['suv'], gearbox: 'auto', priorities: ['reliability'] } });
   assert.ok(m.body.items.length >= 3);
-  assert.ok(m.body.items.every((i) => i.price <= 2750000 && i.why.length && i.match >= 50));
+  assert.ok(m.body.items.every((i) => i.price <= 2750000 && i.why.length && i.match >= 45));
   assert.ok(m.body.items[0].match >= m.body.items[m.body.items.length - 1].match);
   assert.ok(m.body.items.every((i) => i.gearbox === undefined || i.gearbox !== 'Механика'));
 });

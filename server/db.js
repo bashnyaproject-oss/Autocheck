@@ -5,6 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const { seed } = require('./seed');
 
+// Vercel's Neon integration may name the variable with a prefix (e.g. DATABASE_POSTGRES_URL).
+if (!process.env.DATABASE_URL) process.env.DATABASE_URL = process.env.DATABASE_POSTGRES_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED || '';
+if (!process.env.DATABASE_URL) delete process.env.DATABASE_URL;
+
 let ready = null;
 
 async function connect() {
