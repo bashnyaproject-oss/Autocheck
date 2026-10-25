@@ -18,11 +18,13 @@ jobs:
         run: |
           cd photos
           for k in $(jq -r 'keys[]' manifest.json); do
-            [ -f "$k.jpg" ] && continue
+            [ -f "$k-b.jpg" ] && continue
             url=$(jq -r --arg k "$k" '.[$k]' manifest.json)
             curl -fsSL -o "src-$k.jpg" "$url" || { echo "skip $k"; continue; }
             convert "src-$k.jpg" -resize '1280x>' -strip -quality 80 "$k.jpg"
             convert "src-$k.jpg" -resize '640x>' -strip -quality 76 "$k-s.jpg"
+            # guests get only a blurred cover: the sharp photo is never sent to them
+            convert "src-$k.jpg" -resize 320x -blur 0x9 -strip -quality 60 "$k-b.jpg"
             rm "src-$k.jpg"
           done
           ls -la
