@@ -7,6 +7,7 @@ import { api, photoUrl, type Access, type Listing } from '@/api/client';
 import { C, Font, gradeColor, gradeText, kmf, rub } from '@/constants/theme';
 import { carScene, type Body } from '@/lib/car-art';
 
+import { ChevronLeft, ChevronRight, HatchIcon, Heart, LayoutGrid, Lock, SedanIcon, ShieldCheck, Sparkles, SuvIcon, Wallet } from './icons';
 import { PressScale } from './motion';
 import { useApp } from '@/state/app-state';
 
@@ -49,9 +50,9 @@ export function ListingCard({ l, width }: { l: Listing; width: number }) {
         <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0] ?? l.cover_blur} small blur={l.access === 'guest'} style={{ width, aspectRatio: 1.5, borderRadius: 22 }} />
         <View style={st.badge}><Text style={st.badgeText}>✓ Осмотрено</Text></View>
         <Pressable onPress={heart} hitSlop={10} style={st.heart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}>
-          <Text style={[st.heartText, liked && { color: C.ink }]}>{liked ? '♥' : '♡'}</Text>
+          <Heart size={18} color={C.ink} fill={liked ? C.ink : 'transparent'} strokeWidth={2} />
         </Pressable>
-        {l.access === 'guest' ? <View style={st.lock}><Text style={st.lockText}>🔒 Войдите, чтобы смотреть</Text></View> : null}
+        {l.access === 'guest' ? <View style={st.lock}><View style={st.lockPill}><Lock size={13} color="#fff" strokeWidth={2.4} /><Text style={st.lockText}>Войдите, чтобы смотреть</Text></View></View> : null}
       </View>
       <View style={st.row}>
         <Text style={st.title} numberOfLines={1}>{l.make} {l.model}</Text>
@@ -112,7 +113,7 @@ export function ListingRow({ l }: { l: Listing }) {
         <Text style={st.lprice}>{rub(l.price)}</Text>
         {l.access === 'full' && below >= 3 ? <Text style={st.lgood}>ниже рынка на {below}%</Text> : null}
         <Text style={st.lyear}>{l.year}{l.km != null ? ` · ${kmf(l.km)}` : ''}</Text>
-        <Pressable onPress={heart} hitSlop={8} style={st.lheart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}><Text style={{ fontSize: 18, color: C.ink }}>{liked ? '♥' : '♡'}</Text></Pressable>
+        <Pressable onPress={heart} hitSlop={8} style={st.lheart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}><Heart size={18} color={C.ink} fill={liked ? C.ink : 'transparent'} strokeWidth={2} /></Pressable>
       </View>
     </Pressable>
   );
@@ -140,30 +141,31 @@ export function Gallery({ l, access, tall }: { l: Listing; access: Access; tall?
       </ScrollView>
       {slides.length > 1 ? <View style={[st.counter, tall && { bottom: 46, left: 16, right: 'auto' as unknown as number }]}><Text style={st.counterText}>{page + 1} / {slides.length}</Text></View> : null}
       {Platform.OS === 'web' && slides.length > 1 ? <>
-        {page > 0 ? <Pressable onPress={() => goTo(page - 1)} style={[st.arrow, { left: 14 }]} accessibilityLabel="Предыдущее фото"><Text style={st.arrowText}>‹</Text></Pressable> : null}
-        {page < slides.length - 1 ? <Pressable onPress={() => goTo(page + 1)} style={[st.arrow, { right: 14 }]} accessibilityLabel="Следующее фото"><Text style={st.arrowText}>›</Text></Pressable> : null}
+        {page > 0 ? <Pressable onPress={() => goTo(page - 1)} style={[st.arrow, { left: 14 }]} accessibilityLabel="Предыдущее фото"><ChevronLeft size={22} color={C.ink} /></Pressable> : null}
+        {page < slides.length - 1 ? <Pressable onPress={() => goTo(page + 1)} style={[st.arrow, { right: 14 }]} accessibilityLabel="Следующее фото"><ChevronRight size={22} color={C.ink} /></Pressable> : null}
       </> : null}
     </View>
   );
 }
 
-const CATS: [string, string, string][] = [
-  ['', 'Все', 'l4'], ['suv', 'Кроссоверы', 'l10'], ['sedan', 'Седаны', 'l9'], ['hatch', 'Хэтчбеки', 'l5'],
-  ['cheap', 'До 1,5 млн', 'l11'], ['fresh', 'Свежие', 'l12'], ['top', 'Оценка 85+', 'l15'],
+const CATS: [string, string, (p: { size?: number; color?: string; strokeWidth?: number }) => React.ReactNode][] = [
+  ['', 'Все', LayoutGrid], ['suv', 'Кроссоверы', SuvIcon], ['sedan', 'Седаны', SedanIcon], ['hatch', 'Хэтчбеки', HatchIcon],
+  ['cheap', 'До 1,5 млн', Wallet], ['fresh', 'Свежие', Sparkles], ['top', 'Оценка 85+', ShieldCheck],
 ];
-/** Photo tiles with counts, like categories in rental apps. */
+/** Category bar with line icons and counts. */
 export function CategoryBar({ value, onChange, counts, total }: { value: string; onChange: (v: string) => void; counts?: Record<string, number>; total?: number }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}>
-      {CATS.map(([k, label, car]) => {
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 14 }}>
+      {CATS.map(([k, label, Icon]) => {
         const on = (value || '') === k;
         const n = k ? counts?.[k] : total;
         return (
-          <PressScale key={k} onPress={() => onChange(k)} style={st.tile} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-            <View style={[st.tileImgWrap, on && st.tileOn]}>
-              <Image source={{ uri: photoUrl(`/photos/${car}.jpg`, 'small') }} style={st.tileImg} contentFit="cover" />
+          <PressScale key={k} onPress={() => onChange(k)} style={st.cat} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={label}>
+            <View style={[st.catIcon, on && st.catIconOn]}>
+              <Icon size={30} color={on ? '#fff' : C.ink} strokeWidth={1.7} />
             </View>
-            <Text style={[st.tileLabel, on && { fontWeight: '800' }]} numberOfLines={1}>{label}{n != null ? <Text style={st.tileCount}> {n}</Text> : null}</Text>
+            <Text style={[st.catLabel, on && { fontWeight: '800' }]} numberOfLines={1}>{label}</Text>
+            <Text style={st.catCount}>{n != null ? n : ' '}</Text>
           </PressScale>
         );
       })}
@@ -183,6 +185,11 @@ const st = StyleSheet.create({
   lgood: { fontFamily: Font, fontSize: 13, fontWeight: '700', color: '#0E7A3D' },
   lyear: { fontFamily: Font, fontSize: 14.5, color: C.ink2 },
   lheart: { marginTop: 'auto', width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' } as object,
+  cat: { width: 92, alignItems: 'center', gap: 6, paddingVertical: 2 },
+  catIcon: { width: 60, height: 60, borderRadius: 20, backgroundColor: C.fill, alignItems: 'center', justifyContent: 'center' },
+  catIconOn: { backgroundColor: C.night },
+  catLabel: { fontFamily: Font, fontSize: 13, fontWeight: '600', color: C.ink },
+  catCount: { fontFamily: Font, fontSize: 12, color: C.muted, marginTop: -4 },
   tile: { width: 104, gap: 8, alignItems: 'center' },
   tileImgWrap: { width: 104, height: 120, borderRadius: 18, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
   tileOn: { borderColor: C.night },
@@ -200,7 +207,8 @@ const st = StyleSheet.create({
   heart: { position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   heartText: { fontSize: 19, color: C.ink, lineHeight: 22 },
   lock: { position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' },
-  lockText: { fontFamily: Font, backgroundColor: 'rgba(20,20,20,.78)', color: '#fff', fontWeight: '600', fontSize: 13, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden' },
+  lockPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(11,11,12,.8)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  lockText: { fontFamily: Font, color: '#fff', fontWeight: '600', fontSize: 13 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   title: { flex: 1, fontFamily: Font, fontSize: 18, fontWeight: '800', color: C.ink, letterSpacing: -0.4 },
   sub: { fontFamily: Font, fontSize: 13.5, color: C.muted, marginTop: 3 },
@@ -213,7 +221,4 @@ const st = StyleSheet.create({
   counterText: { color: '#fff', fontFamily: Font, fontSize: 13, fontWeight: '600' },
   galLock: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   galLockText: { fontFamily: Font, backgroundColor: 'rgba(20,20,20,.78)', color: '#fff', fontWeight: '700', fontSize: 14, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, overflow: 'hidden' },
-  cat: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: C.fill },
-  catOn: { backgroundColor: C.night },
-  catLabel: { fontFamily: Font, fontSize: 14, fontWeight: '700' },
 });

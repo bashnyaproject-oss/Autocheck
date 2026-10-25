@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api, ApiError, SITE, type Listing, type Report } from '@/api/client';
 import { Gallery } from '@/components/car';
 import { Gate } from '@/components/gate';
+import { ChevronLeft, Heart, Share as ShareIcon } from '@/components/icons';
 import { Appear, PressScale } from '@/components/motion';
 import { Button } from '@/components/ui';
 import { C, Font, MaxContentWidth, gradeColor, gradeLabel, kmf, rub } from '@/constants/theme';
@@ -69,10 +70,10 @@ export default function ListingScreen() {
         <View style={[{ maxWidth: 1000, width: '100%', alignSelf: 'center' }, wide && { paddingTop: 20 }]}>
           <Gallery l={l} access={l.access} tall={!wide} />
           <View style={[st.topBtns, { top: (wide ? 32 : insets.top + 8) }]} pointerEvents="box-none">
-            <PressScale onPress={back} style={st.round} accessibilityLabel="Назад"><Text style={st.roundText}>‹</Text></PressScale>
+            <PressScale onPress={back} style={st.round} accessibilityLabel="Назад"><ChevronLeft size={22} color={C.ink} strokeWidth={2.2} /></PressScale>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <PressScale onPress={share} style={st.round} accessibilityLabel="Поделиться"><Text style={[st.roundText, { fontSize: 18 }]}>⇪</Text></PressScale>
-              <PressScale onPress={like} style={st.round} accessibilityLabel="В избранное"><Text style={[st.roundText, { fontSize: 19 }]}>{l.liked ? '♥' : '♡'}</Text></PressScale>
+              <PressScale onPress={share} style={st.round} accessibilityLabel="Поделиться"><ShareIcon size={18} color={C.ink} strokeWidth={2} /></PressScale>
+              <PressScale onPress={like} style={st.round} accessibilityLabel="В избранное"><Heart size={19} color={C.ink} fill={l.liked ? C.ink : 'transparent'} strokeWidth={2} /></PressScale>
             </View>
           </View>
         </View>

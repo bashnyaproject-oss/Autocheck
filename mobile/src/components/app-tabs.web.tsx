@@ -5,15 +5,16 @@ import { C, Font, MaxGridWidth } from '@/constants/theme';
 import { useWide } from '@/hooks/use-wide';
 import { useApp } from '@/state/app-state';
 
+import { CalendarClock, Heart, MessageCircle, Search, Sparkles, UserRound } from './icons';
 import { PressScale } from './motion';
 
 // Web: phones get a floating bottom bar, desktops a top navigation bar.
 const TABS = [
-  { href: '/', label: 'Поиск', icon: '⌕' },
-  { href: '/saved', label: 'Избранное', icon: '♡' },
-  { href: '/viewings', label: 'Просмотры', icon: '◷' },
-  { href: '/inbox', label: 'Сообщения', icon: '✉' },
-  { href: '/profile', label: 'Профиль', icon: '◉' },
+  { href: '/', label: 'Поиск', icon: Search },
+  { href: '/saved', label: 'Избранное', icon: Heart },
+  { href: '/viewings', label: 'Просмотры', icon: CalendarClock },
+  { href: '/inbox', label: 'Сообщения', icon: MessageCircle },
+  { href: '/profile', label: 'Профиль', icon: UserRound },
 ] as const;
 
 export default function AppTabs() {
@@ -40,7 +41,7 @@ function TopNav() {
       <View style={st.topInner}>
         <Text style={st.logo} onPress={() => router.navigate('/')}>осмотрено<Text style={{ color: '#16A34A' }}>.</Text></Text>
         <View style={st.links}>
-          {[...TABS.slice(0, 4), { href: '/quiz', label: 'Подбор', icon: '' }].map((t) => {
+          {[...TABS.slice(0, 4), { href: '/quiz', label: 'Подбор', icon: Sparkles }].map((t) => {
             const on = path === t.href;
             return (
               <Pressable key={t.href} onPress={() => (t.href === '/quiz' ? router.push('/quiz') : router.navigate(t.href))} style={[st.link, on && st.linkOn]} accessibilityRole="link">
@@ -73,7 +74,7 @@ function BottomBar() {
           return (
             <Pressable key={t.href} style={st.tab} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }} onPress={() => router.navigate(t.href)}>
               <View style={[st.iconWrap, on && st.iconOn]}>
-                <Text style={[st.icon, { color: on ? C.night : 'rgba(255,255,255,.62)' }]}>{t.icon}</Text>
+                <t.icon size={20} color={on ? C.night : 'rgba(255,255,255,.7)'} strokeWidth={2} />
               </View>
               <Text style={[st.label, { color: on ? '#fff' : 'rgba(255,255,255,.55)', fontWeight: on ? '800' : '600' }]}>{t.label}</Text>
             </Pressable>

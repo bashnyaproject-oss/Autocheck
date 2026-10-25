@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api, filterCount, loadQuiz, seenWelcome, type Listing, type Pick } from '@/api/client';
 import { CategoryBar, ListingCard, ListingRow } from '@/components/car';
 import { AppliedTags, FilterPanel, SearchSuggest, SortSelect, offers, useFacets } from '@/components/filters';
+import { CircleQuestionMark, LayoutGrid, LayoutList, MapPin, Search, SlidersHorizontal } from '@/components/icons';
 import { Appear, PressScale } from '@/components/motion';
 import { MatchBadge, PickCard, quizSummary } from '@/components/picks';
 import { C, Font, MaxGridWidth, plural } from '@/constants/theme';
@@ -56,7 +57,7 @@ export default function ExploreScreen() {
             <View style={st.viewToggle}>
               {(['list', 'grid'] as const).map((v) => (
                 <Pressable key={v} onPress={() => setView(v)} style={[st.vt, view === v && st.vtOn]} accessibilityLabel={v === 'list' ? 'Списком' : 'Плиткой'}>
-                  <Text style={[st.vtText, view === v && { color: '#fff' }]}>{v === 'list' ? '☰' : '▦'}</Text>
+                  {v === 'list' ? <LayoutList size={16} color={view === v ? '#fff' : C.ink} /> : <LayoutGrid size={16} color={view === v ? '#fff' : C.ink} />}
                 </Pressable>
               ))}
             </View>
@@ -178,13 +179,13 @@ export default function ExploreScreen() {
                 <Text style={st.hello}>{me ? `Привет, ${me.name.split(' ')[0]}` : 'Осмотрено'}</Text>
                 <Text style={st.city}>{access === 'full' ? 'Доступ покупателя открыт' : access === 'member' ? 'Без доступа покупателя' : 'Гость'}</Text>
               </View>
-              <PressScale onPress={() => router.push('/welcome')} style={st.round} accessibilityLabel="Как это работает"><Text style={st.roundText}>?</Text></PressScale>
+              <PressScale onPress={() => router.push('/welcome')} style={st.round} accessibilityLabel="Как это работает"><CircleQuestionMark size={20} color="#fff" strokeWidth={1.8} /></PressScale>
             </Appear>
             <Appear delay={60} style={{ gap: 8 }}>
               <Pressable style={st.darkChip} onPress={() => router.push('/search')} accessibilityRole="search">
-                <Text style={st.darkChipIcon}>⌕</Text><Text style={st.darkChipText} numberOfLines={1}>{filters.q || 'Марка или модель'}</Text>
+                <Search size={18} color="#fff" strokeWidth={2} /><Text style={st.darkChipText} numberOfLines={1}>{filters.q || 'Марка или модель'}</Text>
               </Pressable>
-              <View style={st.darkChip}><Text style={st.darkChipIcon}>⌖</Text><Text style={st.darkChipText}>Москва и область · все машины осмотрены</Text></View>
+              <View style={st.darkChip}><MapPin size={18} color="#fff" strokeWidth={2} /><Text style={st.darkChipText}>Москва и область · все машины осмотрены</Text></View>
             </Appear>
           </View>
         </SafeAreaView>
@@ -192,7 +193,7 @@ export default function ExploreScreen() {
         <View style={st.sheet}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
             <PressScale onPress={() => router.push('/search')} style={[st.fchip, nf > 0 && st.fchipOn]} accessibilityLabel="Фильтры">
-              <Text style={[st.fchipText, nf > 0 && { color: '#fff' }]}>⚙︎  Все фильтры{nf ? ` · ${nf}` : ''}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><SlidersHorizontal size={15} color={nf > 0 ? '#fff' : C.ink} strokeWidth={2.2} /><Text style={[st.fchipText, nf > 0 && { color: '#fff' }]}>Все фильтры{nf ? ` · ${nf}` : ''}</Text></View>
             </PressScale>
             {chips.map(([label, on, go]) => (
               <PressScale key={label} onPress={go} style={[st.fchip, on && st.fchipOn]}><Text style={[st.fchipText, on && { color: '#fff' }]} numberOfLines={1}>{label}</Text></PressScale>

@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { api, type Access, type Body, type Facets, type Filters } from '@/api/client';
 import { C, Font, plural } from '@/constants/theme';
 
+import { ArrowUpDown, Check, ChevronDown, Search, X } from './icons';
+
 /*
  * Search filters in the spirit of auto.ru: compact fields (Марка → Модель, ranges «от–до»,
  * multi-selects with a summary), live counter «Показать N предложений», applied filters as tags,
@@ -86,12 +88,12 @@ export function SearchSuggest({ value, onPick, onText, style, dark, placeholder 
   return (
     <View style={[{ zIndex: 30 }, style]}>
       <View style={[st.search, dark && { backgroundColor: C.night3 }]}>
-        <Text style={[st.searchIcon, dark && { color: '#fff' }]}>⌕</Text>
+        <Search size={19} color={dark ? '#fff' : C.ink} strokeWidth={2} />
         <TextInput value={text} onChangeText={(v) => { setText(v); onText?.(v); }} onFocus={() => setFocus(true)} onBlur={() => setTimeout(() => setFocus(false), 180)}
           onSubmitEditing={() => (list[0] ? pick(list[0]) : onPick({ ...value, q: text.trim() || undefined }))}
           placeholder={placeholder ?? 'Марка или модель'} placeholderTextColor={dark ? 'rgba(255,255,255,.55)' : C.muted}
           style={[st.searchInput, dark && { color: '#fff' }]} autoCorrect={false} autoCapitalize="none" returnKeyType="search" />
-        {text ? <Text style={[st.clear, dark && { color: '#fff' }]} onPress={() => { setText(''); onText?.(''); }}>✕</Text> : null}
+        {text ? <Pressable onPress={() => { setText(''); onText?.(''); }} hitSlop={8} accessibilityLabel="Очистить"><X size={18} color={dark ? '#fff' : C.muted} /></Pressable> : null}
       </View>
       {focus && text.trim() ? (
         <View style={st.suggest}>
@@ -117,7 +119,7 @@ function Field({ label, value, open, onPress, disabled, children, onClear }: { l
           {value ? <Text style={st.fLabel}>{label}</Text> : null}
           <Text style={[st.fValue, !value && { color: C.muted, fontWeight: '500' }]} numberOfLines={1}>{value || label}</Text>
         </View>
-        {value && onClear ? <Text style={st.fClear} onPress={onClear}>✕</Text> : <Text style={st.fArrow}>{open ? '▴' : '▾'}</Text>}
+        {value && onClear ? <Pressable onPress={onClear} hitSlop={8} accessibilityLabel="Сбросить"><X size={16} color={C.muted} /></Pressable> : <ChevronDown size={18} color={C.muted} style={open ? { transform: [{ rotate: '180deg' }] } : undefined} />}
       </Pressable>
       {open ? <View style={st.menu}><ScrollView style={{ maxHeight: 280 }} nestedScrollEnabled>{children}</ScrollView></View> : null}
     </View>
@@ -126,9 +128,9 @@ function Field({ label, value, open, onPress, disabled, children, onClear }: { l
 function Opt({ label, on, onPress, count, multi = true, locked }: { label: string; on: boolean; onPress: () => void; count?: number; multi?: boolean; locked?: boolean }) {
   return (
     <Pressable onPress={onPress} style={(s: { pressed: boolean; hovered?: boolean }) => [st.opt, s.hovered && { backgroundColor: C.fill }, locked && { opacity: 0.45 }]} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ checked: on }}>
-      {multi ? <View style={[st.box, on && st.boxOn]}>{on ? <Text style={st.boxTick}>✓</Text> : null}</View> : null}
+      {multi ? <View style={[st.box, on && st.boxOn]}>{on ? <Check size={14} color="#fff" strokeWidth={3} /> : null}</View> : null}
       <Text style={[st.optText, on && !multi && { fontWeight: '800' }]} numberOfLines={1}>{locked ? '🔒 ' : ''}{label}</Text>
-      {count != null ? <Text style={st.optCount}>{count}</Text> : !multi && on ? <Text style={st.optCount}>✓</Text> : null}
+      {count != null ? <Text style={st.optCount}>{count}</Text> : !multi && on ? <Check size={16} color={C.ink} strokeWidth={2.5} /> : null}
     </Pressable>
   );
 }
@@ -140,7 +142,7 @@ function RangeInput({ label, value, onChange, suffix }: { label: string; value?:
         <TextInput value={value ? fmt(value) : ''} onChangeText={(v) => onChange(num(v))} placeholder={`${label}${suffix ? `, ${suffix}` : ''}`} placeholderTextColor={C.muted}
           inputMode="numeric" style={[st.fValue, st.rangeInput]} />
       </View>
-      {value ? <Text style={st.fClear} onPress={() => onChange(undefined)}>✕</Text> : null}
+      {value ? <Pressable onPress={() => onChange(undefined)} hitSlop={8}><X size={16} color={C.muted} /></Pressable> : null}
     </View>
   );
 }
@@ -243,7 +245,7 @@ export function AppliedTags({ f, onChange }: { f: Filters; onChange: (f: Filters
     <View style={st.tags}>
       {tags.map(([label, patch]) => (
         <Pressable key={label} onPress={() => onChange({ ...f, ...patch })} style={st.tag} accessibilityLabel={`Убрать фильтр ${label}`}>
-          <Text style={st.tagText}>{label}</Text><Text style={st.tagX}>✕</Text>
+          <Text style={st.tagText}>{label}</Text><X size={14} color={C.muted} strokeWidth={2.4} />
         </Pressable>
       ))}
       <Pressable onPress={() => onChange({ sort: f.sort, category: f.category })} style={[st.tag, { backgroundColor: 'transparent' }]}><Text style={[st.tagText, { textDecorationLine: 'underline' }]}>Сбросить всё</Text></Pressable>
@@ -257,7 +259,7 @@ export function SortSelect({ value, onChange, access, onLocked }: { value?: stri
   const cur = SORTS.find(([k]) => k === (value ?? ''))?.[1] ?? SORTS[0][1];
   return (
     <View style={{ zIndex: 40 }}>
-      <Pressable onPress={() => setOpen(!open)} style={st.sortBtn} accessibilityRole="button"><Text style={st.sortText}>{cur} {open ? '▴' : '▾'}</Text></Pressable>
+      <Pressable onPress={() => setOpen(!open)} style={[st.sortBtn, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} accessibilityRole="button"><ArrowUpDown size={15} color={C.ink} strokeWidth={2.2} /><Text style={st.sortText}>{cur}</Text></Pressable>
       {open ? (
         <View style={st.sortMenu}>
           {SORTS.map(([k, l, needFull]) => {
