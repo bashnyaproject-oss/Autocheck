@@ -1,0 +1,34 @@
+# Downloads demo car photos (generated in Figma) listed in photos/manifest.json,
+# shrinks them and commits them to photos/. The source links expire after 7 days.
+name: Demo photos
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [photos/manifest.json]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y -qq imagemagick jq >/dev/null
+      - name: Download and resize
+        run: |
+          cd photos
+          for k in $(jq -r 'keys[]' manifest.json); do
+            [ -f "$k.jpg" ] && continue
+            url=$(jq -r --arg k "$k" '.[$k]' manifest.json)
+            curl -fsSL -o "src-$k.jpg" "$url" || { echo "skip $k"; continue; }
+            convert "src-$k.jpg" -resize '1280x>' -strip -quality 80 "$k.jpg"
+            convert "src-$k.jpg" -resize '640x>' -strip -quality 76 "$k-s.jpg"
+            rm "src-$k.jpg"
+          done
+          ls -la
+      - name: Commit
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add photos
+          git diff --cached --quiet || git commit -m "Add demo car photos" && git push
