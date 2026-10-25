@@ -19,5 +19,10 @@
  "int-premium": "https://www.figma.com/api/mcp/asset/a1cfd897-ca7e-4a24-ac5b-069e9845f290.jpg",
  "int-suv": "https://www.figma.com/api/mcp/asset/18469f18-bd19-4476-85a6-7467e7b1d83a.jpg",
  "engine": "https://www.figma.com/api/mcp/asset/ce5b98c3-e056-49f9-bbae-2435bcb3f4ac.jpg",
- "inspection": "https://www.figma.com/api/mcp/asset/a3f0b973-deb4-427f-ac24-7d92557595b4.jpg"
+ "inspection": "https://www.figma.com/api/mcp/asset/a3f0b973-deb4-427f-ac24-7d92557595b4.jpg",
+ "ic-report": "https://www.figma.com/api/mcp/asset/8d490140-da18-4083-b7e1-82b62418d93b.jpg",
+ "ic-grade": "https://www.figma.com/api/mcp/asset/ce368381-e2f9-42d2-ad88-774219452265.jpg",
+ "ic-sell": "https://www.figma.com/api/mcp/asset/ff8deadd-ea4e-42bc-a4aa-4fdcc9cb116a.jpg",
+ "ic-inspect": "https://www.figma.com/api/mcp/asset/81a6d145-36be-48d9-a591-fbed9c02cb7d.jpg",
+ "ic-ai": "https://www.figma.com/api/mcp/asset/a80e0654-8594-4173-8cf9-42188333ee7f.jpg"
 }
