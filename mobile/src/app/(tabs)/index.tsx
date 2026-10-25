@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, filterCount, loadQuiz, seenWelcome, type Listing, type Pick } from '@/api/client';
 import { CategoryBar, ListingCard, ListingRow } from '@/components/car';
+import { DeskHome } from '@/components/desk-home';
 import { AppliedTags, FilterPanel, SearchSuggest, SortSelect, offers, useFacets } from '@/components/filters';
 import { CircleQuestionMark, LayoutGrid, LayoutList, MapPin, Search, SlidersHorizontal } from '@/components/icons';
 import { Appear, PressScale } from '@/components/motion';
@@ -127,6 +128,9 @@ export default function ExploreScreen() {
     </PressScale>
   ) : null;
 
+  if (wide && !(nf || filters.q || filters.category || filters.view))
+    return <DeskHome filters={filters} setFilters={setFilters} access={access} fresh={items} />;
+
   if (wide)
     return (
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={st.desk}>
@@ -141,7 +145,7 @@ export default function ExploreScreen() {
           <View style={st.side}>
             <View style={st.sideHead}>
               <Text style={st.sideTitle}>Параметры</Text>
-              {nf ? <Text style={st.sortLink} onPress={() => setFilters({ sort: filters.sort })}>Сбросить</Text> : null}
+              {nf ? <Text style={st.sortLink} onPress={() => setFilters({ sort: filters.sort, view: 'all' })}>Сбросить</Text> : null}
             </View>
             <FilterPanel value={filters} onChange={setFilters} access={access} onLocked={() => router.push('/pass')} />
             <View style={st.sideCount}><Text style={st.sideCountText}>{total ? `Показано ${offers(total)}` : 'Ничего не найдено'}</Text></View>

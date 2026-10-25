@@ -35,16 +35,16 @@ export default function AppTabs() {
 function TopNav() {
   const router = useRouter();
   const path = usePathname();
-  const { me } = useApp();
+  const { me, setFilters } = useApp();
   return (
     <View style={st.top}>
       <View style={st.topInner}>
-        <Text style={st.logo} onPress={() => router.navigate('/')}>осмотрено<Text style={{ color: '#16A34A' }}>.</Text></Text>
+        <Text style={st.logo} onPress={() => { setFilters({}); router.navigate('/'); }}>осмотрено<Text style={{ color: '#16A34A' }}>.</Text></Text>
         <View style={st.links}>
           {[...TABS.slice(0, 4), { href: '/quiz', label: 'Подбор', icon: Sparkles }].map((t) => {
             const on = path === t.href;
             return (
-              <Pressable key={t.href} onPress={() => (t.href === '/quiz' ? router.push('/quiz') : router.navigate(t.href))} style={[st.link, on && st.linkOn]} accessibilityRole="link">
+              <Pressable key={t.href} onPress={() => { if (t.href === '/quiz') return router.push('/quiz'); if (t.href === '/') setFilters({ view: 'all' }); router.navigate(t.href); }} style={[st.link, on && st.linkOn]} accessibilityRole="link">
                 <Text style={[st.linkText, on && { color: '#fff' }]}>{t.label}</Text>
               </Pressable>
             );

@@ -16,22 +16,22 @@ export const SORTS: [string, string, boolean?][] = [
   ['', 'По актуальности'], ['price_asc', 'Сначала дешевле'], ['price_desc', 'Сначала дороже'], ['year_desc', 'Сначала новее'],
   ['km_asc', 'По пробегу'], ['distance', 'По расстоянию'], ['grade_desc', 'По оценке осмотра', true], ['below_market', 'Ниже рынка', true],
 ];
-const BODIES: [Body, string][] = [['sedan', 'Седан'], ['suv', 'Внедорожник / кроссовер'], ['hatch', 'Хэтчбек / универсал']];
-const GEARS: [string, string][] = [['auto', 'Автомат (любой)'], ['Автомат', 'Гидроавтомат'], ['Робот', 'Робот'], ['Вариатор', 'Вариатор'], ['Механика', 'Механика']];
-const DRIVES: [string, string][] = [['Передний', 'Передний'], ['Задний', 'Задний'], ['Полный', 'Полный']];
-const FUELS: [string, string][] = [['Бензин', 'Бензин'], ['Дизель', 'Дизель'], ['Гибрид', 'Гибрид'], ['Электро', 'Электро']];
-const PRICES = [500000, 800000, 1000000, 1300000, 1500000, 2000000, 2500000, 3000000, 4000000];
-const KMS = [10000, 30000, 50000, 75000, 100000, 150000];
+export const BODIES: [Body, string][] = [['sedan', 'Седан'], ['suv', 'Внедорожник / кроссовер'], ['hatch', 'Хэтчбек / универсал']];
+export const GEARS: [string, string][] = [['auto', 'Автомат (любой)'], ['Автомат', 'Гидроавтомат'], ['Робот', 'Робот'], ['Вариатор', 'Вариатор'], ['Механика', 'Механика']];
+export const DRIVES: [string, string][] = [['Передний', 'Передний'], ['Задний', 'Задний'], ['Полный', 'Полный']];
+export const FUELS: [string, string][] = [['Бензин', 'Бензин'], ['Дизель', 'Дизель'], ['Гибрид', 'Гибрид'], ['Электро', 'Электро']];
+export const PRICES = [500000, 800000, 1000000, 1300000, 1500000, 2000000, 2500000, 3000000, 4000000];
+export const KMS = [10000, 30000, 50000, 75000, 100000, 150000];
 const RU: Record<string, string> = {
   тойота: 'Toyota', киа: 'Kia', кия: 'Kia', хендай: 'Hyundai', хёндай: 'Hyundai', хундай: 'Hyundai', хюндай: 'Hyundai', фольксваген: 'Volkswagen', фольц: 'Volkswagen', бмв: 'BMW',
   чери: 'Chery', черри: 'Chery', джили: 'Geely', хавал: 'Haval', хавейл: 'Haval', лада: 'Lada', ваз: 'Lada', мазда: 'Mazda', шкода: 'Skoda', сузуки: 'Suzuki', судзуки: 'Suzuki',
   камри: 'Camry', рав: 'RAV4', рио: 'Rio', поло: 'Polo', солярис: 'Solaris', крета: 'Creta', спортейдж: 'Sportage', спортаж: 'Sportage', тигуан: 'Tiguan', октавия: 'Octavia',
   веста: 'Vesta', джолион: 'Jolion', кулрей: 'Coolray', тигго: 'Tiggo', джимни: 'Jimny',
 };
-const fmt = (n: number) => n.toLocaleString('ru-RU');
-const short = (n: number) => (n >= 1e6 ? `${(n / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} млн` : `${Math.round(n / 1000)} тыс.`);
-const num = (s: string) => { const n = Number(s.replace(/\D/g, '')); return n || undefined; };
-const toggle = <T,>(arr: T[] | undefined, v: T) => (arr?.includes(v) ? arr.filter((x) => x !== v) : [...(arr ?? []), v]);
+export const fmt = (n: number) => n.toLocaleString('ru-RU');
+export const short = (n: number) => (n >= 1e6 ? `${(n / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} млн` : `${Math.round(n / 1000)} тыс.`);
+export const num = (s: string) => { const n = Number(s.replace(/\D/g, '')); return n || undefined; };
+export const toggle = <T,>(arr: T[] | undefined, v: T) => (arr?.includes(v) ? arr.filter((x) => x !== v) : [...(arr ?? []), v]);
 
 let facetsCache: Facets | null = null;
 export function useFacets() {
@@ -76,7 +76,7 @@ export function suggest(text: string, facets: Facets | null): Suggestion[] {
 }
 
 /** Search field with a suggestion list under it. Picking a suggestion sets Марка/Модель. */
-export function SearchSuggest({ value, onPick, onText, style, dark, placeholder }: { value: Filters; onPick: (f: Filters) => void; onText?: (q: string) => void; style?: object; dark?: boolean; placeholder?: string }) {
+export function SearchSuggest({ value, onPick, onText, style, dark, placeholder, big, right }: { value: Filters; onPick: (f: Filters) => void; onText?: (q: string) => void; style?: object; dark?: boolean; placeholder?: string; big?: boolean; right?: ReactNode }) {
   const facets = useFacets();
   const [text, setText] = useState(value.q ?? '');
   const [focus, setFocus] = useState(false);
@@ -87,16 +87,17 @@ export function SearchSuggest({ value, onPick, onText, style, dark, placeholder 
   };
   return (
     <View style={[{ zIndex: 30 }, style]}>
-      <View style={[st.search, dark && { backgroundColor: C.night3 }]}>
-        <Search size={19} color={dark ? '#fff' : C.ink} strokeWidth={2} />
+      <View style={[st.search, dark && { backgroundColor: C.night3 }, big && st.searchBig]}>
+        <Search size={big ? 26 : 19} color={dark ? '#fff' : C.ink} strokeWidth={2} />
         <TextInput value={text} onChangeText={(v) => { setText(v); onText?.(v); }} onFocus={() => setFocus(true)} onBlur={() => setTimeout(() => setFocus(false), 180)}
           onSubmitEditing={() => (list[0] ? pick(list[0]) : onPick({ ...value, q: text.trim() || undefined }))}
           placeholder={placeholder ?? 'Марка или модель'} placeholderTextColor={dark ? 'rgba(255,255,255,.55)' : C.muted}
-          style={[st.searchInput, dark && { color: '#fff' }]} autoCorrect={false} autoCapitalize="none" returnKeyType="search" />
+          style={[st.searchInput, dark && { color: '#fff' }, big && st.searchInputBig]} autoCorrect={false} autoCapitalize="none" returnKeyType="search" />
         {text ? <Pressable onPress={() => { setText(''); onText?.(''); }} hitSlop={8} accessibilityLabel="Очистить"><X size={18} color={dark ? '#fff' : C.muted} /></Pressable> : null}
+        {right}
       </View>
       {focus && text.trim() ? (
-        <View style={st.suggest}>
+        <View style={[st.suggest, big && { top: 84, borderRadius: 22 }]}>
           {list.length ? list.map((s) => (
             <Pressable key={s.make + (s.model ?? '')} onPress={() => pick(s)} style={(s: { pressed: boolean; hovered?: boolean }) => [st.sRow, s.hovered && { backgroundColor: C.fill }]}>
               <Text style={st.sText}><Text style={{ fontWeight: '800' }}>{s.make}</Text>{s.model ? ` ${s.model}` : ''}</Text>
@@ -125,7 +126,7 @@ function Field({ label, value, open, onPress, disabled, children, onClear }: { l
     </View>
   );
 }
-function Opt({ label, on, onPress, count, multi = true, locked }: { label: string; on: boolean; onPress: () => void; count?: number; multi?: boolean; locked?: boolean }) {
+export function Opt({ label, on, onPress, count, multi = true, locked }: { label: string; on: boolean; onPress: () => void; count?: number; multi?: boolean; locked?: boolean }) {
   return (
     <Pressable onPress={onPress} style={(s: { pressed: boolean; hovered?: boolean }) => [st.opt, s.hovered && { backgroundColor: C.fill }, locked && { opacity: 0.45 }]} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ checked: on }}>
       {multi ? <View style={[st.box, on && st.boxOn]}>{on ? <Check size={14} color="#fff" strokeWidth={3} /> : null}</View> : null}
@@ -134,7 +135,7 @@ function Opt({ label, on, onPress, count, multi = true, locked }: { label: strin
     </Pressable>
   );
 }
-function RangeInput({ label, value, onChange, suffix }: { label: string; value?: number; onChange: (v?: number) => void; suffix?: string }) {
+export function RangeInput({ label, value, onChange, suffix }: { label: string; value?: number; onChange: (v?: number) => void; suffix?: string }) {
   return (
     <View style={[st.field, { flex: 1, minWidth: 0 }]}>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -248,7 +249,7 @@ export function AppliedTags({ f, onChange }: { f: Filters; onChange: (f: Filters
           <Text style={st.tagText}>{label}</Text><X size={14} color={C.muted} strokeWidth={2.4} />
         </Pressable>
       ))}
-      <Pressable onPress={() => onChange({ sort: f.sort, category: f.category })} style={[st.tag, { backgroundColor: 'transparent' }]}><Text style={[st.tagText, { textDecorationLine: 'underline' }]}>Сбросить всё</Text></Pressable>
+      <Pressable onPress={() => onChange({ sort: f.sort, category: f.category, view: f.view })} style={[st.tag, { backgroundColor: 'transparent' }]}><Text style={[st.tagText, { textDecorationLine: 'underline' }]}>Сбросить всё</Text></Pressable>
     </View>
   );
 }
@@ -277,6 +278,8 @@ const st = StyleSheet.create({
   searchIcon: { fontSize: 20, fontWeight: '700', color: C.ink },
   searchInput: { flex: 1, minWidth: 0, height: 54, fontFamily: Font, fontSize: 16, color: C.ink, outlineStyle: 'none' } as object,
   clear: { fontSize: 15, color: C.muted, padding: 6 },
+  searchBig: { height: 80, borderRadius: 28, paddingHorizontal: 28, gap: 16 },
+  searchInputBig: { height: 80, fontSize: 21 },
   suggest: { position: 'absolute', top: 60, left: 0, right: 0, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: C.line, paddingVertical: 6, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
   sRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16, paddingVertical: 11 },
   sText: { fontFamily: Font, fontSize: 15.5, color: C.ink },

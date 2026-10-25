@@ -29,6 +29,7 @@ export type MyListing = Listing & { booked_point: string | null; expires_at: str
 export type Filters = {
   q?: string; make?: string[]; model?: string[]; price_min?: number; price_max?: number; year_min?: number; year_max?: number; km_max?: number;
   body?: Body[]; gearbox?: string[]; drive?: string[]; fuel?: string[]; owners_max?: number; grade_min?: number; category?: string; sort?: string;
+  view?: 'all'; // desktop: show the results page even without filters
 };
 export type Facets = { makes: { make: string; count: number; models: { model: string; count: number }[] }[]; price: [number, number]; year: [number, number]; categories?: Record<string, number> };
 export type Quiz = { purpose?: 'city' | 'family' | 'trips' | 'first'; budget_max?: number; body?: Body[]; gearbox?: 'auto' | 'manual' | 'any'; drive?: 'awd' | 'any'; priorities?: string[] };
