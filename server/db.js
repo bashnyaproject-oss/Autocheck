@@ -20,7 +20,8 @@ async function connect() {
     db = { kind: 'memory', query: (sql, params) => pg.query(sql, params), exec: (sql) => pg.exec(sql) };
   }
   await db.exec(schema);
-  const { rows } = await db.query('select count(*)::int as n from listings');
+  // Demo cars are (re)written when missing or from an older demo set (no photos yet).
+  const { rows } = await db.query("select count(*)::int as n from listings where id='l16' and fuel is not null");
   if (!rows[0].n && process.env.SEED !== '0') await seed(db);
   return db;
 }

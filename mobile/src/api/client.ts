@@ -15,6 +15,7 @@ export type Flag = { kind: 'ok' | 'note'; text: string };
 export type Listing = {
   id: string; make: string; model: string; year: number; price: number; city: string; body: Body; color: string;
   status: string; inspected: boolean; inspected_at: string | null; access: Access; photos: string[];
+  cover_blur?: string | null; power?: number | null; fuel?: string | null; consumption?: number | null;
   km?: number; engine?: string | null; gearbox?: string | null; drive?: string | null; owners?: number; distance_km?: number | null; photo_count?: number;
   market_price?: number | null; district?: string | null; description?: string | null; grade?: number | null; flags?: Flag[];
   inspected_by?: string | null; seller?: { id: string; name: string; verified: boolean } | null; liked?: boolean; mine?: boolean;
@@ -25,7 +26,24 @@ export type Viewing = { id: string; listing_id: string; at: string; status: 'req
 export type Thread = { id: string; listing_id: string; title: string; color: string; body: Body; with: string; role: 'buyer' | 'seller'; last_text: string | null; last_at: string | null };
 export type Message = { id: string; mine: boolean; system: boolean; text: string; at: string };
 export type MyListing = Listing & { booked_point: string | null; expires_at: string | null; commission_if_sold: number; fee_if_not_sold: number; buyers?: { id: string; name: string }[]; stats?: { likes: number; viewings: number } };
-export type Filters = { q?: string; price_min?: number; price_max?: number; year_min?: number; body?: Body; gearbox?: string; category?: string; sort?: string };
+export type Filters = {
+  q?: string; make?: string[]; model?: string[]; price_min?: number; price_max?: number; year_min?: number; year_max?: number; km_max?: number;
+  body?: Body[]; gearbox?: string[]; drive?: string[]; fuel?: string[]; owners_max?: number; grade_min?: number; category?: string; sort?: string;
+};
+export type Facets = { makes: { make: string; count: number; models: { model: string; count: number }[] }[]; price: [number, number]; year: [number, number] };
+export type Quiz = { purpose?: 'city' | 'family' | 'trips' | 'first'; budget_max?: number; body?: Body[]; gearbox?: 'auto' | 'manual' | 'any'; drive?: 'awd' | 'any'; priorities?: string[] };
+export type Pick = Listing & { match: number; why: string[]; warn: string[] };
+/** Count of active filters, for the filter button badge. */
+export function filterCount(f: Filters) {
+  return (['make', 'model', 'body', 'gearbox', 'drive', 'fuel'] as const).reduce((n, k) => n + (f[k]?.length ? 1 : 0), 0)
+    + (f.price_min || f.price_max ? 1 : 0) + (f.year_min || f.year_max ? 1 : 0) + (f.km_max ? 1 : 0) + (f.owners_max ? 1 : 0) + (f.grade_min ? 1 : 0);
+}
+/** Photo URL for a size: demo photos have -s (small) variants. Relative paths point at the site. */
+export function photoUrl(u: string | null | undefined, size: 'full' | 'small' = 'full') {
+  if (!u) return undefined;
+  const v = size === 'small' && u.startsWith('/photos/') && !u.endsWith('-b.jpg') ? u.replace(/\.jpg$/, '-s.jpg') : u;
+  return v.startsWith('/') ? (Platform.OS === 'web' ? v : LIVE + v) : v;
+}
 
 let token: string | null = null;
 const store = {
@@ -45,6 +63,10 @@ function deviceId() {
 let welcomeSeen = false;
 export const seenWelcome = () => welcomeSeen || store.get('osm_welcome') === '1';
 export function markWelcome() { welcomeSeen = true; store.set('osm_welcome', '1'); }
+/** Quiz answers live on the device (no account needed to get picks). */
+let quizMem: Quiz | null = null;
+export function loadQuiz(): Quiz | null { if (quizMem) return quizMem; try { const v = store.get('osm_quiz'); return v ? (quizMem = JSON.parse(v)) : null; } catch { return null; } }
+export function saveQuiz(q: Quiz | null) { quizMem = q; store.set('osm_quiz', q ? JSON.stringify(q) : null); }
 
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 
@@ -64,7 +86,8 @@ async function http<T>(method: string, path: string, body?: unknown): Promise<T>
   return j as T;
 }
 const qs = (o: Record<string, unknown>) => {
-  const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== '' && v !== null).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`);
+  const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== '' && v !== null && !(Array.isArray(v) && !v.length))
+    .map(([k, v]) => `${k}=${encodeURIComponent(Array.isArray(v) ? v.join(',') : String(v))}`);
   return p.length ? '?' + p.join('&') : '';
 };
 
@@ -75,7 +98,10 @@ export const api = {
   },
   me: () => http<Me>('GET', '/v1/me'),
   deleteAccount: () => http('DELETE', '/v1/me'),
-  feed: (f: Filters) => http<{ items: Listing[]; access: Access }>('GET', '/v1/feed' + qs(f)),
+  feed: (f: Filters) => http<{ items: Listing[]; total: number; access: Access }>('GET', '/v1/feed' + qs(f)),
+  count: (f: Filters) => http<{ total: number }>('GET', '/v1/feed' + qs({ ...f, count_only: 1 })),
+  facets: () => http<Facets>('GET', '/v1/facets'),
+  match: (q: Quiz) => http<{ items: Pick[]; access: Access }>('POST', '/v1/match', q),
   listing: (id: string) => http<Listing>('GET', `/v1/listings/${id}`),
   report: (id: string) => http<Report>('POST', `/v1/listings/${id}/report`),
   like: (id: string, on: boolean) => http(on ? 'PUT' : 'DELETE', `/v1/listings/${id}/like`),

@@ -76,10 +76,11 @@ function listingOut(l, insp, { level, from, seller }) {
     status: l.status, inspected: !!insp, inspected_at: insp && insp.done_at ? new Date(insp.done_at).toLocaleDateString('ru-RU') : null,
     access: level, photos: [],
   };
-  if (level === 'guest') return o;
   const photos = Array.isArray(l.photos) ? l.photos : [];
+  // Guests get only a pre-blurred small cover (demo photos have one); the sharp photo is never sent.
+  if (level === 'guest') return Object.assign(o, { cover_blur: photos[0] && photos[0].startsWith('/photos/') ? photos[0].replace(/\.jpg$/, '-b.jpg') : null });
   Object.assign(o, {
-    km: l.km, engine: l.engine, gearbox: l.gearbox, drive: l.drive, owners: l.owners,
+    km: l.km, engine: l.engine, gearbox: l.gearbox, drive: l.drive, owners: l.owners, power: l.power, fuel: l.fuel, consumption: l.consumption,
     distance_km: from && l.lat ? Math.round(km(from, [l.lat, l.lng])) : null,
     photos: photos.slice(0, 1), photo_count: photos.length,
   });
@@ -149,33 +150,142 @@ const on = (method, pattern, needs, fn) => routes.push({ method, re: new RegExp(
 on('GET', '/v1/health', null, async (c) => ok({ ok: true, db: c.db.kind, payments: pay.live() ? 'yookassa' : 'demo' }));
 on('GET', '/v1/points', null, async () => ok({ items: POINTS }));
 
+const list = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
+const AUTO = ['Автомат', 'Робот', 'Вариатор'];
+/** Applies the search filters (docs/openapi.yaml). Grade filters only work for people who can see grades. */
+function passes(l, insp, q, level) {
+  const text = String(q.q || '').trim().toLowerCase();
+  if (text && !`${l.make} ${l.model}`.toLowerCase().includes(text)) return false;
+  const makes = list(q.make), models = list(q.model), bodies = list(q.body), gears = list(q.gearbox), drives = list(q.drive), fuels = list(q.fuel);
+  if (makes.length && !makes.includes(l.make)) return false;
+  if (models.length && !models.includes(l.model)) return false;
+  if (bodies.length && !bodies.includes(l.body)) return false;
+  if (gears.length && !gears.some((g) => (g === 'auto' ? AUTO.includes(l.gearbox) : g === l.gearbox))) return false;
+  if (drives.length && !drives.includes(l.drive)) return false;
+  if (fuels.length && !fuels.includes(l.fuel)) return false;
+  const n = (k) => (q[k] != null && q[k] !== '' ? Number(q[k]) : null);
+  if (n('price_min') != null && l.price < n('price_min')) return false;
+  if (n('price_max') != null && l.price > n('price_max')) return false;
+  if (n('year_min') != null && l.year < n('year_min')) return false;
+  if (n('year_max') != null && l.year > n('year_max')) return false;
+  if (n('km_max') != null && l.km > n('km_max')) return false;
+  if (n('owners_max') != null && l.owners > n('owners_max')) return false;
+  if (n('power_min') != null && (l.power || 0) < n('power_min')) return false;
+  if (n('grade_min') != null && level === 'full' && insp.grade < n('grade_min')) return false;
+  if (q.category && CATEGORY[q.category] && !CATEGORY[q.category](l, insp)) return false;
+  if (q.category === 'top' && level !== 'full') return false;
+  return true;
+}
+async function published(db) {
+  const { rows } = await db.query("select * from listings where status='published' order by published_at desc limit 500");
+  const out = [];
+  for (const l of rows) {
+    const insp = await lastInspection(db, l.id);
+    if (insp && insp.grade >= MIN_GRADE) out.push([l, insp]);
+  }
+  return out;
+}
+const SORTS = {
+  price_asc: (a, b) => a.l.price - b.l.price,
+  price_desc: (a, b) => b.l.price - a.l.price,
+  year_desc: (a, b) => b.l.year - a.l.year,
+  km_asc: (a, b) => a.l.km - b.l.km,
+  distance: (a, b) => a.d - b.d,
+  new: (a, b) => new Date(b.l.published_at) - new Date(a.l.published_at),
+  grade_desc: (a, b) => b.insp.grade - a.insp.grade,
+  below_market: (a, b) => (b.l.market_price - b.l.price) / b.l.market_price - (a.l.market_price - a.l.price) / a.l.market_price,
+};
+SORTS.price = SORTS.price_asc; // older app versions
+
 on('GET', '/v1/feed', null, async ({ db, user, query }) => {
   const level = await accessOf(db, user);
   const from = query.lat && query.lng ? [Number(query.lat), Number(query.lng)] : HOME;
   const radius = Number(query.radius_km || 300);
-  const q = String(query.q || '').trim().toLowerCase();
-  const { rows } = await db.query("select * from listings where status='published' order by published_at desc limit 300");
   const items = [];
-  for (const l of rows) {
-    const insp = await lastInspection(db, l.id);
-    if (!insp || insp.grade < MIN_GRADE) continue;
-    if (q && !`${l.make} ${l.model}`.toLowerCase().includes(q)) continue;
-    if (query.price_min && l.price < Number(query.price_min)) continue;
-    if (query.price_max && l.price > Number(query.price_max)) continue;
-    if (query.year_min && l.year < Number(query.year_min)) continue;
-    if (query.body && l.body !== query.body) continue;
-    if (query.gearbox && l.gearbox !== query.gearbox) continue;
-    if (query.category && CATEGORY[query.category] && !CATEGORY[query.category](l, insp)) continue;
-    const d = l.lat ? km(from, [l.lat, l.lng]) : null;
-    if (d != null && d > radius) continue;
-    // Grade filters work only for people who can see grades.
-    if (query.category === 'top' && level !== 'full') continue;
-    items.push({ out: listingOut(l, insp, { level, from }), d: d ?? 999 });
+  for (const [l, insp] of await published(db)) {
+    if (!passes(l, insp, query, level)) continue;
+    const d = l.lat ? km(from, [l.lat, l.lng]) : 999;
+    if (d > radius) continue;
+    items.push({ l, insp, d });
   }
-  if (query.sort === 'price') items.sort((a, b) => a.out.price - b.out.price);
-  else if (query.sort === 'new') items.sort((a, b) => b.out.year - a.out.year);
-  else items.sort((a, b) => a.d - b.d);
-  return ok({ items: items.map((x) => x.out), access: level });
+  const sort = (query.sort === 'grade_desc' || query.sort === 'below_market') && level !== 'full' ? 'new' : query.sort;
+  items.sort(SORTS[sort] || SORTS.new);
+  if (query.count_only) return ok({ total: items.length });
+  return ok({ items: items.map((x) => listingOut(x.l, x.insp, { level, from })), total: items.length, access: level });
+});
+
+/** Values for the filter screen: makes with models and counts, price and year ranges. */
+on('GET', '/v1/facets', null, async ({ db }) => {
+  const makes = {};
+  let pmin = Infinity, pmax = 0, ymin = 9999, ymax = 0;
+  for (const [l] of await published(db)) {
+    const m = (makes[l.make] ||= { make: l.make, count: 0, models: {} });
+    m.count++; m.models[l.model] = (m.models[l.model] || 0) + 1;
+    pmin = Math.min(pmin, l.price); pmax = Math.max(pmax, l.price); ymin = Math.min(ymin, l.year); ymax = Math.max(ymax, l.year);
+  }
+  return ok({
+    makes: Object.values(makes).sort((a, b) => b.count - a.count || a.make.localeCompare(b.make)).map((m) => ({ make: m.make, count: m.count, models: Object.entries(m.models).map(([model, count]) => ({ model, count })) })),
+    price: [pmin === Infinity ? 0 : pmin, pmax], year: [ymin, ymax],
+    gearbox: ['Автомат', 'Робот', 'Вариатор', 'Механика'], drive: ['Передний', 'Полный', 'Задний'], fuel: ['Бензин', 'Дизель', 'Гибрид', 'Электро'],
+  });
+});
+
+/**
+ * Personal picks from the quiz. Scores every car against the answers and explains the score.
+ * Body: { purpose: city|family|trips|first, budget_max, body: [], gearbox: auto|manual|any, priorities: [reliability|economy|comfort|dynamics], drive: awd|any }
+ */
+const RELIABLE = ['Toyota', 'Mazda', 'Kia', 'Hyundai', 'Suzuki', 'Lexus', 'Skoda', 'Volkswagen'];
+const PREMIUM = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Volvo'];
+function scoreCar(l, insp, a, level) {
+  const why = [], warn = [];
+  let s = 40;
+  const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
+  const budget = Number(a.budget_max) || 0;
+  if (budget) {
+    if (l.price <= budget) { s += 14; why.push(`В бюджете: ${fmt(l.price)} ₽`); }
+    else if (l.price <= budget * 1.1) { s += 2; warn.push(`Чуть выше бюджета — на ${fmt(l.price - budget)} ₽`); }
+    else return null;
+  }
+  const BODY = { suv: 'кроссовер', sedan: 'седан', hatch: 'хэтчбек или универсал' };
+  const bodies = Array.isArray(a.body) ? a.body : [];
+  if (bodies.length) { if (bodies.includes(l.body)) { s += 10; why.push(`Кузов — ${BODY[l.body]}, как вы хотели`); } else s -= 12; }
+  const isAuto = AUTO.includes(l.gearbox);
+  if (a.gearbox === 'auto') { if (isAuto) { s += 6; why.push(`Без педали сцепления: ${l.gearbox.toLowerCase()}`); } else return null; }
+  if (a.gearbox === 'manual') { if (!isAuto) { s += 6; why.push('Механика, как вы хотели'); } else s -= 6; }
+  if (a.drive === 'awd') { if (l.drive === 'Полный') { s += 8; why.push('Полный привод'); } else s -= 10; }
+  const cons = l.consumption || 8;
+  switch (a.purpose) {
+    case 'city': if (cons <= 7) { s += 8; why.push(`Экономичная для города: ${String(cons).replace('.', ',')} л на 100 км`); } if (l.body !== 'suv' || l.power < 150) s += 3; break;
+    case 'family': if (l.body === 'suv' || l.model.includes('SW') || l.model.includes('Tiggo 8')) { s += 9; why.push(l.model.includes('Tiggo 8') ? 'Семь мест — с запасом для семьи' : 'Просторный салон и багажник для семьи'); } break;
+    case 'trips': if (l.drive === 'Полный') { s += 6; why.push('Полный привод — для трассы и дачи'); } if ((l.power || 0) >= 140) { s += 4; why.push(`${l.power} л.с. — уверенные обгоны`); } break;
+    case 'first': if (l.price <= 1500000) { s += 6; why.push('Недорого в покупке и обслуживании'); } if (insp.grade >= 85) { s += 4; why.push('Без сюрпризов по технике — подходит новичку'); } break;
+    default:
+  }
+  const pr = Array.isArray(a.priorities) ? a.priorities : [];
+  if (pr.includes('reliability')) {
+    s += Math.round(((insp.grade - 60) / 40) * 10);
+    if (RELIABLE.includes(l.make)) { s += 4; why.push(`${l.make} — марка с хорошей репутацией по надёжности`); }
+    if (l.owners === 1) { s += 2; why.push('Один владелец'); }
+  }
+  if (pr.includes('economy') && cons <= 7) { s += 6; if (a.purpose !== 'city') why.push(`Расход ${String(cons).replace('.', ',')} л на 100 км`); }
+  if (pr.includes('comfort') && (PREMIUM.includes(l.make) || l.model === 'Camry' || l.body === 'suv')) { s += 6; why.push(PREMIUM.includes(l.make) || l.model === 'Camry' ? 'Комфорт бизнес-класса' : 'Высокая посадка и мягкая подвеска'); }
+  if (pr.includes('dynamics') && (l.power || 0) >= 150) { s += 6; why.push(`Динамика: ${l.power} л.с.`); }
+  if (insp.grade >= 85) why.push(level === 'full' ? `Оценка осмотра ${insp.grade} — отличное состояние` : 'Отличная оценка осмотра');
+  else if (insp.grade < 72) warn.push(level === 'full' ? `Оценка ${insp.grade}: есть что учесть по технике` : 'Есть замечания по осмотру');
+  if (l.market_price && l.price < l.market_price) { s += 3; if (level === 'full') why.push(`Дешевле рынка на ${Math.round((1 - l.price / l.market_price) * 100)}%`); }
+  if (l.km < 40000) { s += 3; why.push(`Небольшой пробег — ${fmt(l.km)} км`); }
+  // ~120 points is a perfect fit; scale to a percentage that still separates good from great.
+  return { score: Math.max(30, Math.min(98, Math.round(s * 0.82))), why: [...new Set(why)].slice(0, 4), warn };
+}
+on('POST', '/v1/match', null, async ({ db, user, body }) => {
+  const level = await accessOf(db, user);
+  const out = [];
+  for (const [l, insp] of await published(db)) {
+    const r = scoreCar(l, insp, body || {}, level);
+    if (r && r.score >= 45) out.push({ ...listingOut(l, insp, { level, from: HOME }), match: r.score, why: r.why, warn: r.warn });
+  }
+  out.sort((a, b) => b.match - a.match);
+  return ok({ items: out.slice(0, 12), access: level });
 });
 
 on('GET', '/v1/listings/:id', null, async ({ db, user, params, query }) => {

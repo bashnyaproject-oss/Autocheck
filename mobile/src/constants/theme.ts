@@ -45,4 +45,8 @@ export const rub = (n: number) => Math.round(n).toLocaleString('ru-RU') + ' ₽'
 export const kmf = (n: number) => Math.round(n).toLocaleString('ru-RU') + ' км';
 
 export const MaxContentWidth = 640;
-export const MaxGridWidth = 1180;
+export const MaxGridWidth = 1280;
+
+/** «1 машину / 2 машины / 5 машин» (accusative, for «Показать N …»). */
+export const plural = (n: number, forms: [string, string, string] = ['машину', 'машины', 'машин']) =>
+  n % 10 === 1 && n % 100 !== 11 ? forms[0] : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? forms[1] : forms[2];

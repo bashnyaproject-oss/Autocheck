@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 
-import { api, type Access, type Listing } from '@/api/client';
+import { api, photoUrl, type Access, type Listing } from '@/api/client';
 import { C, Font, gradeColor, gradeText, kmf, rub } from '@/constants/theme';
 import { carScene, type Body } from '@/lib/car-art';
 
@@ -13,10 +13,11 @@ import { useApp } from '@/state/app-state';
 const variantOf = (id: string) => id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
 
 /** A real photo if the seller uploaded one, otherwise a drawn car. Guests see it blurred. */
-export function CarImage({ id, color, body, photo, blur, style }: { id: string; color: string; body: Body; photo?: string; blur?: boolean; style?: StyleProp<ViewStyle> }) {
+export function CarImage({ id, color, body, photo, blur, small, style }: { id: string; color: string; body: Body; photo?: string | null; blur?: boolean; small?: boolean; style?: StyleProp<ViewStyle> }) {
+  const uri = photoUrl(photo, small ? 'small' : 'full') || carScene(color, body, variantOf(id));
   return (
     <View style={[{ overflow: 'hidden', backgroundColor: C.fill }, style]}>
-      <Image source={{ uri: photo || carScene(color, body, variantOf(id)) }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={blur ? 28 : 0} />
+      <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={blur ? (photo?.endsWith('-b.jpg') ? 0 : 18) : 0} transition={250} />
       {blur ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,.18)' }]} /> : null}
     </View>
   );
@@ -45,7 +46,7 @@ export function ListingCard({ l, width }: { l: Listing; width: number }) {
   return (
     <PressScale onPress={open} style={[st.card, { width }]} scale={0.98} accessibilityRole="button" accessibilityLabel={`${l.make} ${l.model}, ${l.year}, ${rub(l.price)}`}>
       <View>
-        <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0]} blur={l.access === 'guest'} style={{ width: width - 16, aspectRatio: 1.45, borderRadius: 20 }} />
+        <CarImage id={l.id} color={l.color} body={l.body} photo={l.photos[0] ?? l.cover_blur} small blur={l.access === 'guest'} style={{ width: width - 16, aspectRatio: 1.45, borderRadius: 20 }} />
         <View style={st.badge}><Text style={st.badgeText}>✓ Осмотрено</Text></View>
         <Pressable onPress={heart} hitSlop={10} style={st.heart} accessibilityLabel={liked ? 'Убрать из избранного' : 'В избранное'}>
           <Text style={[st.heartText, liked && { color: C.ink }]}>{liked ? '♥' : '♡'}</Text>
@@ -67,22 +68,28 @@ export function ListingCard({ l, width }: { l: Listing; width: number }) {
 /** Horizontal photo gallery with page dots. Photos beyond what the access level allows are blurred placeholders. */
 export function Gallery({ l, access }: { l: Listing; access: Access }) {
   const { width } = useWindowDimensions();
-  const w = Math.min(width, 760);
+  const w = Math.min(width, width >= 1024 ? 1000 : 760);
   const [page, setPage] = useState(0);
+  const ref = useRef<any>(null);
+  const goTo = (n: number) => { ref.current?.scrollTo({ x: n * w, animated: true }); setPage(n); };
   const total = Math.max(l.photos.length, l.photo_count ?? 0, 1);
   const shown = access === 'full' ? Math.max(l.photos.length, 1) : 1;
   const slides = Array.from({ length: access === 'full' ? shown : Math.min(total, 3) }, (_, i) => i);
   return (
     <View>
-      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / w))} scrollEventThrottle={32}>
+      <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / w))} scrollEventThrottle={32}>
         {slides.map((i) => (
           <View key={i}>
-            <CarImage id={l.id + i} color={l.color} body={l.body} photo={l.photos[i]} blur={access === 'guest' || i >= shown} style={{ width: w, aspectRatio: 1.3 }} />
+            <CarImage id={l.id + i} color={l.color} body={l.body} photo={l.photos[i] ?? (i === 0 ? l.cover_blur : l.photos[0])} blur={access === 'guest' || i >= shown} style={{ width: w, aspectRatio: width >= 1024 ? 1.75 : 1.3, borderRadius: width >= 1024 ? 24 : 0 }} />
             {i >= shown ? <View style={st.galLock}><Text style={st.galLockText}>🔒 Остальные фото — с доступом</Text></View> : null}
           </View>
         ))}
       </ScrollView>
       {slides.length > 1 ? <View style={st.counter}><Text style={st.counterText}>{page + 1} / {slides.length}</Text></View> : null}
+      {Platform.OS === 'web' && slides.length > 1 ? <>
+        {page > 0 ? <Pressable onPress={() => goTo(page - 1)} style={[st.arrow, { left: 14 }]} accessibilityLabel="Предыдущее фото"><Text style={st.arrowText}>‹</Text></Pressable> : null}
+        {page < slides.length - 1 ? <Pressable onPress={() => goTo(page + 1)} style={[st.arrow, { right: 14 }]} accessibilityLabel="Следующее фото"><Text style={st.arrowText}>›</Text></Pressable> : null}
+      </> : null}
     </View>
   );
 }
@@ -123,6 +130,8 @@ const st = StyleSheet.create({
   price: { fontFamily: Font, fontSize: 16, color: C.ink, marginTop: 4 },
   grade: { borderRadius: 8, paddingHorizontal: 9, height: 26, alignItems: 'center', justifyContent: 'center' },
   gradeText: { fontFamily: Font, fontWeight: '800', fontSize: 14 },
+  arrow: { position: 'absolute', top: '50%', marginTop: -22, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,.92)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8 },
+  arrowText: { fontSize: 28, lineHeight: 30, fontWeight: '600', color: C.ink, marginTop: -3 },
   counter: { position: 'absolute', right: 14, bottom: 14, backgroundColor: 'rgba(20,20,20,.7)', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 3 },
   counterText: { color: '#fff', fontFamily: Font, fontSize: 13, fontWeight: '600' },
   galLock: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },

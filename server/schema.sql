@@ -129,3 +129,6 @@ alter table listings add column if not exists photos jsonb not null default '[]'
 alter table listings add column if not exists buyer_id text;
 alter table viewings add column if not exists at timestamptz;
 alter table viewings add column if not exists note text;
+alter table listings add column if not exists power int;
+alter table listings add column if not exists fuel text;
+alter table listings add column if not exists consumption real;

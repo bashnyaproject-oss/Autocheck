@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     shot(p, 'welcome1_start'); time.sleep(2.5); shot(p, 'welcome1_anim')
     for k in range(3):
         p.get_by_text('Далее', exact=True).click(); time.sleep(2.2); shot(p, f'welcome{k+2}')
-    p.get_by_text('Я покупаю машину').click(); time.sleep(1.2); shot(p, 'auth_choose')
+    p.get_by_text('Сначала просто посмотреть').click(); time.sleep(1); p.goto(BASE + '/app/auth?intent=buy'); time.sleep(1.2); shot(p, 'auth_choose')
     p.get_by_text('Войти через Госуслуги').click(); time.sleep(.6)
     p.get_by_placeholder('+7 900 000-00-00').fill('+7 916 111-22-33')
     p.get_by_placeholder('Иван Петров').fill('Иван Петров'); shot(p, 'auth_provider')

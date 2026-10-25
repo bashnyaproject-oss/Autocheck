@@ -51,7 +51,7 @@ export default function ListingScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ title: `${l.make} ${l.model}`, headerRight: () => <Pressable onPress={like} hitSlop={10} accessibilityLabel="Избранное"><Text style={{ fontSize: 24, color: l.liked ? C.brand : C.ink }}>{l.liked ? '♥' : '♡'}</Text></Pressable> }} />
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <View style={{ maxWidth: 760, width: '100%', alignSelf: 'center' }}><Gallery l={l} access={l.access} /></View>
+        <View style={{ maxWidth: 1000, width: '100%', alignSelf: 'center' }}><Gallery l={l} access={l.access} /></View>
         <View style={st.col}>
           <Text style={st.h1}>{l.make} {l.model}, {l.year}</Text>
           <Text style={st.p}>{l.city}{l.district ? `, ${l.district}` : ''}{l.distance_km != null ? ` · ${l.distance_km} км от вас` : ''}</Text>
@@ -84,7 +84,7 @@ export default function ListingScreen() {
               <View style={st.hr} />
               <Text style={st.h2}>Характеристики</Text>
               <View style={st.specs}>
-                {[['Пробег', l.km != null ? kmf(l.km) : '—'], ['Кузов', BODY[l.body]], ['Двигатель', l.engine ?? '—'], ['Коробка', l.gearbox ?? '—'], ['Привод', l.drive ?? '—'], ['Владельцев', String(l.owners ?? '—')]].map(([k, v]) => (
+                {[['Год', String(l.year)], ['Пробег', l.km != null ? kmf(l.km) : '—'], ['Кузов', BODY[l.body]], ['Двигатель', l.engine ?? '—'], ['Топливо', l.fuel ?? '—'], ['Расход', l.consumption ? `${String(l.consumption).replace('.', ',')} л / 100 км` : '—'], ['Коробка', l.gearbox ?? '—'], ['Привод', l.drive ?? '—'], ['Владельцев', String(l.owners ?? '—')]].map(([k, v]) => (
                   <View key={k} style={st.spec}><Text style={st.p}>{k}</Text><Text style={st.specV}>{v}</Text></View>
                 ))}
               </View>

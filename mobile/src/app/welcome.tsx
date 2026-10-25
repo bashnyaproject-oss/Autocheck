@@ -74,7 +74,7 @@ export default function WelcomeScreen() {
             </PressScale>
           ) : (
             <Appear style={{ gap: 10 }}>
-              <PressScale onPress={() => leave(me ? '/' : '/auth?intent=buy')} style={st.next} accessibilityRole="button">
+              <PressScale onPress={() => leave('/quiz')} style={st.next} accessibilityRole="button">
                 <Text style={st.nextText}>Я покупаю машину</Text><Text style={st.arrow}>→</Text>
               </PressScale>
               <PressScale onPress={() => leave(me ? '/sell' : '/auth?intent=sell')} style={[st.next, st.ghost]} accessibilityRole="button">

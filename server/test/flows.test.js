@@ -17,7 +17,8 @@ test.beforeEach(async () => { await freshMemoryDb(); });
 test('access levels: guest sees little, member a bit more, pass holder everything', async () => {
   const g = await call('GET', '/v1/feed');
   assert.equal(g.body.access, 'guest');
-  assert.equal(g.body.items.length, 8);
+  assert.equal(g.body.items.length, 16);
+  assert.ok(g.body.items.every((i) => !i.photos.length && (!i.cover_blur || i.cover_blur.endsWith('-b.jpg'))));
   assert.ok(g.body.items.every((i) => i.km === undefined && i.grade === undefined && i.photos.length === 0));
   const t = await signIn('levels');
   const m = await call('GET', '/v1/feed', { token: t });
@@ -30,7 +31,7 @@ test('access levels: guest sees little, member a bit more, pass holder everythin
   assert.ok(f.body.description && f.body.seller.name);
   // search filters
   const q = await call('GET', '/v1/feed', { token: t, query: { q: 'kia' } });
-  assert.deepEqual(q.body.items.map((i) => i.make), ['Kia']);
+  assert.ok(q.body.items.length === 2 && q.body.items.every((i) => i.make === 'Kia'));
   const top = await call('GET', '/v1/feed', { token: t, query: { category: 'top' } });
   assert.ok(top.body.items.length > 0 && top.body.items.every((i) => i.grade >= 85));
 });
@@ -147,4 +148,18 @@ test('expired listings: 2 990 ₽ charged', async () => {
   const r = await call('GET', '/v1/cron/expire');
   assert.equal(r.body.expired, 1);
   assert.equal(r.body.charged[0].amount, 2990);
+});
+
+test('filters, facets and personal picks', async () => {
+  const f = await call('GET', '/v1/feed', { query: { make: 'Toyota,Kia', gearbox: 'auto', price_max: 2500000, sort: 'price_asc' } });
+  assert.deepEqual(f.body.items.map((i) => i.model), ['Rio', 'Sportage']);
+  const c = await call('GET', '/v1/feed', { query: { drive: 'Полный', count_only: 1 } });
+  assert.equal(c.body.total, 5);
+  const fac = await call('GET', '/v1/facets');
+  assert.ok(fac.body.makes.find((m) => m.make === 'Toyota').models.length === 2);
+  const m = await call('POST', '/v1/match', { body: { purpose: 'family', budget_max: 2500000, body: ['suv'], gearbox: 'auto', priorities: ['reliability'] } });
+  assert.ok(m.body.items.length >= 3);
+  assert.ok(m.body.items.every((i) => i.price <= 2750000 && i.why.length && i.match >= 50));
+  assert.ok(m.body.items[0].match >= m.body.items[m.body.items.length - 1].match);
+  assert.ok(m.body.items.every((i) => i.gearbox === undefined || i.gearbox !== 'Механика'));
 });

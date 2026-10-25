@@ -20,7 +20,9 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal', headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="listing/[id]" options={{ title: '' }} />
-          <Stack.Screen name="search" options={{ presentation: 'modal', title: 'Поиск' }} />
+          <Stack.Screen name="search" options={{ presentation: 'modal', title: 'Фильтры' }} />
+          <Stack.Screen name="quiz" options={{ title: 'Подбор машины' }} />
+          <Stack.Screen name="picks" options={{ title: 'Ваша подборка' }} />
           <Stack.Screen name="auth" options={{ presentation: 'modal', title: 'Вход' }} />
           <Stack.Screen name="pass" options={{ presentation: 'modal', title: 'Доступ покупателя' }} />
           <Stack.Screen name="book/[id]" options={{ presentation: 'modal', title: 'Запись на просмотр' }} />
